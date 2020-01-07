@@ -1,3 +1,11 @@
+# NOTICE: This file contains code modified from epiR::epi.2by2 version 1.0-2
+#         between 20 August 2019 and 22 August 2019.
+#
+#         Many of the changes involve abstracting repetative routines into
+#         functions, splitting nested calculations into separate variables, and
+#         modifying variable names. The source lines of the original code are
+#         noted on the relevant sections of code below.
+
 #' calculate ratios (odds/risk) from a 2x2x2 table.
 #'
 #' @param x a 2x2x2 table with exposure in rows, outcome in columns, and strata in the third dimension
@@ -235,6 +243,10 @@ get_chisq_pval <- function(x) {
 #' RR is from .funRRwald (156--171)
 #' IRR is from lines 787--797 (no specific function)
 #' 
+#' Many of the changes involve abstracting repetative routines into functions,
+#' splitting nested calculations into separate variables, and modifying 
+#' variable names.
+#' 
 #' @details This function produces odds ratio, risk ratio, and incidence rate
 #' ratio estimates with confidence intervals. I have generalized the methods to 
 #' use as little code duplication as possible. 
@@ -322,6 +334,10 @@ get_mh <- function(arr, measure = "OR", conf = 0.95) {
 
 
 # These functions are adapted from epiR::epi.2by2 lines 1185--1204
+#
+# Many of the changes involve abstracting repetative routines into functions,
+# splitting nested calculations into separate variables, and modifying 
+# variable names.
 mh_rr <- function(arr, conf = 0.95) {
 
   d <- data_frame_from_2x2(arr)[-1, ] # remove crude estimates
@@ -396,7 +412,9 @@ get_woolf_pval <- function(x, measure = "OR") {
 
   # This is taken from lines 1320--1340 of epiR::epi.2by2
   # 
-  # I have isolated the necessary elements and combined them into one function
+  # Many of the changes involve abstracting repetative routines into functions,
+  # splitting nested calculations into separate variables, and modifying 
+  # variable names.
   if (measure == "RR") {
     ## Test of homogeneity of risk ratios (Jewell 2004, page 154). First work
     ## out the Woolf estimate of the adjusted risk ratio (labelled adj_log_est
