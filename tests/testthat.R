@@ -1,4 +1,4 @@
 library(testthat)
-library(cctable)
+library(tuni)
 
-test_check("cctable")
+test_check("tuni")

@@ -1,4 +1,4 @@
-Package: cctable
+Package: tuni
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
@@ -15,3 +15,15 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.2
+URL: https://github.com/R4EPI/tuni
+BugReports: https://github.com/R4EPI/tuni/issues
+Imports: 
+    dplyr (>= 0.8.3),
+    rlang (>= 0.4.0),
+    tidyr (>= 1.0.0),
+    stats,
+    glue,
+    purrr,
+    tidyselect,
+    tibble (>= 2.1.0),
+    scales
