@@ -32,25 +32,72 @@ install.packages("epibuffet")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+The {epibuffet} package produces tables for descriptive epidemiological analysis.
+It contains four functions:
+
+ - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
+ - `tab_survey()` --- Tabulate and describe counts of variables in a survey (with appropriate CIs)
+ - `tab_univariate()` --- Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist
 
 ```{r example}
+library(msfdict)
+library(matchmaker)
+library(msfmisc)
+library(dplyr)
 library(epibuffet)
-## basic example code
+
+linelist <- msfdict::gen_data("Measles", numcases = 1000)
+measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
+
+# Cleaning linelist data
+linelist_clean <- matchmaker::match_df(
+  x = linelist,
+  dictionary = measles_dict,
+  from = "option_code",
+  to = "option_name",
+  by = "data_element_shortname",
+  order = "option_order_in_set"
+)
+linelist_clean
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+## Quick tabulations
 
-```{r cars}
-summary(cars)
+```{r tab_linelist}
+the_symptoms <- tab_linelist(linelist_clean,
+  cough, nasal_discharge, severe_oral_lesions,
+  transpose = "value"
+) 
+the_symptoms
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
+```{r print_linelist}
+the_symptoms %>%
+  msfmisc::rename_redundant("%" = "proportion") %>%
+  msfmisc::augment_redundant("(n)" = "n") %>%
+  knitr::kable()
 ```
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
+## Odds / Risk / Incidence Rate Ratios
+
+```{r orrr}
+symptoms_tf <- linelist_clean %>%
+  dplyr::transmute(
+    pneumonia = grepl("Yes", pneumonia),
+    cough = grepl("Yes", cough),
+    nasal_discharge = grepl("Yes", nasal_discharge),
+    oral_lesions = grepl("Yes", severe_oral_lesions),
+    contact = grepl("known case", contact_history)
+  ) 
+
+symptoms_tf
+
+tu <- tab_univariate(symptoms_tf, 
+  outcome = pneumonia, 
+  cough, nasal_discharge, oral_lesions, contact,
+  mergeCI = TRUE,
+  extend_output = FALSE
+)
+tu %>% select(-est_type) %>% knitr::kable(digits = 3)
+```
+
