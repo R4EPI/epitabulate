@@ -58,9 +58,7 @@
 #' func_res <- tab_univariate(a, case_def, riskA,
 #'   strata = stratifier, digits = 6, measure = "RR"
 #' )
-#'
-#'
-tab_univariate <- function(x, outcome, ... , perstime = NULL, strata = NULL,
+tab_univariate <- function(x, outcome, ..., perstime = NULL, strata = NULL,
                            measure = "OR", extend_output = TRUE,
                            digits = 3, mergeCI = FALSE, woolf_test = FALSE) {
 
@@ -75,14 +73,14 @@ tab_univariate <- function(x, outcome, ... , perstime = NULL, strata = NULL,
   the_vars <- tidyselect::vars_select(colnames(x), ...)
 
   # select the var in the outcome column
-  outcome_var <- tidyselect::vars_select(colnames(x), {{outcome}})
+  outcome_var <- tidyselect::vars_select(colnames(x), {{ outcome }})
 
   # select the var in the perstime column
-  perstime_var <- tidyselect::vars_select(colnames(x), {{perstime}})
+  perstime_var <- tidyselect::vars_select(colnames(x), {{ perstime }})
 
 
   # select the var in the strata column
-  strata_var <- tidyselect::vars_select(colnames(x), {{strata}})
+  strata_var <- tidyselect::vars_select(colnames(x), {{ strata }})
 
 
   ### checks and messasges
@@ -100,27 +98,27 @@ tab_univariate <- function(x, outcome, ... , perstime = NULL, strata = NULL,
 
   # check person time is not missing for incidence rate ratio
   if (length(perstime_var) == 0 && measure == "IRR") {
-    stop(glue::glue("You have selected IRR as a measure but not specified a perstime variable.",
-         "To calculate an incidence rate ratio please specify a variable which indicates",
-         "observation time for each individual"))
+    stop(glue::glue(
+      "You have selected IRR as a measure but not specified a perstime variable.",
+      "To calculate an incidence rate ratio please specify a variable which indicates",
+      "observation time for each individual"
+    ))
   }
 
   # lapply to each of the vars
   purrr::map_dfr(the_vars,
-                 backend_tab_univariate,
-                 # Exposure in here
-                 outcome       = outcome_var,
-                 x             = x,
-                 perstime      = perstime_var,
-                 strata        = strata_var,
-                 measure       = measure,
-                 extend_output = extend_output,
-                 digits        = digits,
-                 mergeCI       = mergeCI,
-                 woolf_test    = woolf_test
+    backend_tab_univariate,
+    # Exposure in here
+    outcome       = outcome_var,
+    x             = x,
+    perstime      = perstime_var,
+    strata        = strata_var,
+    measure       = measure,
+    extend_output = extend_output,
+    digits        = digits,
+    mergeCI       = mergeCI,
+    woolf_test    = woolf_test
   )
-
-
 }
 
 
@@ -145,14 +143,14 @@ tab_univariate <- function(x, outcome, ... , perstime = NULL, strata = NULL,
 #'
 #' @return a data frame
 backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata = NULL,
-                           measure = "OR", extend_output = TRUE,
-                           digits = 3, mergeCI = FALSE, woolf_test = FALSE) {
+                                   measure = "OR", extend_output = TRUE,
+                                   digits = 3, mergeCI = FALSE, woolf_test = FALSE) {
 
 
   ### Selecting variables
   # select the vars in the dots
   exposure_var <- exposure
-  exposure     <- if (length(exposure_var) > 0) rlang::sym(exposure_var) else NULL
+  exposure <- if (length(exposure_var) > 0) rlang::sym(exposure_var) else NULL
   # check if exposure variable is logical
   if (!is.logical(x[[exposure_var]])) {
     stop("exposure variable must be a TRUE/FALSE variable")
@@ -160,22 +158,22 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
 
   # select the var in the outcome column
   outcome_var <- outcome
-  outcome     <- if (length(outcome_var) > 0) rlang::sym(outcome_var) else NULL
+  outcome <- if (length(outcome_var) > 0) rlang::sym(outcome_var) else NULL
 
   # select the var in the perstime column
   perstime_var <- perstime
-  perstime     <- if (length(perstime_var) > 0) rlang::sym(perstime_var) else NULL
+  perstime <- if (length(perstime_var) > 0) rlang::sym(perstime_var) else NULL
 
 
   # select the var in the strata column
   strata_var <- strata
   has_strata <- length(strata_var) > 0
-  strata     <- if (has_strata) rlang::sym(strata_var) else NULL
+  strata <- if (has_strata) rlang::sym(strata_var) else NULL
 
 
 
   # swap the factor levels so TRUE comes first (required by epiR::epi2by2 function)
-  x[[outcome_var]]  <- factor(x[[outcome_var]], levels = c("TRUE", "FALSE"))
+  x[[outcome_var]] <- factor(x[[outcome_var]], levels = c("TRUE", "FALSE"))
   x[[exposure_var]] <- factor(x[[exposure_var]], levels = c("TRUE", "FALSE"))
 
   # swap factor levels for strata if not null
@@ -192,59 +190,64 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
     # if stratifier specified then do by each group
     if (has_strata) {
       # sum outcome and obstime by exposure and strata
-      x_table <- group_by(x, {{exposure}}, {{strata}})
+      x_table <- group_by(x, {{ exposure }}, {{ strata }})
       x_table <- summarise(x_table,
-                           otcm = sum({{outcome}} == TRUE, na.rm = TRUE),
-                           tme  = sum({{perstime}}, na.rm = TRUE))
+        otcm = sum({{ outcome }} == TRUE, na.rm = TRUE),
+        tme = sum({{ perstime }}, na.rm = TRUE)
+      )
 
-      arr <- tidyr::gather(x_table, key = "variable", value = "value", 
-                           -{{exposure}}, -{{strata}})
-      arr <- dplyr::arrange(arr, 
-                            {{strata}}, !!quote(variable), {{exposure}})
+      arr <- tidyr::gather(x_table,
+        key = "variable", value = "value",
+        -{{ exposure }}, -{{ strata }}
+      )
+      arr <- dplyr::arrange(
+        arr,
+        {{ strata }}, !!quote(variable), {{ exposure }}
+      )
 
       the_table <- array(arr$value,
-                         dim = c(2, 2, 2),
-                         dimnames = list(
-                                         unique(arr[[exposure_var]]),
-                                         unique(arr$variable),
-                                         unique(arr[[strata_var]])
-                         )
+        dim = c(2, 2, 2),
+        dimnames = list(
+          unique(arr[[exposure_var]]),
+          unique(arr$variable),
+          unique(arr[[strata_var]])
+        )
       )
       names(dimnames(the_table)) <- c(exposure_var, outcome_var, strata_var)
-
     } else { # if no stratifier then simple table
       # sum outcome and obstime by exposure
-      the_table <- group_by(x, {{exposure}})
+      the_table <- group_by(x, {{ exposure }})
       the_table <- summarise(the_table,
-                             otcm = sum({{outcome}} == TRUE, na.rm = TRUE),
-                             tme  = sum({{perstime}}, na.rm = TRUE))
+        otcm = sum({{ outcome }} == TRUE, na.rm = TRUE),
+        tme = sum({{ perstime }}, na.rm = TRUE)
+      )
 
       # drop the first column and change to a table (for use in epi.2by2)
-      the_table <- as.table(data.matrix(the_table[,2:3]))
+      the_table <- as.table(data.matrix(the_table[, 2:3]))
     }
   } else {
-  
     the_table <- table(x[c(exposure_var, outcome_var, strata_var)])
-
   }
 
-  
-  if (has_strata) {
 
+  if (has_strata) {
     vals <- rbind(strata_ratio_table(the_table, measure), NA)
     if (measure != "IRR") {
       vals <- rbind(vals, NA)
     }
-    est  <- get_ratio_est(the_table, measure, conf = 0.95, strata_name = strata_var)
-    nums <- dplyr::bind_cols(variable = rep(exposure_var, nrow(est)), 
-                             est_type = rownames(est), 
-                             vals, 
-                             est)
+    est <- get_ratio_est(the_table, measure, conf = 0.95, strata_name = strata_var)
+    nums <- dplyr::bind_cols(
+      variable = rep(exposure_var, nrow(est)),
+      est_type = rownames(est),
+      vals,
+      est
+    )
   } else {
-    nums <- dplyr::bind_cols(variable = exposure_var,
-                             est_type = "crude",
-                             strata_ratio_table(the_table, measure),
-                             get_ratio_est(the_table, measure)
+    nums <- dplyr::bind_cols(
+      variable = exposure_var,
+      est_type = "crude",
+      strata_ratio_table(the_table, measure),
+      get_ratio_est(the_table, measure)
     )
   }
 
@@ -252,7 +255,7 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   # use numbers because names will be different according to measure, but place is always same
   if (!extend_output) {
     to_keep <- !grepl("(odds|risk|incidence)$", names(nums))
-    nums    <- nums[to_keep]
+    nums <- nums[to_keep]
   }
 
   # drop woolf-test pvalue
@@ -268,4 +271,3 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   # spit out the out table
   return(nums)
 }
-

@@ -110,80 +110,91 @@ Tabulate counts and proportions
 }
 \examples{
 have_packages <- require("matchmaker") & require("msfdict")
-if (have_packages) { withAutoprint({
 
-# Simulating linelist data
+if (have_packages) {
+  withAutoprint({
 
-linelist     <- msfdict::gen_data("Measles", numcases = 1000)
-measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
+    # Simulating linelist data
 
-# Cleaning linelist data
-linelist_clean <- matchmaker::match_us(
-  x         = linelist,
-  matchbook = measles_dict,
-  from      = "option_code",
-  to        = "option_name",
-  by        = "data_element_shortname",
-  order     = "option_order_in_set"
-)
+    linelist <- msfdict::gen_data("Measles", numcases = 1000)
+    measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
 
-# get a descriptive table by sex
-tab_linelist(linelist_clean, sex)
+    # Cleaning linelist data
+    linelist_clean <- matchmaker::match_us(
+      x = linelist,
+      matchbook = measles_dict,
+      from = "option_code",
+      to = "option_name",
+      by = "data_element_shortname",
+      order = "option_order_in_set"
+    )
 
-# describe prenancy statistics, but remove missing data from the tally
-tab_linelist(linelist_clean, trimester, na.rm = TRUE)
+    # get a descriptive table by sex
+    tab_linelist(linelist_clean, sex)
 
-# describe by symptom
+    # describe prenancy statistics, but remove missing data from the tally
+    tab_linelist(linelist_clean, trimester, na.rm = TRUE)
 
-tab_linelist(linelist_clean, 
-             cough, nasal_discharge, severe_oral_lesions,
-             transpose = "value")
-# describe prenancy statistics, stratifying by vitamin A perscription
-tab_linelist(linelist_clean, trimester, sex, strata = prescribed_vitamin_a, 
-             na.rm = TRUE, row_total = TRUE)
+    # describe by symptom
 
-}) }
+    tab_linelist(linelist_clean,
+      cough, nasal_discharge, severe_oral_lesions,
+      transpose = "value"
+    )
+    # describe prenancy statistics, stratifying by vitamin A perscription
+    tab_linelist(linelist_clean, trimester, sex,
+      strata = prescribed_vitamin_a,
+      na.rm = TRUE, row_total = TRUE
+    )
+  })
+}
 
 have_survey_packages <- require("survey") && require("srvyr")
-if (have_survey_packages) { withAutoprint({
-data(api)
+if (have_survey_packages) {
+  withAutoprint({
+    data(api)
 
-# stratified sample
-surv <- apistrat \%>\%
-  as_survey_design(strata = stype, weights = pw)
+    # stratified sample
+    surv <- apistrat \%>\%
+      as_survey_design(strata = stype, weights = pw)
 
-s <- surv \%>\%
-  tab_survey(awards, strata = stype, col_total = TRUE, row_total = TRUE, deff = TRUE)
-s
+    s <- surv \%>\%
+      tab_survey(awards, strata = stype, col_total = TRUE, row_total = TRUE, deff = TRUE)
+    s
 
-# making things pretty
-s \%>\%
-  # wrap all "n" variables in braces (note space before n).
-  msfmisc::augment_redundant(" (n)" = " n") \%>\%
-  # relabel all columns containing "prop" to "\% (95\% CI)"
-  msfmisc::rename_redundant("\% (95\% CI)"    = ci,
-                   "Design Effect" = deff)
+    # making things pretty
+    s \%>\%
+      # wrap all "n" variables in braces (note space before n).
+      msfmisc::augment_redundant(" (n)" = " n") \%>\%
+      # relabel all columns containing "prop" to "\% (95\% CI)"
+      msfmisc::rename_redundant(
+        "\% (95\% CI)" = ci,
+        "Design Effect" = deff
+      )
 
-# long data
-surv \%>\%
-  tab_survey(awards, strata = stype, wide = FALSE)
+    # long data
+    surv \%>\%
+      tab_survey(awards, strata = stype, wide = FALSE)
 
-# tabulate binary variables
-surv \%>\%
-  tab_survey(yr.rnd, sch.wide, awards, keep = "Yes")
+    # tabulate binary variables
+    surv \%>\%
+      tab_survey(yr.rnd, sch.wide, awards, keep = "Yes")
 
-# stratify the binary variables
-surv \%>\%
-  tab_survey(yr.rnd, sch.wide, awards, 
-             strata    = stype,
-             keep      = "Yes")
+    # stratify the binary variables
+    surv \%>\%
+      tab_survey(yr.rnd, sch.wide, awards,
+        strata    = stype,
+        keep      = "Yes"
+      )
 
-# invert the tabulation
-surv \%>\%
-  tab_survey(yr.rnd, sch.wide, awards, 
-             strata    = stype,
-             drop      = "Yes",
-             deff      = TRUE,
-             row_total = TRUE)
-}) }
+    # invert the tabulation
+    surv \%>\%
+      tab_survey(yr.rnd, sch.wide, awards,
+        strata = stype,
+        drop = "Yes",
+        deff = TRUE,
+        row_total = TRUE
+      )
+  })
+}
 }

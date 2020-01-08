@@ -29,11 +29,14 @@ create a data frame from a 2x2 matrix
 }
 \examples{
 arr <- c(10, 35, 90, 465, 36, 25, 164, 175)
-arr <- array(arr, dim = c(2, 2, 2),
-             dimnames = list(risk = c(TRUE, FALSE),
-                             outcome = c(TRUE, FALSE),
-                             old = c(FALSE, TRUE))
-       )
+arr <- array(arr,
+  dim = c(2, 2, 2),
+  dimnames = list(
+    risk = c(TRUE, FALSE),
+    outcome = c(TRUE, FALSE),
+    old = c(FALSE, TRUE)
+  )
+)
 arr
 data_frame_from_2x2(arr)
 }

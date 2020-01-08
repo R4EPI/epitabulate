@@ -74,8 +74,6 @@ func_res <- tab_univariate(a, case_def, riskA,
 func_res <- tab_univariate(a, case_def, riskA,
   strata = stratifier, digits = 6, measure = "RR"
 )
-
-
 }
 \references{
 Inspired by Daniel Gardiner,

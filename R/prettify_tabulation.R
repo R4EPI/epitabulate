@@ -7,8 +7,6 @@
 #' @param st stratifying variable
 #' @noRd
 prettify_tabulation <- function(y, digits = 1, ci_prefix = "") {
-
-
   ci <- trimws(sprintf("%s ci", ci_prefix))
   y <- msfmisc::unite_ci(y, ci, dplyr::contains("proportion"), percent = TRUE, digits = digits)
 
@@ -16,6 +14,4 @@ prettify_tabulation <- function(y, digits = 1, ci_prefix = "") {
   y[[ci]] <- dplyr::if_else(grepl("NA%", y[[ci]]), NA_character_, y[[ci]])
 
   return(y)
-
 }
-
