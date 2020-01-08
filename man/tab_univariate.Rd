@@ -57,20 +57,23 @@ Produce odds ratios, risk ratios or incidence rate ratios
 \examples{
 
 # generate a fake dataset
-a <- data.frame(case_def = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-           riskA = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-           riskB = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-           stratifier = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-           perstime = sample(150:250, 2000, replace = TRUE)
-           )
+a <- data.frame(
+  case_def   = sample(c(TRUE, FALSE), 2000, replace = TRUE),
+  riskA      = sample(c(TRUE, FALSE), 2000, replace = TRUE),
+  riskB      = sample(c(TRUE, FALSE), 2000, replace = TRUE),
+  stratifier = sample(c(TRUE, FALSE), 2000, replace = TRUE),
+  perstime   = sample(150:250,        2000, replace = TRUE)
+)
 
 # get the results from tab_univariate function
 func_res <- tab_univariate(a, case_def, riskA,
-                           strata = stratifier, digits = 6, measure = "OR")
+  strata = stratifier, digits = 6, measure = "OR"
+)
 
 # get risk ratios
 func_res <- tab_univariate(a, case_def, riskA,
-                           strata = stratifier, digits = 6, measure = "RR")
+  strata = stratifier, digits = 6, measure = "RR"
+)
 
 
 }

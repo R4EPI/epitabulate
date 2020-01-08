@@ -9,8 +9,6 @@ Authors@R:
            comment = c(ORCID = "0000-0003-1458-7108"))
 Description: What the package does (one paragraph).
 License: GPL-3
-Suggests: 
-    testthat
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -26,4 +24,15 @@ Imports:
     purrr,
     tidyselect,
     tibble (>= 2.1.0),
-    scales
+    survey,
+    srvyr,
+    forcats,
+    msfmisc
+Suggests: 
+    testthat,
+    matchmaker,
+    msfdict
+Remotes:
+    reconhub/matchmaker,
+    R4EPI/msfdict,
+    R4EPI/msfmisc
