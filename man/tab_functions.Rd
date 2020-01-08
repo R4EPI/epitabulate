@@ -120,9 +120,9 @@ if (have_packages) {
     measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
 
     # Cleaning linelist data
-    linelist_clean <- matchmaker::match_us(
+    linelist_clean <- matchmaker::match_df(
       x = linelist,
-      matchbook = measles_dict,
+      dictionary = measles_dict,
       from = "option_code",
       to = "option_name",
       by = "data_element_shortname",

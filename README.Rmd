@@ -13,21 +13,21 @@ knitr::opts_chunk$set(
 )
 ```
 
-# tuni
+# epibuffet
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
-[![CRAN status](https://www.r-pkg.org/badges/version/tuni)](https://CRAN.R-project.org/package=tuni)
+[![CRAN status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.org/package=epibuffet)
 <!-- badges: end -->
 
-The goal of tuni is to ...
+The goal of epibuffet is to ...
 
 ## Installation
 
-You can install the released version of tuni from [CRAN](https://CRAN.R-project.org) with:
+You can install the released version of epibuffet from [CRAN](https://CRAN.R-project.org) with:
 
 ``` r
-install.packages("tuni")
+install.packages("epibuffet")
 ```
 
 ## Example
@@ -35,7 +35,7 @@ install.packages("tuni")
 This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
-library(tuni)
+library(epibuffet)
 ## basic example code
 ```
 

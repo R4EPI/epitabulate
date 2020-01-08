@@ -1,4 +1,4 @@
 library(testthat)
-library(tuni)
+library(epibuffet)
 
-test_check("tuni")
+test_check("epibuffet")
