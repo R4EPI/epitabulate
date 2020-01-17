@@ -105,6 +105,6 @@ This function has been superseeded by \code{\link[=tab_survey]{tab_survey()}} pl
 instead.
 }
 \seealso{
-\code{\link[msfmisc:rename_redundant]{msfmisc::rename_redundant()}}, \code{\link[msfmisc:augment_redundant]{msfmisc::augment_redundant()}}
+\code{\link[epikit:rename_redundant]{epikit::rename_redundant()}}, \code{\link[epikit:augment_redundant]{epikit::augment_redundant()}}
 }
 \keyword{internal}

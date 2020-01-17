@@ -265,7 +265,7 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
 
   # merge upper and lower CIs
   if (mergeCI) {
-    nums <- msfmisc::unite_ci(nums, col = "est_ci", "ratio", "lower", "upper", m100 = FALSE, digits = digits)
+    nums <- epikit::unite_ci(nums, col = "est_ci", "ratio", "lower", "upper", m100 = FALSE, digits = digits)
   }
 
   # spit out the out table

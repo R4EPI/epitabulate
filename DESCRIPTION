@@ -27,12 +27,11 @@ Imports:
     survey,
     srvyr,
     forcats,
-    msfmisc
+    epikit
 Suggests: 
     testthat,
-    matchmaker,
+    matchmaker (>= 0.1.0),
     msfdict
 Remotes:
-    reconhub/matchmaker,
     R4EPI/msfdict,
-    R4EPI/msfmisc
+    R4EPI/epikit

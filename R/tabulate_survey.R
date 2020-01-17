@@ -45,7 +45,7 @@
 #'
 #' @keywords internal
 #'
-#' @seealso [msfmisc::rename_redundant()], [msfmisc::augment_redundant()]
+#' @seealso [epikit::rename_redundant()], [epikit::augment_redundant()]
 #'
 #' @importFrom srvyr survey_total survey_mean
 tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
@@ -100,7 +100,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
   # For numeric data, however, we need to warn the user
   if (is.numeric(x$variables[[vars[1]]])) {
     warning(glue::glue("converting `{vars[1]}` to a factor"), call. = FALSE)
-    x <- srvyr::mutate(x, !!cod := msfmisc::fac_from_num(!!cod))
+    x <- srvyr::mutate(x, !!cod := epikit::fac_from_num(!!cod))
   }
 
   # if there is missing data, we should treat it by either removing the rows

@@ -39,7 +39,7 @@ analysis. It contains four functions:
 ``` r
 library(msfdict)
 library(matchmaker)
-library(msfmisc)
+library(epikit)
 library(dplyr)
 library(epibuffet)
 
@@ -111,8 +111,8 @@ the_symptoms
 
 ``` r
 the_symptoms %>%
-  msfmisc::rename_redundant("%" = "proportion") %>%
-  msfmisc::augment_redundant("(n)" = "n") %>%
+  epikit::rename_redundant("%" = "proportion") %>%
+  epikit::augment_redundant("(n)" = "n") %>%
   knitr::kable()
 ```
 

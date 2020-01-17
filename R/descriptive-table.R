@@ -66,7 +66,7 @@ descriptive <- function(df, counter, grouper = NULL, multiplier = 100, digits = 
 
   if (is.numeric(df[[counter]])) {
     warning(glue::glue("converting `{counter}` to a factor"), call. = FALSE)
-    df[[counter]] <- msfmisc::fac_from_num(df[[counter]])
+    df[[counter]] <- epikit::fac_from_num(df[[counter]])
   }
 
   if (is.logical(df[[counter]])) {
