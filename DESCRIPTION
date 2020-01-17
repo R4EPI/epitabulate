@@ -31,7 +31,8 @@ Imports:
 Suggests: 
     testthat,
     matchmaker (>= 0.1.0),
-    msfdict
+    msfdict,
+    covr
 Remotes:
     R4EPI/msfdict,
     R4EPI/epikit
