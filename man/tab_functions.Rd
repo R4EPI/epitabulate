@@ -109,15 +109,15 @@ proportions. Survey data will report confidence intervals.
 Tabulate counts and proportions
 }
 \examples{
-have_packages <- require("matchmaker") & require("msfdict")
+have_packages <- require("matchmaker") & require("epidict")
 
 if (have_packages) {
   withAutoprint({
 
     # Simulating linelist data
 
-    linelist <- msfdict::gen_data("Measles", numcases = 1000)
-    measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
+    linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
+    measles_dict <- epidict::msf_dict("Measles", compact = FALSE)
 
     # Cleaning linelist data
     linelist_clean <- matchmaker::match_df(

@@ -54,14 +54,14 @@ Here is an example of the tables produced by {epibuffet} from a randomly
 generated data set based on an MSF data dictionary for Measles data.
 
 ``` r
-library(msfdict)
+library(epidict)
 library(matchmaker)
 library(epikit)
 library(dplyr)
 library(epibuffet)
 
-linelist <- msfdict::gen_data("Measles", numcases = 1000)
-measles_dict <- msfdict::msf_dict("Measles", compact = FALSE)
+linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
+measles_dict <- epidict::msf_dict("Measles", compact = FALSE)
 
 # Cleaning linelist data
 linelist_clean <- matchmaker::match_df(

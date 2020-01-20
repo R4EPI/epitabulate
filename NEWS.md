@@ -1,3 +1,6 @@
+# epibuffet 0.0.0.9002
+
+* Change import {msfdict} to {epidict}
 
 # epibuffet 0.0.0.9001
 

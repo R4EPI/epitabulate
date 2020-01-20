@@ -1,6 +1,6 @@
 Package: epibuffet
 Title: Tables for Epidemiological Analysis
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R: c(
     person(given = "Zhian N.",
            family = "Kamvar",
@@ -42,8 +42,8 @@ Imports:
 Suggests: 
     testthat,
     matchmaker (>= 0.1.0),
-    msfdict,
+    epidict,
     covr
 Remotes:
-    R4EPI/msfdict,
+    R4EPI/epidict,
     R4EPI/epikit
