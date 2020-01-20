@@ -165,9 +165,9 @@ if (have_survey_packages) {
     # making things pretty
     s \%>\%
       # wrap all "n" variables in braces (note space before n).
-      msfmisc::augment_redundant(" (n)" = " n") \%>\%
+      epikit::augment_redundant(" (n)" = " n") \%>\%
       # relabel all columns containing "prop" to "\% (95\% CI)"
-      msfmisc::rename_redundant(
+      epikit::rename_redundant(
         "\% (95\% CI)" = ci,
         "Design Effect" = deff
       )

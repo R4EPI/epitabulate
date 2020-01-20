@@ -122,9 +122,9 @@
 #'     # making things pretty
 #'     s %>%
 #'       # wrap all "n" variables in braces (note space before n).
-#'       msfmisc::augment_redundant(" (n)" = " n") %>%
+#'       epikit::augment_redundant(" (n)" = " n") %>%
 #'       # relabel all columns containing "prop" to "% (95% CI)"
-#'       msfmisc::rename_redundant(
+#'       epikit::rename_redundant(
 #'         "% (95% CI)" = ci,
 #'         "Design Effect" = deff
 #'       )
@@ -254,7 +254,7 @@ tab_general <- function(x,
       stop("No columns matched the data", call. = FALSE)
     }
   } else {
-    the_dots <- msfmisc::dots_to_charlist(parent = 2L)
+    the_dots <- epikit::dots_to_charlist(parent = 2L)
     # we want to tally the dots that don't match up
     if (length(the_dots) > 1 && length(the_dots) > length(vars)) {
       no_bueno <- glue::glue_collapse(glue::glue("`{setdiff(the_dots, vars)}`"),

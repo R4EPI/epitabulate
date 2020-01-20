@@ -1,4 +1,5 @@
 ---
+title: "Epibuffet"
 output: github_document
 ---
 
@@ -13,36 +14,50 @@ knitr::opts_chunk$set(
 )
 ```
 
-# epibuffet
-
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.org/package=epibuffet)
+[![Travis build status](https://travis-ci.org/R4EPI/epibuffet.svg?branch=master)](https://travis-ci.org/R4EPI/epibuffet)
+[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
+[![Codecov test coverage](https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epibuffet?branch=master)
 <!-- badges: end -->
 
-The goal of epibuffet is to ...
-
-## Installation
-
-You can install the released version of epibuffet from [CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("epibuffet")
-```
-
-## Example
-
 The {epibuffet} package produces tables for descriptive epidemiological analysis.
-It contains four functions:
+It contains three functions:
 
  - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
  - `tab_survey()` --- Tabulate and describe counts of variables in a survey (with appropriate CIs)
  - `tab_univariate()` --- Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist
 
+## Installation
+
+{epibuffet} is currently under development, but you can keep up-to-date by
+installing it from the R4EPIs drat repository:
+
+```{r eval = FALSE}
+# install.packages("drat")
+drat::addRepo("R4EPI")
+install.packages("epibuffet")
+```
+
+You can also install the in-development version from GitHub using the {remotes}
+package (but there's no guarantee that it will be stable):
+
+```{r eval = FALSE}
+# install.packages("remotes")
+remotes::install_github("R4EPI/epibuffet") 
+```
+
+</details>
+## Example
+
+Here is an example of the tables produced by {epibuffet} from a randomly
+generated data set based on an MSF data dictionary for Measles data. 
+
 ```{r example}
 library(msfdict)
 library(matchmaker)
-library(msfmisc)
+library(epikit)
 library(dplyr)
 library(epibuffet)
 
@@ -73,8 +88,8 @@ the_symptoms
 
 ```{r print_linelist}
 the_symptoms %>%
-  msfmisc::rename_redundant("%" = "proportion") %>%
-  msfmisc::augment_redundant("(n)" = "n") %>%
+  epikit::rename_redundant("%" = "proportion") %>%
+  epikit::augment_redundant("(n)" = "n") %>%
   knitr::kable()
 ```
 

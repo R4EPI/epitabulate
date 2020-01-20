@@ -1,19 +1,30 @@
 Package: epibuffet
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
+Title: Tables for Epidemiological Analysis
+Version: 0.0.0.9001
+Authors@R: c(
     person(given = "Zhian N.",
            family = "Kamvar",
            role = c("aut", "cre"),
            email = "zkamvar@gmail.com",
-           comment = c(ORCID = "0000-0003-1458-7108"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "0000-0003-1458-7108")),
+    person(given = "Alex",
+           family = "Spina",
+           role = "ctb"),
+    person(given = "Kate",
+           family = "Doyle",
+           role = "ctb"))
+Description: Produces tables for descriptive epidemiological analysis. These
+    tables describe counts of variables in either line-list or survey data
+    (with appropriate confidence intervals), with additional functionality to
+    calculate odds, risk, and incidence rate ratios directly from a linelist
+    across several variables. This package is part of the 'R4EPIs' project
+    <https://R4epis.netlify.com>.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.2
-URL: https://github.com/R4EPI/epibuffet
+URL: https://R4EPI.github.io/epibuffet, https://github.com/R4EPI/epibuffet
 BugReports: https://github.com/R4EPI/epibuffet/issues
 Imports: 
     dplyr (>= 0.8.3),
@@ -27,12 +38,12 @@ Imports:
     survey,
     srvyr,
     forcats,
-    msfmisc
+    epikit
 Suggests: 
     testthat,
-    matchmaker,
-    msfdict
+    matchmaker (>= 0.1.0),
+    msfdict,
+    covr
 Remotes:
-    reconhub/matchmaker,
     R4EPI/msfdict,
-    R4EPI/msfmisc
+    R4EPI/epikit

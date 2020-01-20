@@ -1,7 +1,7 @@
+Epibuffet
+================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-# epibuffet
 
 <!-- badges: start -->
 
@@ -9,23 +9,16 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.org/package=epibuffet)
+[![Travis build
+status](https://travis-ci.org/R4EPI/epibuffet.svg?branch=master)](https://travis-ci.org/R4EPI/epibuffet)
+[![AppVeyor build
+status](https://ci.appveyor.com/api/projects/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
+[![Codecov test
+coverage](https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epibuffet?branch=master)
 <!-- badges: end -->
 
-The goal of epibuffet is to …
-
-## Installation
-
-You can install the released version of epibuffet from
-[CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("epibuffet")
-```
-
-## Example
-
 The {epibuffet} package produces tables for descriptive epidemiological
-analysis. It contains four functions:
+analysis. It contains three functions:
 
   - `tab_linelist()` — Tabulate and describe counts of variables in a
     linelist
@@ -34,12 +27,36 @@ analysis. It contains four functions:
   - `tab_univariate()` — Calculate Odds / Risk / Incidence Rate Ratios
     directly from a linelist
 
-<!-- end list -->
+## Installation
+
+{epibuffet} is currently under development, but you can keep up-to-date
+by installing it from the R4EPIs drat repository:
+
+``` r
+# install.packages("drat")
+drat::addRepo("R4EPI")
+install.packages("epibuffet")
+```
+
+You can also install the in-development version from GitHub using the
+{remotes} package (but there’s no guarantee that it will be stable):
+
+``` r
+# install.packages("remotes")
+remotes::install_github("R4EPI/epibuffet") 
+```
+
+</details>
+
+## Example
+
+Here is an example of the tables produced by {epibuffet} from a randomly
+generated data set based on an MSF data dictionary for Measles data.
 
 ``` r
 library(msfdict)
 library(matchmaker)
-library(msfmisc)
+library(epikit)
 library(dplyr)
 library(epibuffet)
 
@@ -59,16 +76,16 @@ linelist_clean
 #> # A tibble: 1,000 x 52
 #>    seizure_episodes trimester croup dehydration_lev… residential_sta…
 #>    <fct>            <fct>     <fct> <fct>            <fct>           
-#>  1 Yes              <NA>      No    Some             Internally Disp…
-#>  2 No               1st trim… Yes   None             Internally Disp…
-#>  3 Yes              <NA>      No    None             Refugee         
-#>  4 No               <NA>      No    None             Internally Disp…
-#>  5 Yes              <NA>      No    Unknown          Migrant         
-#>  6 No               <NA>      Yes   None             Resident        
-#>  7 No               <NA>      Yes   Severe           Migrant         
-#>  8 Yes              <NA>      No    None             Refugee         
-#>  9 Yes              <NA>      Yes   None             Refugee         
-#> 10 No               <NA>      No    Unknown          Internally Disp…
+#>  1 No               <NA>      No    Severe           Migrant         
+#>  2 Yes              <NA>      Yes   None             Migrant         
+#>  3 Yes              <NA>      Yes   Severe           Resident        
+#>  4 Yes              <NA>      No    Unknown          Refugee         
+#>  5 Yes              <NA>      No    None             Resident        
+#>  6 No               <NA>      Yes   Severe           Unspecified     
+#>  7 Yes              3rd trim… No    Severe           Internally Disp…
+#>  8 No               <NA>      No    None             Refugee         
+#>  9 Yes              <NA>      Yes   Unknown          Internally Disp…
+#> 10 No               <NA>      No    None             Refugee         
 #> # … with 990 more rows, and 47 more variables:
 #> #   previously_vaccinated <fct>, patient_origin_free_text <chr>,
 #> #   age_days <int>, msf_involvement <fct>,
@@ -104,23 +121,23 @@ the_symptoms
 #> # A tibble: 3 x 5
 #>   variable            `Yes n` `Yes proportion` `No n` `No proportion`
 #>   <fct>                 <dbl>            <dbl>  <dbl>           <dbl>
-#> 1 cough                   497             49.7    503            50.3
-#> 2 nasal_discharge         504             50.4    496            49.6
-#> 3 severe_oral_lesions     527             52.7    473            47.3
+#> 1 cough                   519             51.9    481            48.1
+#> 2 nasal_discharge         491             49.1    509            50.9
+#> 3 severe_oral_lesions     494             49.4    506            50.6
 ```
 
 ``` r
 the_symptoms %>%
-  msfmisc::rename_redundant("%" = "proportion") %>%
-  msfmisc::augment_redundant("(n)" = "n") %>%
+  epikit::rename_redundant("%" = "proportion") %>%
+  epikit::augment_redundant("(n)" = "n") %>%
   knitr::kable()
 ```
 
 | variable              | Yes (n) |    % | No (n) |    % |
 | :-------------------- | ------: | ---: | -----: | ---: |
-| cough                 |     497 | 49.7 |    503 | 50.3 |
-| nasal\_discharge      |     504 | 50.4 |    496 | 49.6 |
-| severe\_oral\_lesions |     527 | 52.7 |    473 | 47.3 |
+| cough                 |     519 | 51.9 |    481 | 48.1 |
+| nasal\_discharge      |     491 | 49.1 |    509 | 50.9 |
+| severe\_oral\_lesions |     494 | 49.4 |    506 | 50.6 |
 
 ## Odds / Risk / Incidence Rate Ratios
 
@@ -138,16 +155,16 @@ symptoms_tf
 #> # A tibble: 1,000 x 5
 #>    pneumonia cough nasal_discharge oral_lesions contact
 #>    <lgl>     <lgl> <lgl>           <lgl>        <lgl>  
-#>  1 TRUE      TRUE  FALSE           TRUE         FALSE  
-#>  2 FALSE     FALSE FALSE           TRUE         TRUE   
-#>  3 TRUE      FALSE TRUE            TRUE         TRUE   
-#>  4 FALSE     FALSE TRUE            TRUE         TRUE   
-#>  5 FALSE     TRUE  FALSE           TRUE         FALSE  
-#>  6 TRUE      FALSE TRUE            FALSE        TRUE   
-#>  7 FALSE     TRUE  FALSE           FALSE        FALSE  
-#>  8 FALSE     TRUE  FALSE           FALSE        TRUE   
-#>  9 FALSE     TRUE  FALSE           TRUE         FALSE  
-#> 10 FALSE     TRUE  TRUE            FALSE        FALSE  
+#>  1 FALSE     FALSE FALSE           FALSE        TRUE   
+#>  2 TRUE      TRUE  FALSE           FALSE        FALSE  
+#>  3 TRUE      TRUE  FALSE           FALSE        FALSE  
+#>  4 FALSE     FALSE TRUE            TRUE         FALSE  
+#>  5 TRUE      TRUE  FALSE           FALSE        TRUE   
+#>  6 TRUE      FALSE FALSE           TRUE         FALSE  
+#>  7 TRUE      FALSE TRUE            TRUE         TRUE   
+#>  8 TRUE      FALSE TRUE            TRUE         FALSE  
+#>  9 FALSE     FALSE TRUE            FALSE        TRUE   
+#> 10 TRUE      FALSE TRUE            TRUE         TRUE   
 #> # … with 990 more rows
 
 tu <- tab_univariate(symptoms_tf, 
@@ -161,7 +178,7 @@ tu %>% select(-est_type) %>% knitr::kable(digits = 3)
 
 | variable         | exp\_cases | unexp\_cases | exp\_controls | unexp\_controls | est\_ci             | p.value |
 | :--------------- | ---------: | -----------: | ------------: | --------------: | :------------------ | ------: |
-| cough            |        314 |          344 |           183 |             159 | 0.793 (0.610–1.030) |   0.082 |
-| nasal\_discharge |        334 |          324 |           170 |             172 | 1.043 (0.803–1.354) |   0.752 |
-| oral\_lesions    |        342 |          316 |           185 |             157 | 0.918 (0.707–1.194) |   0.525 |
-| contact          |        338 |          320 |           170 |             172 | 1.069 (0.823–1.388) |   0.618 |
+| cough            |        340 |          343 |           179 |             138 | 0.764 (0.585–0.999) |   0.049 |
+| nasal\_discharge |        338 |          345 |           153 |             164 | 1.050 (0.804–1.371) |   0.719 |
+| oral\_lesions    |        325 |          358 |           169 |             148 | 0.795 (0.609–1.038) |   0.092 |
+| contact          |        341 |          342 |           159 |             158 | 0.991 (0.759–1.293) |   0.946 |
