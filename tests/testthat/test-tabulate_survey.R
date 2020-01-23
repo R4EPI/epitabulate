@@ -214,7 +214,7 @@ test_that("Proportions are correct", {
 
 
 
-# tabulate_binary_survey tests -------------------------------------------------
+# tab_survey tests -------------------------------------------------
 
 # Binary total and inverted data setup {{{
 
@@ -241,21 +241,8 @@ bin_inv <- tab_survey(s,
 
 # }}}
 
-test_that("tabulate_binary_survey needs a 'keep' argument", {
 
-  expect_error({
-    bin_tot <- tabulate_binary_survey(s,
-                                      awards,
-                                      yr.rnd,
-                                      sch.wide,
-                                      proptotal = TRUE,
-                                      pretty    = FALSE,
-                                      deff      = TRUE)
-  }, "Please provide a list of values to keep in the output")
-
-})
-
-test_that("tabulate_binary_survey returns complementary proportions", {
+test_that("tab_survey returns complementary proportions", {
 
   expect_equal(bin_tot$proportion + bin_inv$proportion, c(1,    1,    1))
   expect_equal(bin_tot$n          + bin_inv$n,          c(6194, 6194, 6194))

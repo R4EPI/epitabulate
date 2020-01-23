@@ -2,7 +2,6 @@
 % Please edit documentation in R/descriptive-table.R
 \name{descriptive}
 \alias{descriptive}
-\alias{multi_descriptive}
 \title{Produces counts with respective proportions from specified variables in a dataframe.}
 \usage{
 descriptive(
@@ -15,17 +14,6 @@ descriptive(
   coltotals = FALSE,
   rowtotals = FALSE,
   single_row = FALSE,
-  explicit_missing = TRUE
-)
-
-multi_descriptive(
-  df,
-  ...,
-  multiplier = 100,
-  digits = 1,
-  proptotal = FALSE,
-  coltotals = TRUE,
-  .id = "symptom",
   explicit_missing = TRUE
 )
 }
@@ -59,10 +47,6 @@ Defaults to \code{FALSE}.}
 \item{explicit_missing}{if \code{TRUE}, missing values will be marked as
 \code{Missing} and tabulated. Defaults to \code{FALSE}, where missing values are
 excluded from the computation}
-
-\item{...}{columns to pass to descriptive}
-
-\item{.id}{the name of the column identifying the aggregates}
 }
 \description{
 This function has been superseeded by \code{\link[=tab_linelist]{tab_linelist()}}. Please use that

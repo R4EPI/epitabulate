@@ -56,26 +56,35 @@ Produce odds ratios, risk ratios or incidence rate ratios
 }
 \examples{
 
-# generate a fake dataset
-a <- data.frame(
-  case_def   = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-  riskA      = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-  riskB      = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-  stratifier = sample(c(TRUE, FALSE), 2000, replace = TRUE),
-  perstime   = sample(150:250,        2000, replace = TRUE)
+# set up data set, first as 2x2x2 table
+arr <- array(
+  data = c(10, 35, 90, 465, 36, 25, 164, 175),
+  dim  = c(2 , 2 , 2),
+  dimnames = list(
+    risk    = c(TRUE , FALSE),
+    outcome = c(TRUE , FALSE),
+    old     = c(FALSE, TRUE)
+  )
 )
+arr
+
+# Create data frame from 2x2x2 table
+library("tidyr")
+a <- arr \%>\% 
+  as.data.frame.table() \%>\% 
+  tidyr::uncount(weights = Freq) \%>\% 
+  dplyr::mutate_all(as.logical) \%>\% 
+  tibble::as_tibble()
 
 # get the results from tab_univariate function
-func_res <- tab_univariate(a, case_def, riskA,
-  strata = stratifier, digits = 6, measure = "OR"
-)
-
-# get risk ratios
-func_res <- tab_univariate(a, case_def, riskA,
-  strata = stratifier, digits = 6, measure = "RR"
-)
+tab_univariate(a, outcome, risk, strata = old, digits = 6, measure = "OR")
+tab_univariate(a, outcome, risk, strata = old, digits = 6, measure = "RR")
 }
 \references{
 Inspired by Daniel Gardiner,
 see \href{https://github.com/DanielGardiner/UsefulFunctions/tree/master/single.variable.analysis.v0.3.R}{github repo}
+Real data set for example from \url{http://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704-ep713_confounding-em/BS704-EP713_Confounding-EM7.html}
+}
+\seealso{
+\code{\link[=data_frame_from_2x2]{data_frame_from_2x2()}}
 }
