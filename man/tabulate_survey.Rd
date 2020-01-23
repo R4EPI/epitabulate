@@ -2,7 +2,6 @@
 % Please edit documentation in R/tabulate_survey.R
 \name{tabulate_survey}
 \alias{tabulate_survey}
-\alias{tabulate_binary_survey}
 \title{Tabulate survey design objects by a categorical and another stratifying variable}
 \usage{
 tabulate_survey(
@@ -18,22 +17,6 @@ tabulate_survey(
   proptotal = FALSE,
   rowtotals = FALSE,
   coltotals = FALSE
-)
-
-tabulate_binary_survey(
-  x,
-  ...,
-  strata = NULL,
-  proptotal = FALSE,
-  keep = NULL,
-  invert = FALSE,
-  pretty = TRUE,
-  wide = TRUE,
-  digits = 1,
-  method = "logit",
-  na.rm = FALSE,
-  deff = FALSE,
-  transpose = NULL
 )
 }
 \arguments{
@@ -74,28 +57,6 @@ column will be added tabulating all of the rows across strata.}
 
 \item{coltotals}{if \code{TRUE} a new row with totals for each "n" column is
 created.}
-
-\item{...}{binary variables for tabulation}
-
-\item{keep}{a vector of binary values to keep}
-
-\item{invert}{if \code{TRUE}, the kept values are rejected. Defaults to \code{FALSE}}
-
-\item{transpose}{if \code{wide = TRUE}, then this will transpose the columns to
-the rows, which is useful when you stratify by age group. Default is
-\code{NULL}, which will not transpose anything. You have three options for
-transpose:
-\itemize{
-\item \code{transpose = "variable"}: uses the variable column, dropping values.
-Use this if you know that your values are all identical or at least
-identifiable by the variable name.
-\item \code{transpose = "value"}   : uses the value column, dropping variables.
-Use this if your values are important and the variable names are
-generic placeholders.
-\item \code{transpose = "both"}    : combines the variable and value columns.
-Use this if both the variables and values are important.
-If there is no stratification, the results will produce a single-row table
-}}
 }
 \value{
 a long or wide tibble with tabulations n, ci, and deff
