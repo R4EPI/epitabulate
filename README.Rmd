@@ -18,16 +18,17 @@ knitr::opts_chunk$set(
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.org/package=epibuffet)
 [![Travis build status](https://travis-ci.org/R4EPI/epibuffet.svg?branch=master)](https://travis-ci.org/R4EPI/epibuffet)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
+[![AppVeyor build status](https://ci.appveyor.com/api/project/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
 [![Codecov test coverage](https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epibuffet?branch=master)
 <!-- badges: end -->
 
 The {epibuffet} package produces tables for descriptive epidemiological analysis.
-It contains three functions:
+It contains four functions:
 
  - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
  - `tab_survey()` --- Tabulate and describe counts of variables in a survey (with appropriate CIs)
  - `tab_univariate()` --- Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist
+ - `data_frame_from_2x2()` --- Creates a data frame from a 2x2 table for unambiguous interpretation
 
 ## Installation
 
@@ -48,8 +49,7 @@ package (but there's no guarantee that it will be stable):
 remotes::install_github("R4EPI/epibuffet") 
 ```
 
-</details>
-## Example
+# Examples
 
 Here is an example of the tables produced by {epibuffet} from a randomly
 generated data set based on an MSF data dictionary for Measles data. 
@@ -93,9 +93,14 @@ the_symptoms %>%
   knitr::kable()
 ```
 
-## Odds / Risk / Incidence Rate Ratios
+# 2x2 tables
 
-```{r orrr}
+In R, creating 2x2 tables is as simple as using the function `table()`, but
+unfortunately, it can be difficult to interpret the values of these tables
+because the dimensions are often flipped around for different analyses. The
+function `data_frame_from_2x2()` will present these values labeled unambiguously.
+
+```{r symp}
 symptoms_tf <- linelist_clean %>%
   dplyr::transmute(
     pneumonia = grepl("Yes", pneumonia),
@@ -107,12 +112,29 @@ symptoms_tf <- linelist_clean %>%
 
 symptoms_tf
 
+print(pxc <- with(symptoms_tf, table(pneumonia, cough)))
+print(pxcxc <- with(symptoms_tf, table(pneumonia, cough, contact)))
+
+data_frame_from_2x2(pxc)
+data_frame_from_2x2(pxcxc)
+```
+
+
+## Odds / Risk / Incidence Rate Ratios
+
+```{r orrr}
 tu <- tab_univariate(symptoms_tf, 
   outcome = pneumonia, 
   cough, nasal_discharge, oral_lesions, contact,
   mergeCI = TRUE,
-  extend_output = FALSE
+  extend_output = FALSE,
+  measure = "OR"
 )
-tu %>% select(-est_type) %>% knitr::kable(digits = 3)
+tu %>% 
+  select(-est_type) %>% 
+  epikit::augment_redundant("exposed " = "exp_") %>%
+  rename(odds = est_ci) %>%
+  knitr::kable(digits = 3)
 ```
+
 

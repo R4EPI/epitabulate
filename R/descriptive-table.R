@@ -153,21 +153,3 @@ descriptive <- function(df, counter, grouper = NULL, multiplier = 100, digits = 
   count_data
 }
 
-
-#' @rdname descriptive
-#' @param ... columns to pass to descriptive
-#' @param .id the name of the column identifying the aggregates
-#' @keywords internal
-multi_descriptive <- function(df, ..., multiplier = 100, digits = 1, proptotal = FALSE, coltotals = TRUE, .id = "symptom", explicit_missing = TRUE) {
-  the_vars <- tidyselect::vars_select(colnames(df), ...)
-  res <- lapply(the_vars, function(i) {
-    suppressWarnings({
-      descriptive(df, i,
-        multiplier = multiplier, digits = digits,
-        proptotal = proptotal, coltotals = coltotals, single_row = TRUE,
-        explicit_missing = explicit_missing
-      )
-    })
-  })
-  bind_rows(res, .id = .id)
-}
