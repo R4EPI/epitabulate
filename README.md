@@ -12,13 +12,13 @@ status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.
 [![Travis build
 status](https://travis-ci.org/R4EPI/epibuffet.svg?branch=master)](https://travis-ci.org/R4EPI/epibuffet)
 [![AppVeyor build
-status](https://ci.appveyor.com/api/projects/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
+status](https://ci.appveyor.com/api/project/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
 [![Codecov test
 coverage](https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epibuffet?branch=master)
 <!-- badges: end -->
 
 The {epibuffet} package produces tables for descriptive epidemiological
-analysis. It contains three functions:
+analysis. It contains four functions:
 
   - `tab_linelist()` — Tabulate and describe counts of variables in a
     linelist
@@ -26,6 +26,8 @@ analysis. It contains three functions:
     survey (with appropriate CIs)
   - `tab_univariate()` — Calculate Odds / Risk / Incidence Rate Ratios
     directly from a linelist
+  - `data_frame_from_2x2()` — Creates a data frame from a 2x2 table for
+    unambiguous interpretation
 
 ## Installation
 
@@ -46,9 +48,7 @@ You can also install the in-development version from GitHub using the
 remotes::install_github("R4EPI/epibuffet") 
 ```
 
-</details>
-
-## Example
+# Examples
 
 Here is an example of the tables produced by {epibuffet} from a randomly
 generated data set based on an MSF data dictionary for Measles data.
@@ -58,6 +58,14 @@ library(epidict)
 library(matchmaker)
 library(epikit)
 library(dplyr)
+#> 
+#> Attaching package: 'dplyr'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     filter, lag
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, setdiff, setequal, union
 library(epibuffet)
 
 linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
@@ -76,16 +84,16 @@ linelist_clean
 #> # A tibble: 1,000 x 52
 #>    seizure_episodes trimester croup dehydration_lev… residential_sta…
 #>    <fct>            <fct>     <fct> <fct>            <fct>           
-#>  1 No               <NA>      No    Severe           Migrant         
-#>  2 Yes              <NA>      Yes   None             Migrant         
-#>  3 Yes              <NA>      Yes   Severe           Resident        
-#>  4 Yes              <NA>      No    Unknown          Refugee         
-#>  5 Yes              <NA>      No    None             Resident        
-#>  6 No               <NA>      Yes   Severe           Unspecified     
-#>  7 Yes              3rd trim… No    Severe           Internally Disp…
-#>  8 No               <NA>      No    None             Refugee         
-#>  9 Yes              <NA>      Yes   Unknown          Internally Disp…
-#> 10 No               <NA>      No    None             Refugee         
+#>  1 No               <NA>      No    Severe           Refugee         
+#>  2 Yes              <NA>      Yes   Some             Refugee         
+#>  3 No               <NA>      No    Severe           Refugee         
+#>  4 No               <NA>      No    Unknown          Refugee         
+#>  5 Yes              <NA>      No    Some             Unspecified     
+#>  6 Yes              <NA>      Yes   Some             Internally Disp…
+#>  7 No               <NA>      No    Some             Refugee         
+#>  8 No               <NA>      No    Severe           Resident        
+#>  9 Yes              <NA>      Yes   Some             Internally Disp…
+#> 10 Yes              3rd trim… No    Unknown          Migrant         
 #> # … with 990 more rows, and 47 more variables:
 #> #   previously_vaccinated <fct>, patient_origin_free_text <chr>,
 #> #   age_days <int>, msf_involvement <fct>,
@@ -121,8 +129,8 @@ the_symptoms
 #> # A tibble: 3 x 5
 #>   variable            `Yes n` `Yes proportion` `No n` `No proportion`
 #>   <fct>                 <dbl>            <dbl>  <dbl>           <dbl>
-#> 1 cough                   519             51.9    481            48.1
-#> 2 nasal_discharge         491             49.1    509            50.9
+#> 1 cough                   499             49.9    501            50.1
+#> 2 nasal_discharge         505             50.5    495            49.5
 #> 3 severe_oral_lesions     494             49.4    506            50.6
 ```
 
@@ -135,11 +143,17 @@ the_symptoms %>%
 
 | variable              | Yes (n) |    % | No (n) |    % |
 | :-------------------- | ------: | ---: | -----: | ---: |
-| cough                 |     519 | 51.9 |    481 | 48.1 |
-| nasal\_discharge      |     491 | 49.1 |    509 | 50.9 |
+| cough                 |     499 | 49.9 |    501 | 50.1 |
+| nasal\_discharge      |     505 | 50.5 |    495 | 49.5 |
 | severe\_oral\_lesions |     494 | 49.4 |    506 | 50.6 |
 
-## Odds / Risk / Incidence Rate Ratios
+# 2x2 tables
+
+In R, creating 2x2 tables is as simple as using the function `table()`,
+but unfortunately, it can be difficult to interpret the values of these
+tables because the dimensions are often flipped around for different
+analyses. The function `data_frame_from_2x2()` will present these values
+labeled unambiguously.
 
 ``` r
 symptoms_tf <- linelist_clean %>%
@@ -155,30 +169,74 @@ symptoms_tf
 #> # A tibble: 1,000 x 5
 #>    pneumonia cough nasal_discharge oral_lesions contact
 #>    <lgl>     <lgl> <lgl>           <lgl>        <lgl>  
-#>  1 FALSE     FALSE FALSE           FALSE        TRUE   
-#>  2 TRUE      TRUE  FALSE           FALSE        FALSE  
-#>  3 TRUE      TRUE  FALSE           FALSE        FALSE  
-#>  4 FALSE     FALSE TRUE            TRUE         FALSE  
-#>  5 TRUE      TRUE  FALSE           FALSE        TRUE   
+#>  1 FALSE     FALSE FALSE           TRUE         FALSE  
+#>  2 TRUE      FALSE TRUE            TRUE         FALSE  
+#>  3 FALSE     TRUE  FALSE           FALSE        TRUE   
+#>  4 TRUE      FALSE FALSE           FALSE        FALSE  
+#>  5 TRUE      TRUE  FALSE           TRUE         TRUE   
 #>  6 TRUE      FALSE FALSE           TRUE         FALSE  
-#>  7 TRUE      FALSE TRUE            TRUE         TRUE   
-#>  8 TRUE      FALSE TRUE            TRUE         FALSE  
-#>  9 FALSE     FALSE TRUE            FALSE        TRUE   
-#> 10 TRUE      FALSE TRUE            TRUE         TRUE   
+#>  7 TRUE      FALSE TRUE            TRUE         FALSE  
+#>  8 TRUE      FALSE TRUE            FALSE        FALSE  
+#>  9 TRUE      FALSE FALSE           TRUE         FALSE  
+#> 10 FALSE     FALSE FALSE           TRUE         FALSE  
 #> # … with 990 more rows
 
+print(pxc <- with(symptoms_tf, table(pneumonia, cough)))
+#>          cough
+#> pneumonia FALSE TRUE
+#>     FALSE   164  165
+#>     TRUE    337  334
+print(pxcxc <- with(symptoms_tf, table(pneumonia, cough, contact)))
+#> , , contact = FALSE
+#> 
+#>          cough
+#> pneumonia FALSE TRUE
+#>     FALSE    90   78
+#>     TRUE    174  183
+#> 
+#> , , contact = TRUE
+#> 
+#>          cough
+#> pneumonia FALSE TRUE
+#>     FALSE    74   87
+#>     TRUE    163  151
+
+data_frame_from_2x2(pxc)
+#>   A_exp_cases B_exp_controls C_unexp_cases D_unexp_controls total_cases
+#> 1         164            165           337              334         501
+#>   total_controls total_exposed total_unexposed total
+#> 1            499           329             671  1000
+data_frame_from_2x2(pxcxc)
+#>       A_exp_cases B_exp_controls C_unexp_cases D_unexp_controls
+#> crude         164            165           337              334
+#> FALSE          90             78           174              183
+#> TRUE           74             87           163              151
+#>       total_cases total_controls total_exposed total_unexposed total
+#> crude         501            499           329             671  1000
+#> FALSE         264            261           168             357   525
+#> TRUE          237            238           161             314   475
+```
+
+## Odds / Risk / Incidence Rate Ratios
+
+``` r
 tu <- tab_univariate(symptoms_tf, 
   outcome = pneumonia, 
   cough, nasal_discharge, oral_lesions, contact,
   mergeCI = TRUE,
-  extend_output = FALSE
+  extend_output = FALSE,
+  measure = "OR"
 )
-tu %>% select(-est_type) %>% knitr::kable(digits = 3)
+tu %>% 
+  select(-est_type) %>% 
+  epikit::augment_redundant("exposed " = "exp_") %>%
+  rename(odds = est_ci) %>%
+  knitr::kable(digits = 3)
 ```
 
-| variable         | exp\_cases | unexp\_cases | exp\_controls | unexp\_controls | est\_ci             | p.value |
-| :--------------- | ---------: | -----------: | ------------: | --------------: | :------------------ | ------: |
-| cough            |        340 |          343 |           179 |             138 | 0.764 (0.585–0.999) |   0.049 |
-| nasal\_discharge |        338 |          345 |           153 |             164 | 1.050 (0.804–1.371) |   0.719 |
-| oral\_lesions    |        325 |          358 |           169 |             148 | 0.795 (0.609–1.038) |   0.092 |
-| contact          |        341 |          342 |           159 |             158 | 0.991 (0.759–1.293) |   0.946 |
+| variable         | exposed cases | unexposed cases | exposed controls | unexposed controls | odds                | p.value |
+| :--------------- | ------------: | --------------: | ---------------: | -----------------: | :------------------ | ------: |
+| cough            |           334 |             337 |              165 |                164 | 0.985 (0.757–1.282) |   0.911 |
+| nasal\_discharge |           341 |             330 |              164 |                165 | 1.040 (0.799–1.354) |   0.773 |
+| oral\_lesions    |           341 |             330 |              153 |                176 | 1.189 (0.913–1.548) |   0.200 |
+| contact          |           314 |             357 |              161 |                168 | 0.918 (0.705–1.195) |   0.524 |
