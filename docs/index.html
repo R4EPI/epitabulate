@@ -74,13 +74,14 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
+
 <div id="epibuffet" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
 <a href="#epibuffet" class="anchor"></a>Epibuffet</h1></div>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
 
-<p>The {epibuffet} package produces tables for descriptive epidemiological analysis. It contains three functions:</p>
+<p>The {epibuffet} package produces tables for descriptive epidemiological analysis. It contains four functions:</p>
 <ul>
 <li>
 <code><a href="reference/tab_functions.html">tab_linelist()</a></code> — Tabulate and describe counts of variables in a linelist</li>
@@ -88,6 +89,8 @@
 <code><a href="reference/tab_functions.html">tab_survey()</a></code> — Tabulate and describe counts of variables in a survey (with appropriate CIs)</li>
 <li>
 <code><a href="reference/tab_univariate.html">tab_univariate()</a></code> — Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist</li>
+<li>
+<code><a href="reference/data_frame_from_2x2.html">data_frame_from_2x2()</a></code> — Creates a data frame from a 2x2 table for unambiguous interpretation</li>
 </ul>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
@@ -99,67 +102,74 @@
 <p>You can also install the in-development version from GitHub using the {remotes} package (but there’s no guarantee that it will be stable):</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co"># install.packages("remotes")</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">remotes<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/remotes/man/install_github.html">install_github</a></span>(<span class="st">"R4EPI/epibuffet"</span>) </a></code></pre></div>
-
 </div>
-<div id="example" class="section level2">
-<h2 class="hasAnchor">
-<a href="#example" class="anchor"></a>Example</h2>
+</div>
+<div id="examples" class="section level1">
+<h1 class="hasAnchor">
+<a href="#examples" class="anchor"></a>Examples</h1>
 <p>Here is an example of the tables produced by {epibuffet} from a randomly generated data set based on an MSF data dictionary for Measles data.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(epidict)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(matchmaker)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(epikit)</a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(dplyr)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(epibuffet)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">linelist &lt;-<span class="st"> </span>epidict<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epidict/man/gen_data.html">gen_data</a></span>(<span class="st">"Measles"</span>, <span class="dt">numcases =</span> <span class="dv">1000</span>, <span class="dt">org =</span> <span class="st">"MSF"</span>)</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">measles_dict &lt;-<span class="st"> </span>epidict<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epidict/man/msf_dict.html">msf_dict</a></span>(<span class="st">"Measles"</span>, <span class="dt">compact =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co"># Cleaning linelist data</span></a>
-<a class="sourceLine" id="cb3-11" data-line-number="11">linelist_clean &lt;-<span class="st"> </span>matchmaker<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/matchmaker/man/match_df.html">match_df</a></span>(</a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">  <span class="dt">x =</span> linelist,</a>
-<a class="sourceLine" id="cb3-13" data-line-number="13">  <span class="dt">dictionary =</span> measles_dict,</a>
-<a class="sourceLine" id="cb3-14" data-line-number="14">  <span class="dt">from =</span> <span class="st">"option_code"</span>,</a>
-<a class="sourceLine" id="cb3-15" data-line-number="15">  <span class="dt">to =</span> <span class="st">"option_name"</span>,</a>
-<a class="sourceLine" id="cb3-16" data-line-number="16">  <span class="dt">by =</span> <span class="st">"data_element_shortname"</span>,</a>
-<a class="sourceLine" id="cb3-17" data-line-number="17">  <span class="dt">order =</span> <span class="st">"option_order_in_set"</span></a>
-<a class="sourceLine" id="cb3-18" data-line-number="18">)</a>
-<a class="sourceLine" id="cb3-19" data-line-number="19">linelist_clean</a>
-<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="co">#&gt; # A tibble: 1,000 x 52</span></a>
-<a class="sourceLine" id="cb3-21" data-line-number="21"><span class="co">#&gt;    seizure_episodes trimester croup dehydration_lev… residential_sta…</span></a>
-<a class="sourceLine" id="cb3-22" data-line-number="22"><span class="co">#&gt;    &lt;fct&gt;            &lt;fct&gt;     &lt;fct&gt; &lt;fct&gt;            &lt;fct&gt;           </span></a>
-<a class="sourceLine" id="cb3-23" data-line-number="23"><span class="co">#&gt;  1 No               &lt;NA&gt;      No    Severe           Migrant         </span></a>
-<a class="sourceLine" id="cb3-24" data-line-number="24"><span class="co">#&gt;  2 Yes              &lt;NA&gt;      Yes   None             Migrant         </span></a>
-<a class="sourceLine" id="cb3-25" data-line-number="25"><span class="co">#&gt;  3 Yes              &lt;NA&gt;      Yes   Severe           Resident        </span></a>
-<a class="sourceLine" id="cb3-26" data-line-number="26"><span class="co">#&gt;  4 Yes              &lt;NA&gt;      No    Unknown          Refugee         </span></a>
-<a class="sourceLine" id="cb3-27" data-line-number="27"><span class="co">#&gt;  5 Yes              &lt;NA&gt;      No    None             Resident        </span></a>
-<a class="sourceLine" id="cb3-28" data-line-number="28"><span class="co">#&gt;  6 No               &lt;NA&gt;      Yes   Severe           Unspecified     </span></a>
-<a class="sourceLine" id="cb3-29" data-line-number="29"><span class="co">#&gt;  7 Yes              3rd trim… No    Severe           Internally Disp…</span></a>
-<a class="sourceLine" id="cb3-30" data-line-number="30"><span class="co">#&gt;  8 No               &lt;NA&gt;      No    None             Refugee         </span></a>
-<a class="sourceLine" id="cb3-31" data-line-number="31"><span class="co">#&gt;  9 Yes              &lt;NA&gt;      Yes   Unknown          Internally Disp…</span></a>
-<a class="sourceLine" id="cb3-32" data-line-number="32"><span class="co">#&gt; 10 No               &lt;NA&gt;      No    None             Refugee         </span></a>
-<a class="sourceLine" id="cb3-33" data-line-number="33"><span class="co">#&gt; # … with 990 more rows, and 47 more variables:</span></a>
-<a class="sourceLine" id="cb3-34" data-line-number="34"><span class="co">#&gt; #   previously_vaccinated &lt;fct&gt;, patient_origin_free_text &lt;chr&gt;,</span></a>
-<a class="sourceLine" id="cb3-35" data-line-number="35"><span class="co">#&gt; #   age_days &lt;int&gt;, msf_involvement &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-36" data-line-number="36"><span class="co">#&gt; #   nutrition_status_at_admission &lt;fct&gt;, fever &lt;fct&gt;, sex &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-37" data-line-number="37"><span class="co">#&gt; #   patient_origin &lt;chr&gt;, pregnancy_outcome_at_exit &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-38" data-line-number="38"><span class="co">#&gt; #   prescribed_vitamin_a &lt;fct&gt;, date_of_exit &lt;date&gt;,</span></a>
-<a class="sourceLine" id="cb3-39" data-line-number="39"><span class="co">#&gt; #   date_of_consultation_admission &lt;date&gt;, event_file_type &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-40" data-line-number="40"><span class="co">#&gt; #   residential_status_brief &lt;fct&gt;, other_eye_complications &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-41" data-line-number="41"><span class="co">#&gt; #   treatment_facility_site &lt;chr&gt;, prescribed_antibiotics &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-42" data-line-number="42"><span class="co">#&gt; #   treatment_location &lt;chr&gt;, date_of_onset &lt;date&gt;, exit_status &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-43" data-line-number="43"><span class="co">#&gt; #   treatment_facility_name &lt;lgl&gt;, severe_oral_lesions &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-44" data-line-number="44"><span class="co">#&gt; #   candidiasis &lt;fct&gt;, time_to_death &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-45" data-line-number="45"><span class="co">#&gt; #   malaria_rdt_at_admission &lt;fct&gt;, patient_facility_type &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-46" data-line-number="46"><span class="co">#&gt; #   previous_vaccine_doses_received &lt;fct&gt;, age_years &lt;int&gt;,</span></a>
-<a class="sourceLine" id="cb3-47" data-line-number="47"><span class="co">#&gt; #   arrival_date_in_area_if_3m &lt;date&gt;, severity_of_illness &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-48" data-line-number="48"><span class="co">#&gt; #   age_months &lt;int&gt;, date_of_last_vaccination &lt;date&gt;,</span></a>
-<a class="sourceLine" id="cb3-49" data-line-number="49"><span class="co">#&gt; #   baby_born_with_complications &lt;fct&gt;, case_number &lt;chr&gt;,</span></a>
-<a class="sourceLine" id="cb3-50" data-line-number="50"><span class="co">#&gt; #   xerophthalmia &lt;fct&gt;, cough &lt;fct&gt;, contact_history &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-51" data-line-number="51"><span class="co">#&gt; #   detected_by &lt;fct&gt;, delivery_event &lt;fct&gt;, encephalitis &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-52" data-line-number="52"><span class="co">#&gt; #   nasal_discharge &lt;fct&gt;, acute_otitis_media &lt;fct&gt;, pregnant &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-53" data-line-number="53"><span class="co">#&gt; #   foetus_alive_at_admission &lt;fct&gt;, maculopapular_rash &lt;fct&gt;,</span></a>
-<a class="sourceLine" id="cb3-54" data-line-number="54"><span class="co">#&gt; #   pneumonia &lt;fct&gt;, late_complications &lt;fct&gt;</span></a></code></pre></div>
-</div>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="co">#&gt; Attaching package: 'dplyr'</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="co">#&gt; The following objects are masked from 'package:stats':</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">#&gt;     filter, lag</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co">#&gt; The following objects are masked from 'package:base':</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"><span class="co">#&gt;     intersect, setdiff, setequal, union</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(epibuffet)</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">linelist &lt;-<span class="st"> </span>epidict<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epidict/man/gen_data.html">gen_data</a></span>(<span class="st">"Measles"</span>, <span class="dt">numcases =</span> <span class="dv">1000</span>, <span class="dt">org =</span> <span class="st">"MSF"</span>)</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">measles_dict &lt;-<span class="st"> </span>epidict<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epidict/man/msf_dict.html">msf_dict</a></span>(<span class="st">"Measles"</span>, <span class="dt">compact =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="co"># Cleaning linelist data</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">linelist_clean &lt;-<span class="st"> </span>matchmaker<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/matchmaker/man/match_df.html">match_df</a></span>(</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">  <span class="dt">x =</span> linelist,</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  <span class="dt">dictionary =</span> measles_dict,</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">  <span class="dt">from =</span> <span class="st">"option_code"</span>,</a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">  <span class="dt">to =</span> <span class="st">"option_name"</span>,</a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">  <span class="dt">by =</span> <span class="st">"data_element_shortname"</span>,</a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">  <span class="dt">order =</span> <span class="st">"option_order_in_set"</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26">)</a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">linelist_clean</a>
+<a class="sourceLine" id="cb3-28" data-line-number="28"><span class="co">#&gt; # A tibble: 1,000 x 52</span></a>
+<a class="sourceLine" id="cb3-29" data-line-number="29"><span class="co">#&gt;    seizure_episodes trimester croup dehydration_lev… residential_sta…</span></a>
+<a class="sourceLine" id="cb3-30" data-line-number="30"><span class="co">#&gt;    &lt;fct&gt;            &lt;fct&gt;     &lt;fct&gt; &lt;fct&gt;            &lt;fct&gt;           </span></a>
+<a class="sourceLine" id="cb3-31" data-line-number="31"><span class="co">#&gt;  1 No               &lt;NA&gt;      No    Severe           Refugee         </span></a>
+<a class="sourceLine" id="cb3-32" data-line-number="32"><span class="co">#&gt;  2 Yes              &lt;NA&gt;      Yes   Some             Refugee         </span></a>
+<a class="sourceLine" id="cb3-33" data-line-number="33"><span class="co">#&gt;  3 No               &lt;NA&gt;      No    Severe           Refugee         </span></a>
+<a class="sourceLine" id="cb3-34" data-line-number="34"><span class="co">#&gt;  4 No               &lt;NA&gt;      No    Unknown          Refugee         </span></a>
+<a class="sourceLine" id="cb3-35" data-line-number="35"><span class="co">#&gt;  5 Yes              &lt;NA&gt;      No    Some             Unspecified     </span></a>
+<a class="sourceLine" id="cb3-36" data-line-number="36"><span class="co">#&gt;  6 Yes              &lt;NA&gt;      Yes   Some             Internally Disp…</span></a>
+<a class="sourceLine" id="cb3-37" data-line-number="37"><span class="co">#&gt;  7 No               &lt;NA&gt;      No    Some             Refugee         </span></a>
+<a class="sourceLine" id="cb3-38" data-line-number="38"><span class="co">#&gt;  8 No               &lt;NA&gt;      No    Severe           Resident        </span></a>
+<a class="sourceLine" id="cb3-39" data-line-number="39"><span class="co">#&gt;  9 Yes              &lt;NA&gt;      Yes   Some             Internally Disp…</span></a>
+<a class="sourceLine" id="cb3-40" data-line-number="40"><span class="co">#&gt; 10 Yes              3rd trim… No    Unknown          Migrant         </span></a>
+<a class="sourceLine" id="cb3-41" data-line-number="41"><span class="co">#&gt; # … with 990 more rows, and 47 more variables:</span></a>
+<a class="sourceLine" id="cb3-42" data-line-number="42"><span class="co">#&gt; #   previously_vaccinated &lt;fct&gt;, patient_origin_free_text &lt;chr&gt;,</span></a>
+<a class="sourceLine" id="cb3-43" data-line-number="43"><span class="co">#&gt; #   age_days &lt;int&gt;, msf_involvement &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-44" data-line-number="44"><span class="co">#&gt; #   nutrition_status_at_admission &lt;fct&gt;, fever &lt;fct&gt;, sex &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-45" data-line-number="45"><span class="co">#&gt; #   patient_origin &lt;chr&gt;, pregnancy_outcome_at_exit &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-46" data-line-number="46"><span class="co">#&gt; #   prescribed_vitamin_a &lt;fct&gt;, date_of_exit &lt;date&gt;,</span></a>
+<a class="sourceLine" id="cb3-47" data-line-number="47"><span class="co">#&gt; #   date_of_consultation_admission &lt;date&gt;, event_file_type &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-48" data-line-number="48"><span class="co">#&gt; #   residential_status_brief &lt;fct&gt;, other_eye_complications &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-49" data-line-number="49"><span class="co">#&gt; #   treatment_facility_site &lt;chr&gt;, prescribed_antibiotics &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-50" data-line-number="50"><span class="co">#&gt; #   treatment_location &lt;chr&gt;, date_of_onset &lt;date&gt;, exit_status &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-51" data-line-number="51"><span class="co">#&gt; #   treatment_facility_name &lt;lgl&gt;, severe_oral_lesions &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-52" data-line-number="52"><span class="co">#&gt; #   candidiasis &lt;fct&gt;, time_to_death &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-53" data-line-number="53"><span class="co">#&gt; #   malaria_rdt_at_admission &lt;fct&gt;, patient_facility_type &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-54" data-line-number="54"><span class="co">#&gt; #   previous_vaccine_doses_received &lt;fct&gt;, age_years &lt;int&gt;,</span></a>
+<a class="sourceLine" id="cb3-55" data-line-number="55"><span class="co">#&gt; #   arrival_date_in_area_if_3m &lt;date&gt;, severity_of_illness &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-56" data-line-number="56"><span class="co">#&gt; #   age_months &lt;int&gt;, date_of_last_vaccination &lt;date&gt;,</span></a>
+<a class="sourceLine" id="cb3-57" data-line-number="57"><span class="co">#&gt; #   baby_born_with_complications &lt;fct&gt;, case_number &lt;chr&gt;,</span></a>
+<a class="sourceLine" id="cb3-58" data-line-number="58"><span class="co">#&gt; #   xerophthalmia &lt;fct&gt;, cough &lt;fct&gt;, contact_history &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-59" data-line-number="59"><span class="co">#&gt; #   detected_by &lt;fct&gt;, delivery_event &lt;fct&gt;, encephalitis &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-60" data-line-number="60"><span class="co">#&gt; #   nasal_discharge &lt;fct&gt;, acute_otitis_media &lt;fct&gt;, pregnant &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-61" data-line-number="61"><span class="co">#&gt; #   foetus_alive_at_admission &lt;fct&gt;, maculopapular_rash &lt;fct&gt;,</span></a>
+<a class="sourceLine" id="cb3-62" data-line-number="62"><span class="co">#&gt; #   pneumonia &lt;fct&gt;, late_complications &lt;fct&gt;</span></a></code></pre></div>
 <div id="quick-tabulations" class="section level2">
 <h2 class="hasAnchor">
 <a href="#quick-tabulations" class="anchor"></a>Quick tabulations</h2>
@@ -171,8 +181,8 @@
 <a class="sourceLine" id="cb4-6" data-line-number="6"><span class="co">#&gt; # A tibble: 3 x 5</span></a>
 <a class="sourceLine" id="cb4-7" data-line-number="7"><span class="co">#&gt;   variable            `Yes n` `Yes proportion` `No n` `No proportion`</span></a>
 <a class="sourceLine" id="cb4-8" data-line-number="8"><span class="co">#&gt;   &lt;fct&gt;                 &lt;dbl&gt;            &lt;dbl&gt;  &lt;dbl&gt;           &lt;dbl&gt;</span></a>
-<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="co">#&gt; 1 cough                   519             51.9    481            48.1</span></a>
-<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="co">#&gt; 2 nasal_discharge         491             49.1    509            50.9</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="co">#&gt; 1 cough                   499             49.9    501            50.1</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="co">#&gt; 2 nasal_discharge         505             50.5    495            49.5</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11"><span class="co">#&gt; 3 severe_oral_lesions     494             49.4    506            50.6</span></a></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">the_symptoms <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"><span class="st">  </span>epikit<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epikit/man/rename_redundant.html">rename_redundant</a></span>(<span class="st">"%"</span> =<span class="st"> "proportion"</span>) <span class="op">%&gt;%</span></a>
@@ -189,17 +199,17 @@
 <tbody>
 <tr class="odd">
 <td align="left">cough</td>
-<td align="right">519</td>
-<td align="right">51.9</td>
-<td align="right">481</td>
-<td align="right">48.1</td>
+<td align="right">499</td>
+<td align="right">49.9</td>
+<td align="right">501</td>
+<td align="right">50.1</td>
 </tr>
 <tr class="even">
 <td align="left">nasal_discharge</td>
-<td align="right">491</td>
-<td align="right">49.1</td>
-<td align="right">509</td>
-<td align="right">50.9</td>
+<td align="right">505</td>
+<td align="right">50.5</td>
+<td align="right">495</td>
+<td align="right">49.5</td>
 </tr>
 <tr class="odd">
 <td align="left">severe_oral_lesions</td>
@@ -211,9 +221,11 @@
 </tbody>
 </table>
 </div>
-<div id="odds-risk-incidence-rate-ratios" class="section level2">
-<h2 class="hasAnchor">
-<a href="#odds-risk-incidence-rate-ratios" class="anchor"></a>Odds / Risk / Incidence Rate Ratios</h2>
+</div>
+<div id="x2-tables" class="section level1">
+<h1 class="hasAnchor">
+<a href="#x2-tables" class="anchor"></a>2x2 tables</h1>
+<p>In R, creating 2x2 tables is as simple as using the function <code><a href="https://rdrr.io/r/base/table.html">table()</a></code>, but unfortunately, it can be difficult to interpret the values of these tables because the dimensions are often flipped around for different analyses. The function <code><a href="reference/data_frame_from_2x2.html">data_frame_from_2x2()</a></code> will present these values labeled unambiguously.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">symptoms_tf &lt;-<span class="st"> </span>linelist_clean <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"><span class="st">  </span>dplyr<span class="op">::</span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/mutate.html">transmute</a></span>(</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="dt">pneumonia =</span> <span class="kw"><a href="https://rdrr.io/r/base/grep.html">grepl</a></span>(<span class="st">"Yes"</span>, pneumonia),</a>
@@ -227,76 +239,128 @@
 <a class="sourceLine" id="cb6-11" data-line-number="11"><span class="co">#&gt; # A tibble: 1,000 x 5</span></a>
 <a class="sourceLine" id="cb6-12" data-line-number="12"><span class="co">#&gt;    pneumonia cough nasal_discharge oral_lesions contact</span></a>
 <a class="sourceLine" id="cb6-13" data-line-number="13"><span class="co">#&gt;    &lt;lgl&gt;     &lt;lgl&gt; &lt;lgl&gt;           &lt;lgl&gt;        &lt;lgl&gt;  </span></a>
-<a class="sourceLine" id="cb6-14" data-line-number="14"><span class="co">#&gt;  1 FALSE     FALSE FALSE           FALSE        TRUE   </span></a>
-<a class="sourceLine" id="cb6-15" data-line-number="15"><span class="co">#&gt;  2 TRUE      TRUE  FALSE           FALSE        FALSE  </span></a>
-<a class="sourceLine" id="cb6-16" data-line-number="16"><span class="co">#&gt;  3 TRUE      TRUE  FALSE           FALSE        FALSE  </span></a>
-<a class="sourceLine" id="cb6-17" data-line-number="17"><span class="co">#&gt;  4 FALSE     FALSE TRUE            TRUE         FALSE  </span></a>
-<a class="sourceLine" id="cb6-18" data-line-number="18"><span class="co">#&gt;  5 TRUE      TRUE  FALSE           FALSE        TRUE   </span></a>
+<a class="sourceLine" id="cb6-14" data-line-number="14"><span class="co">#&gt;  1 FALSE     FALSE FALSE           TRUE         FALSE  </span></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15"><span class="co">#&gt;  2 TRUE      FALSE TRUE            TRUE         FALSE  </span></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16"><span class="co">#&gt;  3 FALSE     TRUE  FALSE           FALSE        TRUE   </span></a>
+<a class="sourceLine" id="cb6-17" data-line-number="17"><span class="co">#&gt;  4 TRUE      FALSE FALSE           FALSE        FALSE  </span></a>
+<a class="sourceLine" id="cb6-18" data-line-number="18"><span class="co">#&gt;  5 TRUE      TRUE  FALSE           TRUE         TRUE   </span></a>
 <a class="sourceLine" id="cb6-19" data-line-number="19"><span class="co">#&gt;  6 TRUE      FALSE FALSE           TRUE         FALSE  </span></a>
-<a class="sourceLine" id="cb6-20" data-line-number="20"><span class="co">#&gt;  7 TRUE      FALSE TRUE            TRUE         TRUE   </span></a>
-<a class="sourceLine" id="cb6-21" data-line-number="21"><span class="co">#&gt;  8 TRUE      FALSE TRUE            TRUE         FALSE  </span></a>
-<a class="sourceLine" id="cb6-22" data-line-number="22"><span class="co">#&gt;  9 FALSE     FALSE TRUE            FALSE        TRUE   </span></a>
-<a class="sourceLine" id="cb6-23" data-line-number="23"><span class="co">#&gt; 10 TRUE      FALSE TRUE            TRUE         TRUE   </span></a>
+<a class="sourceLine" id="cb6-20" data-line-number="20"><span class="co">#&gt;  7 TRUE      FALSE TRUE            TRUE         FALSE  </span></a>
+<a class="sourceLine" id="cb6-21" data-line-number="21"><span class="co">#&gt;  8 TRUE      FALSE TRUE            FALSE        FALSE  </span></a>
+<a class="sourceLine" id="cb6-22" data-line-number="22"><span class="co">#&gt;  9 TRUE      FALSE FALSE           TRUE         FALSE  </span></a>
+<a class="sourceLine" id="cb6-23" data-line-number="23"><span class="co">#&gt; 10 FALSE     FALSE FALSE           TRUE         FALSE  </span></a>
 <a class="sourceLine" id="cb6-24" data-line-number="24"><span class="co">#&gt; # … with 990 more rows</span></a>
 <a class="sourceLine" id="cb6-25" data-line-number="25"></a>
-<a class="sourceLine" id="cb6-26" data-line-number="26">tu &lt;-<span class="st"> </span><span class="kw"><a href="reference/tab_univariate.html">tab_univariate</a></span>(symptoms_tf, </a>
-<a class="sourceLine" id="cb6-27" data-line-number="27">  <span class="dt">outcome =</span> pneumonia, </a>
-<a class="sourceLine" id="cb6-28" data-line-number="28">  cough, nasal_discharge, oral_lesions, contact,</a>
-<a class="sourceLine" id="cb6-29" data-line-number="29">  <span class="dt">mergeCI =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb6-30" data-line-number="30">  <span class="dt">extend_output =</span> <span class="ot">FALSE</span></a>
-<a class="sourceLine" id="cb6-31" data-line-number="31">)</a>
-<a class="sourceLine" id="cb6-32" data-line-number="32">tu <span class="op">%&gt;%</span><span class="st"> </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span>(<span class="op">-</span>est_type) <span class="op">%&gt;%</span><span class="st"> </span>knitr<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/knitr/man/kable.html">kable</a></span>(<span class="dt">digits =</span> <span class="dv">3</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb6-26" data-line-number="26"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(pxc &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/with.html">with</a></span>(symptoms_tf, <span class="kw"><a href="https://rdrr.io/r/base/table.html">table</a></span>(pneumonia, cough)))</a>
+<a class="sourceLine" id="cb6-27" data-line-number="27"><span class="co">#&gt;          cough</span></a>
+<a class="sourceLine" id="cb6-28" data-line-number="28"><span class="co">#&gt; pneumonia FALSE TRUE</span></a>
+<a class="sourceLine" id="cb6-29" data-line-number="29"><span class="co">#&gt;     FALSE   164  165</span></a>
+<a class="sourceLine" id="cb6-30" data-line-number="30"><span class="co">#&gt;     TRUE    337  334</span></a>
+<a class="sourceLine" id="cb6-31" data-line-number="31"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(pxcxc &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/with.html">with</a></span>(symptoms_tf, <span class="kw"><a href="https://rdrr.io/r/base/table.html">table</a></span>(pneumonia, cough, contact)))</a>
+<a class="sourceLine" id="cb6-32" data-line-number="32"><span class="co">#&gt; , , contact = FALSE</span></a>
+<a class="sourceLine" id="cb6-33" data-line-number="33"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb6-34" data-line-number="34"><span class="co">#&gt;          cough</span></a>
+<a class="sourceLine" id="cb6-35" data-line-number="35"><span class="co">#&gt; pneumonia FALSE TRUE</span></a>
+<a class="sourceLine" id="cb6-36" data-line-number="36"><span class="co">#&gt;     FALSE    90   78</span></a>
+<a class="sourceLine" id="cb6-37" data-line-number="37"><span class="co">#&gt;     TRUE    174  183</span></a>
+<a class="sourceLine" id="cb6-38" data-line-number="38"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb6-39" data-line-number="39"><span class="co">#&gt; , , contact = TRUE</span></a>
+<a class="sourceLine" id="cb6-40" data-line-number="40"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb6-41" data-line-number="41"><span class="co">#&gt;          cough</span></a>
+<a class="sourceLine" id="cb6-42" data-line-number="42"><span class="co">#&gt; pneumonia FALSE TRUE</span></a>
+<a class="sourceLine" id="cb6-43" data-line-number="43"><span class="co">#&gt;     FALSE    74   87</span></a>
+<a class="sourceLine" id="cb6-44" data-line-number="44"><span class="co">#&gt;     TRUE    163  151</span></a>
+<a class="sourceLine" id="cb6-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb6-46" data-line-number="46"><span class="kw"><a href="reference/data_frame_from_2x2.html">data_frame_from_2x2</a></span>(pxc)</a>
+<a class="sourceLine" id="cb6-47" data-line-number="47"><span class="co">#&gt;   A_exp_cases B_exp_controls C_unexp_cases D_unexp_controls total_cases</span></a>
+<a class="sourceLine" id="cb6-48" data-line-number="48"><span class="co">#&gt; 1         164            165           337              334         501</span></a>
+<a class="sourceLine" id="cb6-49" data-line-number="49"><span class="co">#&gt;   total_controls total_exposed total_unexposed total</span></a>
+<a class="sourceLine" id="cb6-50" data-line-number="50"><span class="co">#&gt; 1            499           329             671  1000</span></a>
+<a class="sourceLine" id="cb6-51" data-line-number="51"><span class="kw"><a href="reference/data_frame_from_2x2.html">data_frame_from_2x2</a></span>(pxcxc)</a>
+<a class="sourceLine" id="cb6-52" data-line-number="52"><span class="co">#&gt;       A_exp_cases B_exp_controls C_unexp_cases D_unexp_controls</span></a>
+<a class="sourceLine" id="cb6-53" data-line-number="53"><span class="co">#&gt; crude         164            165           337              334</span></a>
+<a class="sourceLine" id="cb6-54" data-line-number="54"><span class="co">#&gt; FALSE          90             78           174              183</span></a>
+<a class="sourceLine" id="cb6-55" data-line-number="55"><span class="co">#&gt; TRUE           74             87           163              151</span></a>
+<a class="sourceLine" id="cb6-56" data-line-number="56"><span class="co">#&gt;       total_cases total_controls total_exposed total_unexposed total</span></a>
+<a class="sourceLine" id="cb6-57" data-line-number="57"><span class="co">#&gt; crude         501            499           329             671  1000</span></a>
+<a class="sourceLine" id="cb6-58" data-line-number="58"><span class="co">#&gt; FALSE         264            261           168             357   525</span></a>
+<a class="sourceLine" id="cb6-59" data-line-number="59"><span class="co">#&gt; TRUE          237            238           161             314   475</span></a></code></pre></div>
+<div id="odds-risk-incidence-rate-ratios" class="section level2">
+<h2 class="hasAnchor">
+<a href="#odds-risk-incidence-rate-ratios" class="anchor"></a>Odds / Risk / Incidence Rate Ratios</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">tu &lt;-<span class="st"> </span><span class="kw"><a href="reference/tab_univariate.html">tab_univariate</a></span>(symptoms_tf, </a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="dt">outcome =</span> pneumonia, </a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  cough, nasal_discharge, oral_lesions, contact,</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  <span class="dt">mergeCI =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  <span class="dt">extend_output =</span> <span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  <span class="dt">measure =</span> <span class="st">"OR"</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">)</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">tu <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span>(<span class="op">-</span>est_type) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="st">  </span>epikit<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/epikit/man/rename_redundant.html">augment_redundant</a></span>(<span class="st">"exposed "</span> =<span class="st"> "exp_"</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/select.html">rename</a></span>(<span class="dt">odds =</span> est_ci) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12"><span class="st">  </span>knitr<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/knitr/man/kable.html">kable</a></span>(<span class="dt">digits =</span> <span class="dv">3</span>)</a></code></pre></div>
 <table class="table">
+<colgroup>
+<col width="15%">
+<col width="12%">
+<col width="14%">
+<col width="15%">
+<col width="17%">
+<col width="18%">
+<col width="6%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">variable</th>
-<th align="right">exp_cases</th>
-<th align="right">unexp_cases</th>
-<th align="right">exp_controls</th>
-<th align="right">unexp_controls</th>
-<th align="left">est_ci</th>
+<th align="right">exposed cases</th>
+<th align="right">unexposed cases</th>
+<th align="right">exposed controls</th>
+<th align="right">unexposed controls</th>
+<th align="left">odds</th>
 <th align="right">p.value</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="left">cough</td>
-<td align="right">340</td>
-<td align="right">343</td>
-<td align="right">179</td>
-<td align="right">138</td>
-<td align="left">0.764 (0.585–0.999)</td>
-<td align="right">0.049</td>
+<td align="right">334</td>
+<td align="right">337</td>
+<td align="right">165</td>
+<td align="right">164</td>
+<td align="left">0.985 (0.757–1.282)</td>
+<td align="right">0.911</td>
 </tr>
 <tr class="even">
 <td align="left">nasal_discharge</td>
-<td align="right">338</td>
-<td align="right">345</td>
-<td align="right">153</td>
+<td align="right">341</td>
+<td align="right">330</td>
 <td align="right">164</td>
-<td align="left">1.050 (0.804–1.371)</td>
-<td align="right">0.719</td>
+<td align="right">165</td>
+<td align="left">1.040 (0.799–1.354)</td>
+<td align="right">0.773</td>
 </tr>
 <tr class="odd">
 <td align="left">oral_lesions</td>
-<td align="right">325</td>
-<td align="right">358</td>
-<td align="right">169</td>
-<td align="right">148</td>
-<td align="left">0.795 (0.609–1.038)</td>
-<td align="right">0.092</td>
+<td align="right">341</td>
+<td align="right">330</td>
+<td align="right">153</td>
+<td align="right">176</td>
+<td align="left">1.189 (0.913–1.548)</td>
+<td align="right">0.200</td>
 </tr>
 <tr class="even">
 <td align="left">contact</td>
-<td align="right">341</td>
-<td align="right">342</td>
-<td align="right">159</td>
-<td align="right">158</td>
-<td align="left">0.991 (0.759–1.293)</td>
-<td align="right">0.946</td>
+<td align="right">314</td>
+<td align="right">357</td>
+<td align="right">161</td>
+<td align="right">168</td>
+<td align="left">0.918 (0.705–1.195)</td>
+<td align="right">0.524</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
+
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -337,7 +401,7 @@
 <li><a href="https://www.tidyverse.org/lifecycle/#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://CRAN.R-project.org/package=epibuffet"><img src="https://www.r-pkg.org/badges/version/epibuffet" alt="CRAN status"></a></li>
 <li><a href="https://travis-ci.org/R4EPI/epibuffet"><img src="https://travis-ci.org/R4EPI/epibuffet.svg?branch=master" alt="Travis build status"></a></li>
-<li><a href="https://ci.appveyor.com/project/zkamvar/epibuffet"><img src="https://ci.appveyor.com/api/projects/status/github/zkamvar/epibuffet?branch=master&amp;svg=true" alt="AppVeyor build status"></a></li>
+<li><a href="https://ci.appveyor.com/project/zkamvar/epibuffet"><img src="https://ci.appveyor.com/api/project/status/github/zkamvar/epibuffet?branch=master&amp;svg=true" alt="AppVeyor build status"></a></li>
 <li><a href="https://codecov.io/gh/R4EPI/epibuffet?branch=master"><img src="https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>
 </div>
