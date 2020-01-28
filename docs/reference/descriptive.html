@@ -130,17 +130,6 @@ function instead.</p>
   <span class='kw'>rowtotals</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>single_row</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>explicit_missing</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
-)
-
-<span class='fu'>multi_descriptive</span>(
-  <span class='no'>df</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>multiplier</span> <span class='kw'>=</span> <span class='fl'>100</span>,
-  <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>proptotal</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>coltotals</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>.id</span> <span class='kw'>=</span> <span class='st'>"symptom"</span>,
-  <span class='kw'>explicit_missing</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -195,14 +184,6 @@ Defaults to <code>FALSE</code>.</p></td>
       <td><p>if <code>TRUE</code>, missing values will be marked as
 <code>Missing</code> and tabulated. Defaults to <code>FALSE</code>, where missing values are
 excluded from the computation</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>columns to pass to descriptive</p></td>
-    </tr>
-    <tr>
-      <th>.id</th>
-      <td><p>the name of the column identifying the aggregates</p></td>
     </tr>
     </table>
 

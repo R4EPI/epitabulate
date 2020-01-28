@@ -1,0 +1,28 @@
+
+The {epibuffet} package produces tables for descriptive epidemiological analysis.
+It contains four functions:
+
+ - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
+ - `tab_survey()` --- Tabulate and describe counts of variables in a survey (with appropriate CIs)
+ - `tab_univariate()` --- Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist
+ - `data_frame_from_2x2()` --- Creates a data frame from a 2x2 table for unambiguous interpretation
+
+## Installation
+
+{epibuffet} is currently under development, but you can keep up-to-date by
+installing it from the R4EPIs drat repository:
+
+```{r eval = FALSE}
+# install.packages("drat")
+drat::addRepo("R4EPI")
+install.packages("epibuffet")
+```
+
+You can also install the in-development version from GitHub using the {remotes}
+package (but there's no guarantee that it will be stable):
+
+```{r eval = FALSE}
+# install.packages("remotes")
+remotes::install_github("R4EPI/epibuffet") 
+```
+

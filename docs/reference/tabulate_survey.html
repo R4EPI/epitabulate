@@ -132,22 +132,6 @@ instead.</p>
   <span class='kw'>proptotal</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>rowtotals</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>coltotals</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-)
-
-<span class='fu'>tabulate_binary_survey</span>(
-  <span class='no'>x</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>proptotal</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>keep</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>invert</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>pretty</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>wide</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"logit"</span>,
-  <span class='kw'>na.rm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>deff</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>transpose</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -214,35 +198,6 @@ column will be added tabulating all of the rows across strata.</p></td>
       <th>coltotals</th>
       <td><p>if <code>TRUE</code> a new row with totals for each "n" column is
 created.</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>binary variables for tabulation</p></td>
-    </tr>
-    <tr>
-      <th>keep</th>
-      <td><p>a vector of binary values to keep</p></td>
-    </tr>
-    <tr>
-      <th>invert</th>
-      <td><p>if <code>TRUE</code>, the kept values are rejected. Defaults to <code>FALSE</code></p></td>
-    </tr>
-    <tr>
-      <th>transpose</th>
-      <td><p>if <code>wide = TRUE</code>, then this will transpose the columns to
-the rows, which is useful when you stratify by age group. Default is
-<code>NULL</code>, which will not transpose anything. You have three options for
-transpose:</p><ul>
-<li><p><code>transpose = "variable"</code>: uses the variable column, dropping values.
-Use this if you know that your values are all identical or at least
-identifiable by the variable name.</p></li>
-<li><p><code>transpose = "value"</code>   : uses the value column, dropping variables.
-Use this if your values are important and the variable names are
-generic placeholders.</p></li>
-<li><p><code>transpose = "both"</code>    : combines the variable and value columns.
-Use this if both the variables and values are important.
-If there is no stratification, the results will produce a single-row table</p></li>
-</ul></td>
     </tr>
     </table>
 
