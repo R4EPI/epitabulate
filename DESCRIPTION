@@ -33,7 +33,7 @@ Imports:
     stats,
     glue,
     purrr,
-    tidyselect,
+    tidyselect (>= 1.0.0),
     tibble (>= 2.1.0),
     survey,
     srvyr,
