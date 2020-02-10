@@ -239,29 +239,21 @@ tab_general <- function(x,
   # We try to match the user-supplied variables to the colnames. If the user
   # supplied a tidyselect verb (e.g. `starts_with("CHOICE")`, then it should
   # filter properly.
-  vars <- tidyselect::vars_select(colnames(x), ..., .strict = FALSE)
+  xnames <- colnames(x)
+  names(xnames) <- xnames
+  # 2020-02-10 
+  #
+  # tidyselect has updated when I was on vacation and changed its behavior. It
+  # used to return nothing if one of the columns did not exist, which we could
+  # fix by wrapping the call in one_of and report which columns were not found,
+  # but now it's going to take some rethinking about how to handle this 
+  # properly, so at the moment, we are sliently ignoring columns that don't 
+  # match. 
+  vars <- tidyselect::eval_select(rlang::expr(c(...)), data = xnames, strict = FALSE)
+  vars <- xnames[vars]
 
-  # However, if the user supplies a vector of column names and some do not exist,
-  # tidyselect unhelpfully returns nothing
-  #
-  # >:(
-  #
-  # so, to give our users something, we wrap this character vector in one_of(),
-  # which will warn about which columns were not recognised.
   if (length(vars) == 0) {
-    vars <- tidyselect::vars_select(colnames(x), tidyselect::one_of(...), .strict = FALSE)
-    if (length(vars) == 0) {
-      stop("No columns matched the data", call. = FALSE)
-    }
-  } else {
-    the_dots <- epikit::dots_to_charlist(parent = 2L)
-    # we want to tally the dots that don't match up
-    if (length(the_dots) > 1 && length(the_dots) > length(vars)) {
-      no_bueno <- glue::glue_collapse(glue::glue("`{setdiff(the_dots, vars)}`"),
-        sep = ", "
-      )
-      warning(glue::glue("Unknown columns: {no_bueno}"), call. = FALSE)
-    }
+    stop("No columns matched the data", call. = FALSE)
   }
 
   stra <- rlang::enquo(strata)
