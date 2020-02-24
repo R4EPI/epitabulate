@@ -122,18 +122,28 @@ test_that("woolf p-values work", {
 
 # Full tables ------------------------------------------------------------------
 
-OR_strat_woolf <- tab_univariate(arrt, outcome, risk, strata = old, measure = "OR", woolf_test = TRUE)
-OR_strata <- tab_univariate(arrt, outcome, risk, strata = old, measure = "OR", extend_output = FALSE, mergeCI = TRUE)
+get_utab <- function(dat, what, ...) {
+  tab_univariate(dat,
+    "outcome",
+    "risk",
+    strata = "old",
+    measure = what,
+    ...
+  )
+}
+
+OR_strat_woolf <- get_utab(arrt, what = "OR", woolf_test = TRUE)
+OR_strata <- get_utab(arrt, what = "OR", extend_output = FALSE, mergeCI = TRUE)
 OR_simple <- tab_univariate(arrt, outcome, risk, measure = "OR", extend_output = FALSE, mergeCI = TRUE)
 OR_names <- c("variable", "est_type", "exp_cases", "unexp_cases", "exp_controls", "unexp_controls", "est_ci", "p.value")
 
-RR_strat_woolf <- tab_univariate(arrt, outcome, risk, strata = old, measure = "RR", woolf_test = TRUE)
-RR_strata <- tab_univariate(arrt, outcome, risk, strata = old, measure = "RR", extend_output = FALSE, mergeCI = TRUE)
+RR_strat_woolf <- get_utab(arrt, what = "RR", woolf_test = TRUE)
+RR_strata <- get_utab(arrt, what = "RR", extend_output = FALSE, mergeCI = TRUE)
 RR_simple <- tab_univariate(arrt, outcome, risk, measure = "RR", extend_output = FALSE, mergeCI = TRUE)
 RR_names <- c("variable", "est_type", "exp_cases", "exp_total", "unexp_cases", "unexp_total", "est_ci", "p.value")
 
-IRR_strat_woolf <- tab_univariate(arrt, outcome, risk, strata = old, perstime = pt, measure = "IRR", woolf_test = TRUE)
-IRR_strata <- tab_univariate(arrt, outcome, risk, strata = old, perstime = pt, measure = "IRR", extend_output = FALSE, mergeCI = TRUE)
+IRR_strat_woolf <- get_utab(arrt, what = "IRR", perstime = "pt", woolf_test = TRUE)
+IRR_strata <- get_utab(arrt, what = "IRR", perstime = "pt", extend_output = FALSE, mergeCI = TRUE)
 IRR_simple <- tab_univariate(arrt, outcome, risk, perstime = pt, measure = "IRR", extend_output = FALSE, mergeCI = TRUE)
 IRR_names <- c("variable", "est_type", "exp_cases", "exp_perstime", "unexp_cases", "unexp_perstime", "est_ci", "p.value")
 
@@ -163,6 +173,7 @@ test_that("tab_univariate OR works with strata", {
 
 
 }) 
+
 
 test_that("tab_univariate RR works with strata", {
 
@@ -226,3 +237,87 @@ test_that("setting extend_output to FALSE will remove only the estimates", {
 
 })
 
+context("Missing data in ratios")
+
+test_that("tab_univariate OR works with strata with missing data", {
+
+  # adding missing data into the first column effectively removes the first row
+  missna <- get_utab(arrt[-1, ], what = "OR", woolf_test = TRUE)
+  riskna <- get_utab(mutate(arrt, risk = c(NA, risk[-1])), what = "OR", woolf_test = TRUE)
+  outna  <- get_utab(mutate(arrt, outcome = c(NA, outcome[-1])), what = "OR", woolf_test = TRUE)
+  oldna  <- get_utab(mutate(arrt, old = c(NA, old[-1])), what = "OR", woolf_test = TRUE)
+
+  expect_identical(missna, riskna)
+  expect_identical(riskna, oldna)
+  expect_identical(riskna, outna)
+  expect_identical(riskna$est_type, c("crude", "old: TRUE", "old: FALSE", "MH", "woolf"))
+
+  # Testing cases and basic ratios
+  expect_equal(riskna$exp_cases  , c(36 +  9, 36     ,  9     , NA, NA))
+  expect_equal(riskna$unexp_cases, c(25 + 35, 25     , 35     , NA, NA))
+  expect_equal(riskna$cases_odds , c(45 / 60, 36 / 25,  9 / 35, NA, NA))
+
+  # Testing controls and basic ratios
+  expect_equal(riskna$exp_controls  , c(164 +  90, 164      , 90      , NA, NA))
+  expect_equal(riskna$unexp_controls, c(175 + 465, 175      , 465     , NA, NA))
+  expect_equal(riskna$controls_odds , c(254 / 640, 164 / 175, 90 / 465, NA, NA))
+
+  # Testing odds ratios
+  expected <- or_expect[c(1, 3, 2), ] # correct for alphabetical sorting
+  this_pval <- the_pval[c(1, 3, 2)]
+
+  expect_true(all(riskna$ratio  <= c(expected$ratio, MH_OR$est  , NA), na.rm = TRUE))
+
+}) 
+
+test_that("tab_univariate RR works with strata with missing data", {
+
+  # adding missing data into the first column effectively removes the first row
+  missna <- get_utab(arrt[-1, ], what = "RR", woolf_test = TRUE)
+  riskna <- get_utab(mutate(arrt, risk = c(NA, risk[-1])), what = "RR", woolf_test = TRUE)
+  outna  <- get_utab(mutate(arrt, outcome = c(NA, outcome[-1])), what = "RR", woolf_test = TRUE)
+  oldna  <- get_utab(mutate(arrt, old = c(NA, old[-1])), what = "RR", woolf_test = TRUE)
+
+  expect_identical(missna, riskna)
+  expect_identical(riskna, oldna)
+  expect_identical(riskna, outna)
+
+  # Testing cases and basic ratios
+  expect_equal(riskna$exp_cases, c(36 +  9           , 36      ,  9      , NA, NA))
+  expect_equal(riskna$exp_total, c(36 +  9 + 90 + 164, 36 + 164,  9 + 90 , NA, NA))
+  expect_equal(riskna$exp_risk , c(45 / 299          , 36 / 200,  9 /  99, NA, NA) * 100)
+
+  # Testing controls and basic ratios
+  expect_equal(riskna$unexp_cases, c(25 + 35            , 25      , 35      , NA, NA))
+  expect_equal(riskna$unexp_total, c(25 + 35 + 175 + 465, 25 + 175, 35 + 465, NA, NA))
+  expect_equal(riskna$unexp_risk , c(60 / 700           , 25 / 200, 35 / 500, NA, NA) * 100)
+
+  # Testing odds ratios
+  expected <- rr_expect[c(1, 3, 2), ] # correct for alphabetical sorting
+  this_pval <- the_pval[c(1, 3, 2)]
+
+  expect_true(all(riskna$ratio <= c(expected$ratio, MH_RR$est  , NA), na.rm = TRUE))
+
+
+}) 
+
+test_that("tab_univariate works with IRR strata with missing data", {
+
+  # adding missing data into the first column effectively removes the first row
+  missna <- get_utab(arrt[-1, ], what = "IRR", perstime = pt, woolf_test = TRUE)
+  riskna <- get_utab(mutate(arrt, risk = c(NA, risk[-1])), what = "IRR", perstime = pt, woolf_test = TRUE)
+  outna  <- get_utab(mutate(arrt, outcome = c(NA, outcome[-1])), what = "IRR", perstime = pt, woolf_test = TRUE)
+  oldna  <- get_utab(mutate(arrt, old = c(NA, old[-1])), what = "IRR", perstime = pt, woolf_test = TRUE)
+
+  expect_equal(missna$exp_cases      , c(35 + 10  , 36      ,  9       , NA))
+  expect_equal(missna$exp_perstime   , c(598      , 400     , 198      , NA))
+  expect_equal(missna$exp_incidence  , c(45 / 598 , 36 / 400,  9 / 198 , NA) * 100)
+
+  expect_equal(missna$unexp_cases    , c(25 + 35  , 25      , 35       , NA))
+  expect_equal(missna$unexp_perstime , c(1400     , 400     , 1000     , NA))
+  expect_equal(missna$unexp_incidence, c(60 / 1400, 25 / 400, 35 / 1000, NA) * 100)
+
+  expected <- irr_expect[c(1, 3, 2, 4), ]
+  expect_true(all(missna$ratio <= expected$ratio))
+
+})
