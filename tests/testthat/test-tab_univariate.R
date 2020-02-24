@@ -67,6 +67,35 @@ arrt <- as.data.frame.table(arr) %>%
 
 arrt$pt <- 2 # person time
 
+# Errors -----------------------------------------------------------------------
+test_that("tab_univariate requires a data frame", {
+  expect_error(tab_univariate(arr, some, vars), "x must be a data frame")
+})
+
+test_that("Exposure variables must be logical", {
+  itest <- iris %>%
+    dplyr::mutate(
+      sl = Sepal.Length > 6,
+      pl = Petal.Length > 4,
+      ve = Species == "versicolor"
+   )
+    
+  expect_error(tab_univariate(itest, Species, sl, strata = pl),
+               "outcome must be a TRUE/FALSE variable")
+
+  expect_error(tab_univariate(itest, ve, sl, strata = Petal.Length),
+               "strata variable must be a TRUE/FALSE variable")
+
+  expect_error(tab_univariate(itest, ve, sl, Petal.Length),
+               "exposure variables must be TRUE/FALSE variables, but Petal.Length is a numeric.")
+
+  expect_error(tab_univariate(itest, ve, sl, strata = pl, measure = "IRR"),
+    "You have selected IRR as a measure but not specified a perstime variable."
+  )
+
+})
+
+# Internal Estimators ----------------------------------------------------------
 test_that("internal estimate functions works", {
 
   expect_equivalent(get_ratio_est(arr, "OR")[1:3, 1:3],  (or_expect))
@@ -90,6 +119,8 @@ test_that("woolf p-values work", {
 
 })
 
+
+# Full tables ------------------------------------------------------------------
 
 OR_strat_woolf <- tab_univariate(arrt, outcome, risk, strata = old, measure = "OR", woolf_test = TRUE)
 OR_strata <- tab_univariate(arrt, outcome, risk, strata = old, measure = "OR", extend_output = FALSE, mergeCI = TRUE)

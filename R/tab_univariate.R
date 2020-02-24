@@ -72,7 +72,7 @@ tab_univariate <- function(x, outcome, ..., perstime = NULL, strata = NULL,
 
   # check that x is a data frame
   if (!is.data.frame(x)) {
-    stop("x must be a data frame")
+    stop("x must be a data frame", call. = FALSE)
   }
 
   ### Selecting variables
@@ -161,7 +161,9 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   exposure <- if (length(exposure_var) > 0) rlang::sym(exposure_var) else NULL
   # check if exposure variable is logical
   if (!is.logical(x[[exposure_var]])) {
-    stop("exposure variable must be a TRUE/FALSE variable")
+    msg <- glue::glue("exposure variables must be TRUE/FALSE variables,",
+                      " but {exposure_var} is a {class(x[[exposure_var]])[1]}.")
+    stop(msg, call. = FALSE)
   }
 
   # select the var in the outcome column
