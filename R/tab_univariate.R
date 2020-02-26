@@ -224,9 +224,9 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
       the_table <- array(arr$value,
         dim = c(2, 2, 2),
         dimnames = list(
-          unique(na.omit(arr[[exposure_var]])),
-          unique(na.omit(arr$variable)),
-          unique(na.omit(arr[[strata_var]]))
+          unique(stats::na.omit(arr[[exposure_var]])),
+          unique(stats::na.omit(arr$variable)),
+          unique(stats::na.omit(arr[[strata_var]]))
         )
       )
       names(dimnames(the_table)) <- c(exposure_var, outcome_var, strata_var)
