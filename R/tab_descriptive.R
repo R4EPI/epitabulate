@@ -307,7 +307,7 @@ tab_general <- function(x,
 
   # return the results with only the selected values
   if (!isTRUE(keep) && !is.null(drop)) {
-    stop("you can only choose to keep values or drop values. Specifying both is not allowed")
+    stop("you can only choose to keep values or drop values. Specifying both is not allowed", call. = FALSE)
   }
 
   strata_exists <- tidyselect::vars_select(colnames(x), !!stra)

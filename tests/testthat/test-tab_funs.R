@@ -182,6 +182,12 @@ test_that("specifying all columns that do not match will throw an error", {
 
 })
 
+test_that("only keep OR drop can be specified", {
+  expect_error(tab_linelist(iris, Species, keep = "virginica", drop = "setosa"),
+    "you can only choose to keep values or drop values"
+  )
+})
+
 
 # }}}
 
@@ -296,7 +302,7 @@ test_that("linelist---adding strata works", {
   
 })
 
-test_that("transposing with both and col_total will shove total to the end", {
+test_that("transposing with both and col_total will keep total to the end of the section", {
   s_res_choice  <- tab_linelist(d, 
     tidyselect::starts_with("CHOICE"), 
     strata = strata, 
@@ -324,6 +330,34 @@ test_that("transposing with both and col_total will shove total to the end", {
   expect_match(names(s_res_symptom)[total_positions], "Total")
   expect_equivalent(colSums(s_res_symptom[total_n]), c(100, 100, 100))
   expect_equivalent(colSums(s_res_symptom[total_p]), c(100, 100, 100) * 3)
+})
+
+test_that("transposing with col_total and value will have the total be the last column", {
+
+  iris_value <- tab_linelist(iris, Species, col_total = TRUE, transpose = "value")
+
+  expect_equal(nrow(iris_value), 1)
+  expect_named(iris_value,
+    c("variable", 
+      "setosa n"    , "setosa proportion"    ,
+      "versicolor n", "versicolor proportion",
+      "virginica n" , "virginica proportion" ,
+      "Total n"     , "Total proportion"
+    )
+  )
+})
+
+test_that("transposing with col_total and variable will have total be the last row", {
+
+  expect_equal(iris_value[["Total n"]], 150)
+  iris_variable <- tab_linelist(iris, Species, col_total = TRUE, transpose = "variable")
+
+  expect_equal(nrow(iris_variable), 4)
+  expect_equal(iris_variable$value, forcats::fct_inorder(c(levels(iris$Species), "Total")))
+  expect_named(iris_variable, c("value", "Species n", "Species proportion"))
+  expect_equal(sum(iris_variable[["Species n"]][-4]), iris_variable[["Species n"]][4])
+                
+
 })
 
 # }}}
