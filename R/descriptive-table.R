@@ -25,10 +25,6 @@
 #'
 #' @param rowtotals Add row totals (only sums counts)
 #'
-#' @param single_row if `TRUE` and `grouper = NA`, then the output is flattened
-#'   to a single row so that variables can be concatenated into a data frame.
-#'   Defaults to `FALSE`.
-#'
 #' @param explicit_missing if `TRUE`, missing values will be marked as
 #' `Missing` and tabulated. Defaults to `FALSE`, where missing values are
 #' excluded from the computation
@@ -52,7 +48,7 @@
 #' @keywords internal
 descriptive <- function(df, counter, grouper = NULL, multiplier = 100, digits = 1,
                         proptotal = FALSE, coltotals = FALSE, rowtotals = FALSE,
-                        single_row = FALSE, explicit_missing = TRUE) {
+                        explicit_missing = TRUE) {
 
 
   # translate the variable names to character
@@ -145,11 +141,6 @@ descriptive <- function(df, counter, grouper = NULL, multiplier = 100, digits = 
     )
   }
 
-  if (single_row) {
-    count_data <- tidyr::gather(count_data, "variable", "value", -1)
-    count_data <- tidyr::unite(count_data, "tempvar", 1, .data$variable)
-    count_data <- tidyr::spread(count_data, "tempvar", "value")
-  }
   count_data
 }
 
