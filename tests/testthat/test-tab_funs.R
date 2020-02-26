@@ -193,7 +193,7 @@ test_that("specifying all columns that do not match will throw an error", {
 test_that("tab_survey can give results similar to the old tabulate_binary_survey", {
 
   res_choice  <- tab_survey(nss, tidyselect::starts_with("CHOICE"), drop = "")
-  res_symptom <- tab_survey(nss, SYMPTOMS, keep = "Yes")
+  res_symptom <- tab_survey(nss, tidyselect::all_of(SYMPTOMS), keep = "Yes")
 
   expect_identical(res_choice, tbs_expect_choice)
   expect_identical(res_symptom, tbs_expect_symptom)
@@ -205,7 +205,7 @@ test_that("survey---transposition without strata will give the same order and va
   n_choice  <- tab_survey(s, tidyselect::starts_with("CHOICE"), drop = "", transpose = "value") %>%
     dplyr::select(dplyr::ends_with(" n")) %>%
     unlist(use.names = FALSE)
-  n_symptom <- tab_survey(s, SYMPTOMS, keep = "Yes", transpose = "variable") %>%
+  n_symptom <- tab_survey(s, tidyselect::all_of(SYMPTOMS), keep = "Yes", transpose = "variable") %>%
     dplyr::select(dplyr::ends_with(" n")) %>%
     unlist(use.names = FALSE)
 
@@ -217,8 +217,8 @@ test_that("survey---transposition without strata will give the same order and va
 test_that("tab_linelist can give results similar to the old multi_descriptive", {
   
   res_choice  <- tab_linelist(d, tidyselect::starts_with("CHOICE"), drop = "")
-  res_symptom <- tab_linelist(d, SYMPTOMS, keep = "Yes")
-  res_symptom_transpose <- tab_linelist(d, SYMPTOMS, transpose = "value")
+  res_symptom <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), keep = "Yes")
+  res_symptom_transpose <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), transpose = "value")
 
   expect_identical(res_choice, md_expect_choice)
   expect_identical(res_symptom, md_expect_symptom)
@@ -228,7 +228,7 @@ test_that("tab_linelist can give results similar to the old multi_descriptive", 
 
 test_that("transposition can happen without strata by value", {
   
-  res_symptom_transpose <- tab_linelist(d, SYMPTOMS, transpose = "value")
+  res_symptom_transpose <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), transpose = "value")
 
   expect_identical(md_expect_symptom$n,          res_symptom_transpose[["Yes n"]])
   expect_identical(md_expect_symptom$proportion, res_symptom_transpose[["Yes proportion"]])
@@ -237,7 +237,7 @@ test_that("transposition can happen without strata by value", {
 
 test_that("transposition can happen without strata by variable", {
   
-  res_symptom_transpose <- tab_linelist(d, SYMPTOMS, transpose = "variable")
+  res_symptom_transpose <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), transpose = "variable")
   expect_equivalent(md_expect_symptom$n, unlist(res_symptom_transpose[2, c(2, 4, 6)]))
   expect_equivalent(md_expect_symptom$proportion, unlist(res_symptom_transpose[2, c(3, 5, 7)]))
 
@@ -248,7 +248,7 @@ test_that("linelist---transposition without strata will give the same order and 
   n_choice  <- tab_linelist(d, tidyselect::starts_with("CHOICE"), drop = "", transpose = "value") %>%
     dplyr::select(dplyr::ends_with(" n")) %>%
     unlist(use.names = FALSE)
-  n_symptom <- tab_linelist(d, SYMPTOMS, keep = "Yes", transpose = "variable") %>%
+  n_symptom <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), keep = "Yes", transpose = "variable") %>%
     dplyr::select(dplyr::ends_with(" n")) %>%
     unlist(use.names = FALSE)
 
@@ -263,7 +263,7 @@ test_that("linelist---transposition without strata will give the same order and 
 test_that("survey---adding strata works", {
 
   s_res_choice  <- tab_survey(s, tidyselect::starts_with("CHOICE"), strata = strata, drop = "")
-  s_res_symptom <- tab_survey(s, SYMPTOMS, strata = strata, keep = "Yes")
+  s_res_symptom <- tab_survey(s, tidyselect::all_of(SYMPTOMS), strata = strata, keep = "Yes")
   # expect_warning({
     s_warning <- tab_survey(s, tidyselect::all_of(c("bullsweat", SYMPTOMS)), strata = strata, keep = "Yes")
   # }, "Unknown columns: `bullsweat`", fixed = TRUE)
@@ -283,7 +283,7 @@ test_that("survey---adding strata works", {
 test_that("linelist---adding strata works", {
 
   s_res_choice  <- tab_linelist(d, tidyselect::starts_with("CHOICE"), strata = strata, drop = "")
-  s_res_symptom <- tab_linelist(d, SYMPTOMS, strata = strata, keep = "Yes")
+  s_res_symptom <- tab_linelist(d, tidyselect::all_of(SYMPTOMS), strata = strata, keep = "Yes")
 
   expect_equal(ncol(s_res_choice), 8L)
   expect_equal(ncol(s_res_symptom), 8L)
@@ -296,36 +296,36 @@ test_that("linelist---adding strata works", {
   
 })
 
-# }}}
-
-
-# edge case tests {{{
-# TODO: FINISH THIS TEST
-
-srv <- tibble::tribble(
-               ~cause_of_death, ~health_district,   ~n,
-               "Malaria/fever",     "District A",   2L,
-               "Malaria/fever",     "District B",   0L,
-                   "Diarrhoea",     "District A",   1L,
-                   "Diarrhoea",     "District B",   2L,
-                 "Respiratory",     "District A",   2L,
-                 "Respiratory",     "District B",   0L,
-             "Trauma/accident",     "District A",   0L,
-             "Trauma/accident",     "District B",   0L,
-           "Pregnancy-related",     "District A",   0L,
-           "Pregnancy-related",     "District B",   1L,
-                    "Violence",     "District A",   2L,
-                    "Violence",     "District B",   2L,
-  "Outbreak disease (specify)",     "District A",   1L,
-  "Outbreak disease (specify)",     "District B",   1L,
-                "Malnutrition",     "District A",   1L,
-                "Malnutrition",     "District B",   0L,
-                     "Unknown",     "District A",   1L,
-                     "Unknown",     "District B",   3L,
-             "Other (specify)",     "District A",   0L,
-             "Other (specify)",     "District B",   1L,
-              "Not Applicable",     "District A", 196L,
-              "Not Applicable",     "District B", 214L
+test_that("transposing with both and col_total will shove total to the end", {
+  s_res_choice  <- tab_linelist(d, 
+    tidyselect::starts_with("CHOICE"), 
+    strata = strata, 
+    drop = "", 
+    col_total = TRUE, 
+    transpose = "both"
   )
 
+  s_res_symptom <- tab_linelist(d, 
+    tidyselect::all_of(SYMPTOMS), 
+    strata = strata, 
+    drop = "No",
+    col_total = TRUE, 
+    transpose = "both"
+  )
+
+  total_n <- 4 + c(0, 4, 8)
+  total_p <- total_n + 1
+  total_positions <- c(total_n, total_p)
+
+  expect_match(names(s_res_choice)[total_positions], "Total")
+  expect_equivalent(colSums(s_res_choice[total_n]), c(100, 100, 100))
+  expect_equivalent(colSums(s_res_choice[total_p]), c(100, 100, 100) * 3)
+
+  expect_match(names(s_res_symptom)[total_positions], "Total")
+  expect_equivalent(colSums(s_res_symptom[total_n]), c(100, 100, 100))
+  expect_equivalent(colSums(s_res_symptom[total_p]), c(100, 100, 100) * 3)
+})
+
 # }}}
+
+
