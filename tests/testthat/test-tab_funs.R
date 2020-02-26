@@ -345,11 +345,12 @@ test_that("transposing with col_total and value will have the total be the last 
       "Total n"     , "Total proportion"
     )
   )
+  expect_equal(iris_value[["Total n"]], 150)
+
 })
 
 test_that("transposing with col_total and variable will have total be the last row", {
 
-  expect_equal(iris_value[["Total n"]], 150)
   iris_variable <- tab_linelist(iris, Species, col_total = TRUE, transpose = "variable")
 
   expect_equal(nrow(iris_variable), 4)
