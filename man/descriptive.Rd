@@ -13,7 +13,6 @@ descriptive(
   proptotal = FALSE,
   coltotals = FALSE,
   rowtotals = FALSE,
-  single_row = FALSE,
   explicit_missing = TRUE
 )
 }
@@ -39,10 +38,6 @@ proportions for each column.}
 \item{coltotals}{Add column totals on the end}
 
 \item{rowtotals}{Add row totals (only sums counts)}
-
-\item{single_row}{if \code{TRUE} and \code{grouper = NA}, then the output is flattened
-to a single row so that variables can be concatenated into a data frame.
-Defaults to \code{FALSE}.}
 
 \item{explicit_missing}{if \code{TRUE}, missing values will be marked as
 \code{Missing} and tabulated. Defaults to \code{FALSE}, where missing values are

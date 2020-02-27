@@ -72,7 +72,7 @@ tab_univariate <- function(x, outcome, ..., perstime = NULL, strata = NULL,
 
   # check that x is a data frame
   if (!is.data.frame(x)) {
-    stop("x must be a data frame")
+    stop("x must be a data frame", call. = FALSE)
   }
 
   ### Selecting variables
@@ -161,7 +161,9 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   exposure <- if (length(exposure_var) > 0) rlang::sym(exposure_var) else NULL
   # check if exposure variable is logical
   if (!is.logical(x[[exposure_var]])) {
-    stop("exposure variable must be a TRUE/FALSE variable")
+    msg <- glue::glue("exposure variables must be TRUE/FALSE variables,",
+                      " but {exposure_var} is a {class(x[[exposure_var]])[1]}.")
+    stop(msg, call. = FALSE)
   }
 
   # select the var in the outcome column
@@ -195,8 +197,14 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   # for "IRR" return counts and person time by exposure
   if (measure == "IRR") {
 
+    x <- dplyr::filter(x, 
+      !is.na(.data[[exposure_var]]), 
+      !is.na(.data[[outcome_var]]), 
+      !is.na(.data[[perstime_var]])
+    )
     # if stratifier specified then do by each group
     if (has_strata) {
+      x <- dplyr::filter(x, !is.na(.data[[strata_var]]))
       # sum outcome and obstime by exposure and strata
       x_table <- group_by(x, {{ exposure }}, {{ strata }})
       x_table <- summarise(x_table,
@@ -216,9 +224,9 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
       the_table <- array(arr$value,
         dim = c(2, 2, 2),
         dimnames = list(
-          unique(arr[[exposure_var]]),
-          unique(arr$variable),
-          unique(arr[[strata_var]])
+          unique(stats::na.omit(arr[[exposure_var]])),
+          unique(stats::na.omit(arr$variable)),
+          unique(stats::na.omit(arr[[strata_var]]))
         )
       )
       names(dimnames(the_table)) <- c(exposure_var, outcome_var, strata_var)
