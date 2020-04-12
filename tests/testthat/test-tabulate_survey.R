@@ -336,3 +336,22 @@ test_that("values are sensible in a transposition", {
   expect_equal(sum(trn_props), sum(str_props))
 
 })
+
+
+test_that("tab_survey is robust to having one group", {
+
+  # https://github.com/R4EPI/epibuffet/issues/12
+
+  dummy <- tibble::tibble(
+    banana = sample(c("eat", NA), 100, replace = TRUE),
+    weight = sample(1:3, 100, replace = TRUE)
+  )
+
+  dummy_weighted <- dummy %>% 
+    srvyr::as_survey_design(ids = 1, weights = weight)
+
+
+  expect_error(tab_survey(dummy_weighted, banana),
+    "contrasts can be applied.+?factors.+?2 or more levels")
+
+}) 
