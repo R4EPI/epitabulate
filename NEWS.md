@@ -1,6 +1,8 @@
 # epibuffet 0.0.0.9004
 
 * update tests for compatibility with dplyr v1.0.0
+* add better error reporting from `tabulate_survey()` in the case of low number
+  factor levels.
 
 # epibuffet 0.0.0.9003
 
