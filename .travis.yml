@@ -20,6 +20,12 @@ matrix:
     - os: osx
       osx_image: xcode8.3
 
+r_github_packages: 
+  - r-lib/rlang
+  - r-lib/vctrs
+  - tidyverse/dplyr
+  - gergness/srvyr
+
 warnings_are_errors: true
 
 notifications:
@@ -28,5 +34,5 @@ notifications:
     on_failure: change
 
 after_success:
-- if [[ "${R_CODECOV}" ]]; then Rscript -e 'covr::codecov()'; fi
+  - if [[ "${R_CODECOV}" ]]; then Rscript -e 'covr::codecov()'; fi
 
