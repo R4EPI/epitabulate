@@ -1,6 +1,6 @@
 Package: epibuffet
 Title: Tables for Epidemiological Analysis
-Version: 0.0.0.9003
+Version: 0.0.0.9004
 Authors@R: c(
     person(given = "Zhian N.",
            family = "Kamvar",

@@ -83,7 +83,10 @@ test_that("character data works", {
     tabulate_survey(yr, stype, wide = FALSE, pretty = FALSE)
 
   names(char)[1] <- "yr.rnd"
-  expect_identical(char, yr_rnd)
+  # 2020-04-12 16:32 -----
+  # I need to use equivalent here because the groups are persistant and have
+  # different names here in dplyr version 1.0
+  expect_equivalent(char, yr_rnd)
 
 })
 
@@ -93,7 +96,7 @@ test_that("logical data are converted to factors", {
     mutate(summer = yr.rnd == "No") %>%
     tabulate_survey(summer, stype, wide = FALSE, pretty = FALSE)
 
-  expect_identical(summer[-1], yr_rnd[-1])
+  expect_equivalent(summer[-1], yr_rnd[-1])
   expect_equal(levels(summer[[1]]), c("TRUE", "FALSE"))
 
 })
@@ -106,7 +109,7 @@ test_that("integer categorical data are converted to factors", {
     tabulate_survey(summer, stype, wide = FALSE, pretty = FALSE)
   }, "converting `summer` to a factor", fixed = TRUE)
 
-  expect_identical(summer[-1], yr_rnd[-1])
+  expect_equivalent(summer[-1], yr_rnd[-1])
   expect_equal(levels(summer[[1]]), c("0", "1"))
 
 })

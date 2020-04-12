@@ -271,7 +271,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
       # group by stratifier
       y <- dplyr::group_by(y, !!st, .drop = FALSE)
       # tally up the Ns
-      tot <- dplyr::tally(y, !!rlang::sym("n"))
+      tot <- dplyr::tally(y, !!rlang::sym("n"), name = "n")
       # bind to the long data frame
       y <- dplyr::ungroup(y)
     }
@@ -285,7 +285,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
     # group by cause of death
     y <- dplyr::group_by(y, !!cod, .drop = FALSE)
     # tally up the Ns
-    tot <- dplyr::tally(y, !!rlang::sym("n"))
+    tot <- dplyr::tally(y, !!rlang::sym("n"), name = "n")
     # bind to the long data frame
     y <- dplyr::ungroup(y)
     suppressMessages(y <- dplyr::bind_rows(y, tot))

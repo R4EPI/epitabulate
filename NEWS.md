@@ -1,3 +1,7 @@
+# epibuffet 0.0.0.9004
+
+* update tests for compatibility with dplyr v1.0.0
+
 # epibuffet 0.0.0.9003
 
 * Update to {tidyselect} 1.0.0, remove warning if unused columns (#8, @zkamvar)
