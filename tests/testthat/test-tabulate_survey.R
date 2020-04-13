@@ -338,20 +338,19 @@ test_that("values are sensible in a transposition", {
 })
 
 
-test_that("tab_survey is robust to having one group", {
+test_that("tab_survey fails when there is only one group and missing data", {
 
   # https://github.com/R4EPI/epibuffet/issues/12
-
   dummy <- tibble::tibble(
     banana = sample(c("eat", NA), 100, replace = TRUE),
     weight = sample(1:3, 100, replace = TRUE)
   )
 
-  dummy_weighted <- dummy %>% 
-    srvyr::as_survey_design(ids = 1, weights = weight)
+  dummy_weighted <- srvyr::as_survey_design(dummy, ids = 1, weights = weight)
 
-
-  expect_error(tab_survey(dummy_weighted, banana),
-    "contrasts can be applied.+?factors.+?2 or more levels")
+  expect_error(
+    tab_survey(dummy_weighted, banana, na.rm = TRUE),
+    "contrasts can be applied.+?factors.+?2 or more levels"
+  )
 
 }) 
