@@ -149,13 +149,18 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
     # groups and try again.
     error = function(e) {
       y <- e
-      if (!null_strata && y$message == "contrasts can be applied only to factors with 2 or more levels") {
-        x <- group_by(x, !!st, !!cod, .drop = FALSE)
-        y <- srvyr::summarise(x,
-          n    = srvyr::survey_total(vartype = "se", na.rm = TRUE),
-          mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
-        )
-      }
+      err <- "contrasts can be applied.+?factors.+?2 or more levels"
+      if (grepl(err, y$message)) {
+        if (!null_strata) {
+          x <- group_by(x, !!st, !!cod, .drop = FALSE)
+          y <- srvyr::summarise(x,
+            n    = srvyr::survey_total(vartype = "se", na.rm = TRUE),
+            mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
+          )
+        } else {
+          stop(e$message, call. = FALSE)
+        }
+      } 
       y
     }
   )
@@ -271,7 +276,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
       # group by stratifier
       y <- dplyr::group_by(y, !!st, .drop = FALSE)
       # tally up the Ns
-      tot <- dplyr::tally(y, !!rlang::sym("n"))
+      tot <- dplyr::tally(y, !!rlang::sym("n"), name = "n")
       # bind to the long data frame
       y <- dplyr::ungroup(y)
     }
@@ -285,7 +290,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
     # group by cause of death
     y <- dplyr::group_by(y, !!cod, .drop = FALSE)
     # tally up the Ns
-    tot <- dplyr::tally(y, !!rlang::sym("n"))
+    tot <- dplyr::tally(y, !!rlang::sym("n"), name = "n")
     # bind to the long data frame
     y <- dplyr::ungroup(y)
     suppressMessages(y <- dplyr::bind_rows(y, tot))

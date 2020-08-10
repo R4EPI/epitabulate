@@ -83,7 +83,10 @@ test_that("character data works", {
     tabulate_survey(yr, stype, wide = FALSE, pretty = FALSE)
 
   names(char)[1] <- "yr.rnd"
-  expect_identical(char, yr_rnd)
+  # 2020-04-12 16:32 -----
+  # I need to use equivalent here because the groups are persistant and have
+  # different names here in dplyr version 1.0
+  expect_equivalent(char, yr_rnd)
 
 })
 
@@ -93,7 +96,7 @@ test_that("logical data are converted to factors", {
     mutate(summer = yr.rnd == "No") %>%
     tabulate_survey(summer, stype, wide = FALSE, pretty = FALSE)
 
-  expect_identical(summer[-1], yr_rnd[-1])
+  expect_equivalent(summer[-1], yr_rnd[-1])
   expect_equal(levels(summer[[1]]), c("TRUE", "FALSE"))
 
 })
@@ -106,7 +109,7 @@ test_that("integer categorical data are converted to factors", {
     tabulate_survey(summer, stype, wide = FALSE, pretty = FALSE)
   }, "converting `summer` to a factor", fixed = TRUE)
 
-  expect_identical(summer[-1], yr_rnd[-1])
+  expect_equivalent(summer[-1], yr_rnd[-1])
   expect_equal(levels(summer[[1]]), c("0", "1"))
 
 })
@@ -333,3 +336,21 @@ test_that("values are sensible in a transposition", {
   expect_equal(sum(trn_props), sum(str_props))
 
 })
+
+
+test_that("tab_survey fails when there is only one group and missing data", {
+
+  # https://github.com/R4EPI/epibuffet/issues/12
+  dummy <- tibble::tibble(
+    banana = sample(c("eat", NA), 100, replace = TRUE),
+    weight = sample(1:3, 100, replace = TRUE)
+  )
+
+  dummy_weighted <- srvyr::as_survey_design(dummy, ids = 1, weights = weight)
+
+  expect_error(
+    tab_survey(dummy_weighted, banana, na.rm = TRUE),
+    "contrasts can be applied.+?factors.+?2 or more levels"
+  )
+
+}) 
