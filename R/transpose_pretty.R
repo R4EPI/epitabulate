@@ -170,7 +170,7 @@ widen_tabulation <- function(y, cod, st, pretty = TRUE, digits = 1) {
   y <- tidyr::gather(y, key = !!KEY, value = !!VALUE, -(1:2)) # 2
   y <- dplyr::arrange(y, !!cod, !!st) # 3
   y <- tidyr::unite(y, !!TMP, !!st, !!KEY, sep = " ") # 4
-  y <- dplyr::mutate(y, !!TMP := forcats::fct_inorder(dplyr::pull(y, !!TMP))) # 5
+  y[[TMP]] <- forcats::fct_inorder(dplyr::pull(y, !!TMP)) # 5
   y <- tidyr::spread(y, !!TMP, !!VALUE) # 6
 
   # 7
