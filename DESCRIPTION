@@ -23,22 +23,22 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 URL: https://R4EPI.github.io/epibuffet, https://github.com/R4EPI/epibuffet
 BugReports: https://github.com/R4EPI/epibuffet/issues
 Imports: 
-    dplyr (>= 0.8.3),
+    dplyr (>= 1.0.2),
     rlang (>= 0.4.0),
     tidyr (>= 1.0.0),
     stats,
     glue,
     purrr,
     tidyselect (>= 1.0.0),
-    tibble (>= 2.1.0),
+    tibble (>= 3.0.0),
     survey,
     srvyr,
     forcats,
-    epikit
+    epikit (>= 0.1.2)
 Suggests: 
     testthat,
     matchmaker (>= 0.1.0),
@@ -46,4 +46,4 @@ Suggests:
     covr
 Remotes:
     R4EPI/epidict,
-    R4EPI/epikit
+    R4EPI/epikit@znk-fix-name-repair

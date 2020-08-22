@@ -103,7 +103,7 @@ flipper <- function(x, res, transpose = c("variable", "value", "both"), pretty =
   for (i in suffix) {
     suff <- rlang::ensym(i)
     tmp <- transpose_pretty(res, !!stra, !!var, !!suff, slevels)
-    tres <- dplyr::bind_cols(tres, tmp[-1])
+    tres <- dplyr::bind_cols(tres, tmp[-1], .name_repair = "minimal")
   }
 
   # re-ordering the columns so that they are grouped by the original row order
@@ -150,7 +150,7 @@ widen_tabulation <- function(y, cod, st, pretty = TRUE, digits = 1) {
   #
   #  5 Make sure the factors are in the correct order as "strata signifier"
   #
-  #  6 Spread out the combined stratifier and signifier to columns
+  #  6 Spread out the combined stratifier and signifier to columns and ungroup
   #
   #  7 make sure the column arrangement matches the initial arrangement of the
   #    stratifier
@@ -172,6 +172,7 @@ widen_tabulation <- function(y, cod, st, pretty = TRUE, digits = 1) {
   y <- tidyr::unite(y, !!TMP, !!st, !!KEY, sep = " ") # 4
   y[[TMP]] <- forcats::fct_inorder(dplyr::pull(y, !!TMP)) # 5
   y <- tidyr::spread(y, !!TMP, !!VALUE) # 6
+  y <- dplyr::ungroup(y) # ungrouping added to prevent dplyr from adding grouping context
 
   # 7
   # guarding against common situation of having a stratifier that is 45+, changing to 45[+]
@@ -184,11 +185,10 @@ widen_tabulation <- function(y, cod, st, pretty = TRUE, digits = 1) {
   if (pretty) {
     # map through all the levels of l and pull out the matching columns
     tmp <- purrr::map(l, ~ dplyr::select(y, dplyr::starts_with(paste0(., " "))))
-    # pretty up those columns and bind them all together
-    tmp <- purrr::map2_dfc(tmp, l, ~ prettify_tabulation(.x, digits = digits, ci_prefix = .y))
-
-    # glue the result to the first column of the data
-    y <- dplyr::bind_cols(y[1], tmp)
+    # pretty up those columns 
+    tmp <- purrr::map2(tmp, l, ~ prettify_tabulation(.x, digits = digits, ci_prefix = .y))
+    # glue the results to the first column of the data
+    y <- dplyr::bind_cols(y[1], tmp, .name_repair = "minimal")
   }
 
   return(y)

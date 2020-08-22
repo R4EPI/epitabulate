@@ -223,8 +223,8 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
           vartype = "ci"
         )
       )
-      res <- dplyr::bind_cols(!!cod := .x, res)
-      dplyr::bind_cols(!!st := .y, res)
+      res <- dplyr::bind_cols(!!cod := .x, res, .name_repair = "minimal")
+      dplyr::bind_cols(!!st := .y, res, .name_repair = "minimal")
     }
   } else {
     s_prop <- function(xx, .x, cod) {
@@ -235,7 +235,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
           vartype = "ci"
         )
       )
-      dplyr::bind_cols(!!cod := rep(.x, nrow(res)), res)
+      dplyr::bind_cols(!!cod := rep(.x, nrow(res)), res, .name_repair = "minimal")
     }
   }
 
@@ -297,7 +297,6 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
     # replace any NAs in the stratifier with "Total"
     y <- dplyr::mutate(y, !!st := forcats::fct_explicit_na(!!st, "Total"))
   }
-
 
   if (wide && !null_strata) {
     y <- widen_tabulation(y, !!cod, !!st, pretty = pretty, digits = digits)

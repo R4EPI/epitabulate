@@ -348,9 +348,11 @@ test_that("tab_survey fails when there is only one group and missing data", {
 
   dummy_weighted <- srvyr::as_survey_design(dummy, ids = 1, weights = weight)
 
+  suppressWarnings({
   expect_error(
     tab_survey(dummy_weighted, banana, na.rm = TRUE),
     "contrasts can be applied.+?factors.+?2 or more levels"
   )
+  })
 
 }) 
