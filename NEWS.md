@@ -1,3 +1,7 @@
+# epibuffet 0.0.0.9005
+
+* update for compatibility with dplyr 1.0.2
+
 # epibuffet 0.0.0.9004
 
 * update tests for compatibility with dplyr v1.0.0
