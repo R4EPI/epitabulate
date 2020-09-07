@@ -256,14 +256,16 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
       variable = rep(exposure_var, nrow(est)),
       est_type = rownames(est),
       vals,
-      est
+      est,
+      .name_repair = "minimal"
     )
   } else {
     nums <- dplyr::bind_cols(
       variable = exposure_var,
       est_type = "crude",
       strata_ratio_table(the_table, measure),
-      get_ratio_est(the_table, measure)
+      get_ratio_est(the_table, measure),
+      .name_repair = "minimal"
     )
   }
 

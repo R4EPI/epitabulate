@@ -145,6 +145,15 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
         mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
       )
     },
+    warning = function(w) {
+      y <- w
+      wrn <- 'algorithm did not converge'    
+      if (grepl(wrn, w$message, fixed = TRUE)) {
+        warning('the GLM did not converge, so estimates and confidence intervals may be less reliable', call. = FALSE)
+      } else {
+        warning(w)
+      }
+    },
     # In the case of an error, return the error by default, but try to flip the
     # groups and try again.
     error = function(e) {
@@ -158,7 +167,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
             mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
           )
         } else {
-          stop(e$message, call. = FALSE)
+          stop(e, call. = FALSE)
         }
       } 
       y
@@ -223,8 +232,8 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
           vartype = "ci"
         )
       )
-      res <- dplyr::bind_cols(!!cod := .x, res)
-      dplyr::bind_cols(!!st := .y, res)
+      res <- dplyr::bind_cols(!!cod := .x, res, .name_repair = "minimal")
+      dplyr::bind_cols(!!st := .y, res, .name_repair = "minimal")
     }
   } else {
     s_prop <- function(xx, .x, cod) {
@@ -235,7 +244,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
           vartype = "ci"
         )
       )
-      dplyr::bind_cols(!!cod := rep(.x, nrow(res)), res)
+      dplyr::bind_cols(!!cod := rep(.x, nrow(res)), res, .name_repair = "minimal")
     }
   }
 
@@ -297,7 +306,6 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
     # replace any NAs in the stratifier with "Total"
     y <- dplyr::mutate(y, !!st := forcats::fct_explicit_na(!!st, "Total"))
   }
-
 
   if (wide && !null_strata) {
     y <- widen_tabulation(y, !!cod, !!st, pretty = pretty, digits = digits)
