@@ -145,6 +145,15 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
         mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
       )
     },
+    warning = function(w) {
+      y <- w
+      wrn <- 'algorithm did not converge'    
+      if (grepl(wrn, w$message, fixed = TRUE)) {
+        warning('the GLM did not converge, so estimates and confidence intervals may be less reliable', call. = FALSE)
+      } else {
+        warning(w)
+      }
+    },
     # In the case of an error, return the error by default, but try to flip the
     # groups and try again.
     error = function(e) {
@@ -158,7 +167,7 @@ tabulate_survey <- function(x, var, strata = NULL, pretty = TRUE, wide = TRUE,
             mean = srvyr::survey_mean(na.rm = TRUE, deff = deff)
           )
         } else {
-          stop(e$message, call. = FALSE)
+          stop(e, call. = FALSE)
         }
       } 
       y
