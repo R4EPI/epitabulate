@@ -52,4 +52,5 @@ Suggests:
 Remotes:
     R4EPI/epidict,
     R4EPI/epikit,
-    ddsjoberg/gtsummary
+    ddsjoberg/gtsummary,
+    larmarange/broom.helpers
