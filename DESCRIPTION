@@ -30,11 +30,14 @@ Imports:
     dplyr (>= 1.0.2),
     rlang (>= 0.4.0),
     tidyr (>= 1.0.0),
+    effectsize,
     stats,
     glue,
+    gtsummary (>= 1.3.6.9012),
     purrr,
     tidyselect (>= 1.0.0),
     tibble (>= 3.0.0),
+    stringr,
     survey,
     srvyr,
     forcats,
@@ -47,3 +50,4 @@ Suggests:
 Remotes:
     R4EPI/epidict,
     R4EPI/epikit
+    ddsjoberg/gtsummary
