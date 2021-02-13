@@ -11,7 +11,8 @@ tbl_cmh(
   strata,
   label = NULL,
   estimate_fun = gtsummary::style_ratio,
-  overall_label = "Crude"
+  overall_label = "Crude",
+  quiet = FALSE
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ Default is \code{gtsummary::style_ratio}}
 
 \item{overall_label}{string indicating the un-stratified ORs.
 Default is \code{"Crude"}}
+
+\item{quiet}{logical indicating whether to suppress messages. Default is \code{FALSE}}
 }
 \value{
 gtsummary table

@@ -9,6 +9,7 @@
 #' Default is `gtsummary::style_ratio`
 #' @param overall_label string indicating the un-stratified ORs.
 #' Default is `"Crude"`
+#' @param quiet logical indicating whether to suppress messages. Default is `FALSE`
 #'
 #' @return gtsummary table
 #' @export
@@ -26,7 +27,8 @@
 tbl_cmh <- function(data, case, exposure, strata,
                     label = NULL,
                     estimate_fun = gtsummary::style_ratio,
-                    overall_label = "Crude") {
+                    overall_label = "Crude",
+                    quiet = FALSE) {
   # checking inputs ------------------------------------------------------------
   if (!is.data.frame(data)) rlang::abort("`data=` must be a data frame")
   if (!rlang::is_string(overall_label)) rlang::abort("`overall_label=` must be a string")
@@ -48,6 +50,11 @@ tbl_cmh <- function(data, case, exposure, strata,
   # @aspina7 add check that case and exposure are dichotomous
   # @aspina7 add check that strata are all categorical variables
   # @aspina7 add check that the overall_label value is not a level of any strata
+
+  # printing message to be clear to users how case/control and exposure defined
+  if (isFALSE(quiet)) {
+    rlang::inform("Assuming `control` < `case` & `not exposed` < `exposed`")
+  }
 
   # construct cross tabs for each stratifying variable -------------------------
   tbl_crosstabs <-
