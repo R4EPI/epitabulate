@@ -2,7 +2,7 @@
 % Please edit documentation in R/tbl_cmh.R
 \name{tbl_cmh}
 \alias{tbl_cmh}
-\title{Title}
+\title{Stratified Odds Ratios}
 \usage{
 tbl_cmh(
   data,
@@ -35,7 +35,14 @@ Default is \code{"Crude"}}
 gtsummary table
 }
 \description{
-Title
+Stratified Odds Ratios
+}
+\examples{
+library(gtsummary)
+
+tbl_cmh_ex1 <-
+  trial \%>\%
+  tbl_cmh(case = death, exposure = trt, strata = c(stage, grade))
 }
 \author{
 Daniel D. Sjoberg

@@ -17,11 +17,11 @@
 #' @importFrom rlang .data .env expr
 #'
 #' @examples
+#' library(gtsummary)
+#'
 #' tbl_cmh_ex1 <-
-#'   gtsummary::trial %>%
-#'   dplyr::select(grade, stage, death, response) %>%
-#'   dplyr::rename(case = response, exposure = death) %>%
-#'   tbl_cmh(case = case, exposure = exposure, strata = c(stage, grade))
+#'   trial %>%
+#'   tbl_cmh(case = death, exposure = trt, strata = c(stage, grade))
 
 tbl_cmh <- function(data, case, exposure, strata,
                     label = NULL,
