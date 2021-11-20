@@ -544,6 +544,74 @@ gtcfrageall <- gt_cfr %>%
 
 gtcfrageall
 
+
+
+# by level age_cfr  ---------------------
+
+add_cfr_stat_level <- function(data, variable, by, ...) {
+  browser()
+  if(!is.null(by)) {
+    warning("cfr by strata is not currently available, ignoring `by` argument")
+  }
+
+  if(!is.null(by)) {
+    by_sym <- as.symbol(by)
+  }
+  gt_dt <- tb$table_body
+  var_levels <- gt_dt %>%
+    dplyr::filter(!is.na(stat_0)$
+
+  tb <- list(...)$tbl
+  browser()
+  by_sym <- as.symbol("sex")
+  deaths_var <- data$deaths_var[1]
+  var <- rlang::enquo(variable)
+  var_sym <- as.symbol("sex")
+  # by_sym <- as.symbol(by)
+  stat_new <- data %>%
+    case_fatality_rate_df(
+      deaths = deaths,
+      group = var_sym,
+      mergeCI = TRUE)
+#
+#
+#   data <- data %>%
+#     mutate(age_group = factor(age_group))
+#
+#   stat_new <- data %>%
+#     epikit::case_fatality_rate_df(
+#       deaths = expression("DIED",
+#       # group = age_group,
+#       mergeCI = TRUE) %>%
+#     dplyr::mutate(deaths = as.integer(deaths))
+}
+
+age_cfr <- linelist_cleaned %>%
+  dplyr::filter(patient_facility_type == "Inpatient") %>%
+  dplyr::select(case_number, DIED, sex) %>%
+  dplyr::mutate(deaths_var = "DIED") %>%
+  # dplyr::mutate() %>%
+  gtsummary::tbl_summary(
+    include = sex,
+    missing = "no") %>%
+  gtsummary::add_stat(
+    fns = list(gtsummary::everything() ~ add_cfr_stat_level),
+    location = gtsummary::everything() ~ "level"
+  )  %>%
+  gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::mutate(stat_0 = NULL)
+  )
+
+# Combine cfr age and total tables
+
+gtcfrageall <- gt_cfr %>%
+  gtsummary::modify_table_body(
+    ~ .x %>% add_row(age_cfr$table_body)
+  )
+
+gtcfrageall
+
 # Attack rates --------------------------------------------------
 ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000)
 
@@ -558,6 +626,7 @@ ar %>%
 
 # gtsummary attack rate
 add_attack_rate_stat <- function(data, variable, by=NULL, ...) {
+  browser()
   population <- data$population[1]
   multiplier <- data$multiplier[1]
   cases <- nrow(data)
@@ -629,5 +698,7 @@ gt_ar_age <- linelist_cleaned %>%
   )
 
 gt_ar_age
+
+
 
 
