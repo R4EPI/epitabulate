@@ -176,8 +176,8 @@ linelist_cleaned <- linelist_cleaned %>%
 
 
 # Force missing values to NA
-# important for sex to generate age pyramids
-linelist_cleaned$sex <- fct_recode(linelist_cleaned$sex,
+# important for gender to generate age pyramids
+linelist_cleaned$gender <- fct_recode(linelist_cleaned$sex,
                                    NULL = "Unknown/unspecified")
 
 
@@ -453,7 +453,7 @@ linelist_cleaned %>%
 # use gtsummary add_stat function-------------------------------
 # Create wrapper function for
 add_cfr_stat <- function(data, variable, by, ...) {
-  browser()
+
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
   }
@@ -485,7 +485,7 @@ gt_cfr #,
 
 linelist_deaths_gender  <- linelist_cleaned %>%
   dplyr::filter(patient_facility_type == "Inpatient") %>%
-  dplyr::select(case_number, DIED, sex) %>%
+  dplyr::select(case_number, DIED, ) %>%
   dplyr::mutate(
                 sex = forcats::fct_explicit_na(sex, "Missing")) %>%
   tidyr::pivot_wider(names_from = "sex", values_from = "DIED")
@@ -536,6 +536,7 @@ age_cfr <- linelist_deaths_age %>%
     ~ .x %>%
       dplyr::mutate(stat_0 = NULL)
   )
+
 # Combine cfr age and total tables
 gtcfrageall <- gt_cfr %>%
   gtsummary::modify_table_body(
@@ -558,40 +559,29 @@ add_cfr_stat_level <- function(data, variable, by, ...) {
   tb <- list(...)$tbl
   gt_dt <- tb$table_body
   var_dt <- gt_dt %>%
-    dplyr::filter(variable %in% c("sex") & !is.na(stat_0))
+    dplyr::filter(variable %in% variable & !is.na(stat_0))
   var_levels <- unique(var_dt$label)
 
-  by_sym <- as.symbol("sex")
   deaths_var <- data$deaths_var[1]
   deaths <- data[[deaths_var]]
   var <- rlang::enquo(variable)
-  var_sym <- as.symbol("sex")
+  var_sym <- as.symbol(variable)
   qvariable <- rlang::enquo(var_sym)
 
-
+  browser()
   stat_new <- data %>%
-    case_fatality_rate_df(
-      deaths = deaths,
-      group = var_sym,
+    epikit::case_fatality_rate_df(
+      deaths = DIED,
+      group = variable,
       mergeCI = TRUE) %>%
-    dplyr::filter(!!qvariable %in% var_levels) %>%
+    dplyr::filter(variable %in% var_levels) %>%
     select(deaths, population, cfr, ci)
 
-#
-#
-#   data <- data %>%
-#     mutate(age_group = factor(age_group))
-#
-#   stat_new <- data %>%
-#     epikit::case_fatality_rate_df(
-#       deaths = expression("DIED",
-#       # group = age_group,
-#       mergeCI = TRUE) %>%
-#     dplyr::mutate(deaths = as.integer(deaths))
 }
 
 age_cfr <- linelist_cleaned %>%
   dplyr::filter(patient_facility_type == "Inpatient") %>%
+  dplyr::mutate(sex = factor(sex)) %>%
   dplyr::select(case_number, DIED, sex) %>%
   dplyr::mutate(deaths_var = "DIED") %>%
   # dplyr::mutate() %>%
@@ -630,11 +620,11 @@ ar %>%
 
 # gtsummary attack rate
 add_attack_rate_stat <- function(data, variable, by=NULL, ...) {
-  browser()
+
   population <- data$population[1]
   multiplier <- data$multiplier[1]
   cases <- nrow(data)
-  # browser()
+
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
   }
@@ -643,7 +633,6 @@ add_attack_rate_stat <- function(data, variable, by=NULL, ...) {
                             population = population,
                             multiplier = multiplier)
 
-  # browser()
   ar %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     rename("Cases (n)" = cases,
@@ -652,12 +641,6 @@ add_attack_rate_stat <- function(data, variable, by=NULL, ...) {
            "95%CI" = ci) %>%
     select(-Population) %>% # drop the population column as it is not changing
     tibble::tibble()
-  #
-  # # dput(stat_new)
-  # structure(list(`Cases (n)` = 76L, `AR (per 10,000)` = 15.2015201520152,
-  #                `95%CI` = "(12.16--18.98)"), class = c("tbl_df", "tbl", "data.frame"
-  #                ), row.names = c(NA, -1L))
-
 }
 
 
