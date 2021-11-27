@@ -1,4 +1,4 @@
-Package: epibuffet
+Package: epitabulate
 Title: Tables for Epidemiological Analysis
 Version: 0.0.0.9005
 Authors@R: c(
@@ -7,9 +7,11 @@ Authors@R: c(
            role = c("aut", "cre"),
            email = "zkamvar@gmail.com",
            comment = c(ORCID = "0000-0003-1458-7108")),
-    person(given = "Alex",
+    person(given = "Alexander",
            family = "Spina",
-           role = "ctb"),
+           email = "alexfspina@gmail.com", 
+           comment = c(ORCID = "0000-0001-8425-1867"),
+           role = "aut"),
     person(given = "Kate",
            family = "Doyle",
            role = "ctb"))
@@ -24,8 +26,8 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-URL: https://R4EPI.github.io/epibuffet/, https://github.com/R4EPI/epibuffet/
-BugReports: https://github.com/R4EPI/epibuffet/issues
+URL: https://R4EPI.github.io/epitabulate/, https://github.com/R4EPI/epitabulate/
+BugReports: https://github.com/R4EPI/epitabulate/issues
 Imports: 
     dplyr (>= 1.0.2),
     rlang (>= 0.4.0),

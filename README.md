@@ -1,4 +1,4 @@
-Epibuffet
+Epitabulate
 ================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -8,15 +8,15 @@ Epibuffet
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN
-status](https://www.r-pkg.org/badges/version/epibuffet)](https://CRAN.R-project.org/package=epibuffet)
-status](https://ci.appveyor.com/api/project/status/github/zkamvar/epibuffet?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epibuffet)
+status](https://www.r-pkg.org/badges/version/epitabulate)](https://CRAN.R-project.org/package=epitabulate)
+status](https://ci.appveyor.com/api/project/status/github/zkamvar/epitabulate?branch=master&svg=true)](https://ci.appveyor.com/project/zkamvar/epitabulate)
 [![Codecov test
-coverage](https://codecov.io/gh/R4EPI/epibuffet/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epibuffet?branch=master)
+coverage](https://codecov.io/gh/R4EPI/epitabulate/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epitabulate?branch=master)
 [![R build
-status](https://github.com/R4EPI/epibuffet/workflows/R-CMD-check/badge.svg)](https://github.com/R4EPI/epibuffet/actions)
+status](https://github.com/R4EPI/epitabulate/workflows/R-CMD-check/badge.svg)](https://github.com/R4EPI/epitabulate/actions)
 <!-- badges: end -->
 
-The {epibuffet} package produces tables for descriptive epidemiological
+The {epitabulate} package produces tables for descriptive epidemiological
 analysis. It contains four functions:
 
   - `tab_linelist()` — Tabulate and describe counts of variables in a
@@ -30,13 +30,13 @@ analysis. It contains four functions:
 
 ## Installation
 
-{epibuffet} is currently under development, but you can keep up-to-date
+{epitabulate} is currently under development, but you can keep up-to-date
 by installing it from the R4EPIs drat repository:
 
 ``` r
 # install.packages("drat")
 drat::addRepo("R4EPI")
-install.packages("epibuffet")
+install.packages("epitabulate")
 ```
 
 You can also install the in-development version from GitHub using the
@@ -44,12 +44,12 @@ You can also install the in-development version from GitHub using the
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("R4EPI/epibuffet") 
+remotes::install_github("R4EPI/epitabulate") 
 ```
 
 # Examples
 
-Here is an example of the tables produced by {epibuffet} from a randomly
+Here is an example of the tables produced by {epitabulate} from a randomly
 generated data set based on an MSF data dictionary for Measles data.
 
 ``` r
@@ -65,7 +65,7 @@ library(dplyr)
 #> The following objects are masked from 'package:base':
 #> 
 #>     intersect, setdiff, setequal, union
-library(epibuffet)
+library(epitabulate)
 
 linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
 measles_dict <- epidict::msf_dict("Measles", compact = FALSE)
