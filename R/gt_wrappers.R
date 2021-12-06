@@ -86,6 +86,30 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
 }
 
 
-add_gt_attack_rate_label
+add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
+  browser()
+  # population column required
+
+}
+
+
+merge_gt_univar_counts <- function(gt_object) {
+  gt_data <- gt_object$inputs$data
+  by <- gt_object$inputs$y
+  ## produce counts for each of the variables of interest
+  cross_tab <- gt_data %>%
+    gtsummary::tbl_summary(by = by)
+  ## combine for a full table
+  gtsummary::tbl_merge(list(cross_tab, gt_object)) %>%
+    gtsummary::modify_spanning_header(gtsummary::everything() ~ NA_character_) %>%
+    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ by)
+}
+
+
+gt_remove_stat <- function(gt_object, col_name = "stat_0") {
+  gt_object %>% gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::select(-all_of(col_name)))
+}
 
 

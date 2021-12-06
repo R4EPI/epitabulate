@@ -2,22 +2,24 @@
 # Setup -----------------------------------------
 #
 # ## Installing required packages for this template
-# required_packages <- c("knitr",       # create output docs
-#                        "here",        # find your files
-#                        "dplyr",       # clean/shape data
-#                        "forcats",     # clean/shape data
-#                        "stringr",     # clean text
-#                        "rio",         # read in data
-#                        "ggplot2",     # create plots and charts
-#                        "patchwork",   # combine plots in one
-#                        "sitrep",      # MSF field epi functions
-#                        "linelist",    # Functions for cleaning/standardising data/dates
-#                        "matchmaker",  # dictionary-based standardization of variables
-#                        "incidence",   # create epicurves
-#                        "aweek",       # define epi weeks
-#                        "epitrix",     # epi helpers and tricks
-#                        "sf",          # encode spatial vector data
-#                        "ggspatial")   # plot maps
+required_packages <- c("knitr",       # create output docs
+                       "here",        # find your files
+                       "dplyr",       # clean/shape data
+                       "forcats",     # clean/shape data
+                       "stringr",     # clean text
+                       "rio",         # read in data
+                       "ggplot2",     # create plots and charts
+                       "patchwork",   # combine plots in one
+                       "sitrep",      # MSF field epi functions
+                       "linelist",    # Functions for cleaning/standardising data/dates
+                       "matchmaker",  # dictionary-based standardization of variables
+                       "incidence",   # create epicurves
+                       "aweek",       # define epi weeks
+                       "epitrix",     # epi helpers and tricks
+                       "sf",          # encode spatial vector data
+                       "ggspatial",   # plot maps
+                       "testthat"     # testing functions
+                       )
 
 for (pkg in required_packages) {
   # install packages if not already present
@@ -217,13 +219,15 @@ population_data_region <- gen_population(total_pop = 5000,         # set the tot
          population = n)
 
 
+population <- sum(population_data_age$population)
 
 # Tests start ------------------------------------------------------------------
 
 
 test_that("cfr calculation returns gtsummary object and correct results for a single result", {
   # This should be used with dichotomus data types without showing missing value
-  # and for add_stat by location = "label"
+  # and for gtsummary::add_stat by location = "label"
+  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
   expected_cfr <-  linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
     case_fatality_rate_df(deaths = DIED, mergeCI = TRUE)
@@ -252,6 +256,7 @@ test_that("cfr calculation returns gtsummary object and correct results for a si
 })
 
 test_that("cfr calculation returns gtsummary object and correct results for a result by variable level", {
+  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
 
   linelist_cleaned$gender <- linelist_cleaned$sex
   expected_cfr <-  linelist_cleaned %>%
@@ -296,6 +301,8 @@ test_that("cfr calculation returns gtsummary object and correct results for a re
 
 
 test_that("attack rate calculation returns gtsummary object and correct results for a single result", {
+  # Works like add_stat - for those who want to have more control and fully customize
+
   expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
     merge_ci_df(e = 3)
 
@@ -306,15 +313,12 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
       include = cases,
-      statistic = everything() ~ "",
       label = cases ~ "All participants") %>%
+    # Remove stat column from gt summary (default "n (%) column)
+    gt_remove_stat() %>%
+    # Use add stat to add attack rate by label
     gtsummary::add_stat(
       fns = list(gtsummary::everything() ~ add_gt_attack_rate_label)
-    ) %>%
-    gtsummary::modify_table_body(
-      ~ .x %>%
-        dplyr::mutate(stat_0 = NULL)
-
     )
 
   ar_df <- gt_ar$table_body
@@ -327,8 +331,10 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
 
 test_that("attack rate calculation returns gtsummary object and correct results for a result by variable level", {
+  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
+
   cases <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
-    left_join(population_data_age, by = "age_group") # merge population data
+    left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
 
 
   # attack rate for each group
@@ -337,6 +343,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     bind_cols(select(cases, age_group), .)
 
   # FILL IN!
+  # function: add_gt_attack_rate_level
 
   ar_df <- gt_ar$table_body
 
@@ -345,6 +352,49 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
   expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })
+
+
+test_that("cfr calculation returns gtsummary object and correct results with any given variables", {
+  # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
+  # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
+  # function: add_gt_case_fatality_rate
+})
+
+
+test_that("cfr calculation returns gtsummary object and correct results with any given variables", {
+  # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
+  # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
+  # function: add_gt_attack_rate
+})
+
+test_that("univariate regression with gtsummary returns counts with OR and RR", {
+  linelist_cleaned$gender <- linelist_cleaned$sex
+  gt_uni <- linelist_cleaned %>%
+    select(DIED, gender, age_group) %>%     ## keep variables of interest
+    gtsummary::tbl_uvregression(            ## produce univariate table
+      method = glm,                         ## define regression want to run (generalised linear model)
+      y = DIED,                             ## define outcome variable
+      method.args = list(family = binomial),  ## define what type of glm want to run (logistic)
+      exponentiate = TRUE,                    ## exponentiate to produce odds ratios (rather than log odds)
+      hide_n = TRUE                               ## dont include overall counts in regression table
+    ) %>%
+    merge_gt_univar_counts()
+
+  uni_df <- gt_uni$table_body
+  age_3_14 <- uni_df %>% dplyr::filter(label == "3-14")
+
+  expect_s3_class(gt_uni, "gtsummary")
+  # check death counts and percentage are in stat_1 cols
+  expect_equal(age_3_14$stat_1_1, "18 (9.0%)")
+  # check spanner heading label matches regression y input
+  expect("DIED" %in% gt_uni$table_styling$header$spanning_header,
+         "missing spanner heading")
+
+
+})
+
+
+
 
 
 

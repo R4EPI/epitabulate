@@ -687,5 +687,23 @@ gt_ar_age <- linelist_cleaned %>%
 gt_ar_age
 
 
+# Attack rates by level  ----------------------------------------------------
+
+cases <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
+  left_join(population_data_age, by = "age_group") # merge population data
+
+
+# attack rate for each group
+attack_rate(cases$n, cases$population, multiplier = 10000, mergeCI = TRUE) %>%
+  # add the epiweek column to table
+  bind_cols(select(cases, age_group), .) %>%
+  rename("Age group" = age_group,
+         "Cases (n)" = cases,
+         "Population" = population,
+         "AR (per 10,000)" = ar,
+         "95%CI" = ci) %>%
+  kable(digits = 1, format.args = list(big.mark = ",")) # set thousands separator
+
+
 
 
