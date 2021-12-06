@@ -1,15 +1,24 @@
-#' Produce
+# gtsummary and epikit wrapper functions
+
+#' A case fatality rate wrapper function to be passed to the gtsummary::add_stat
+#' function, which returns a data frame with a single row to be used with
+#' dichotomous data or overall data.Calls epikit::case_fatality_rate_df.
 #'
-#' @param x A data frame
+#' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
-#' @param outcome Name of A TRUE/FALSE variable as your outcome of interest
-#'   (e.g. illness)
+#' @param variable Name of a variable as the outcome of interest, passed by the
+#' gtsummary::add_stat function (e.g. illness).
 #'
-#' @param ... Names of TRUE/FALSE variables as exposures of interest (e.g. risk
-#'   factors)
-#'   #' @return a long or wide tibble with tabulations n, ci, and deff
+#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat function
+#'   (e.g. illness).
 #'
+#' @param ... additional params that may be passed from gtsummary functions.
 #'
+#' @return a single row gtsummary object with case fatality rate results for
+#' deaths, cases, cfr, and 95% confidence interval.
+#'
+#' @rdname gtsummary_wrappers
+#' @export
 #'
 add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
 
@@ -29,6 +38,26 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
 }
 
 
+#' A case fatality rate wrapper function to be passed to the gtsummary::add_stat function,
+#' which returns a data frame with multiple rows to be used when location is set
+#' to "level" for multi-level categorical data. Calls epikit::case_fatality_rate_df.
+#'
+#' @param data A data frame, passed by the gtsummary::add_stat function.
+#'
+#' @param variable Name of a variable as the outcome of interest, passed by the
+#' gtsummary::add_stat function (e.g. illness).
+#'
+#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat
+#' function (e.g. illness).
+#'
+#' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @return a single row or multiple row gtsummary object with with case fatality
+#' rate results for deaths, cases, cfr, and 95% confidence interval.
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
 add_gt_cfr_stat_level <- function(data, variable, by, ...) {
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
@@ -60,6 +89,25 @@ add_gt_cfr_stat_level <- function(data, variable, by, ...) {
 
 }
 
+#' An attack rate wrapper function to be passed to the gtsummary::add_stat
+#' function, which returns a data frame with a single row to be used with
+#' dichotomous data or overall data. Calls epikit::attack_rate.
+#'
+#' @param data A data frame, passed by the gtsummary::add_stat function.
+#'
+#' @param variable Name of a variable as the outcome of interest, passed by the
+#' gtsummary::add_stat function (e.g. illness).
+#'
+#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat function
+#'   (e.g. illness).
+#'
+#' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @return a single row gtsummary object with with attack rate results with
+#' cases, attack rate, and 95% confidence interval.
+#'
+#' @rdname gtsummary_wrappers
+#' @export
 
 add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
   if(is.null(data$population)) {
@@ -83,16 +131,36 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
                             population = population,
                             multiplier = multiplier)
 
+  ar_label <- paste0("AR (per ", multiplier, ")")
   ar %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     rename("Cases (n)" = cases,
-           "AR (per 10,000)" = ar,
+           ar_label = ar,
            "95%CI" = ci) %>%
     select(-population) %>% # drop the population column as it is not changing
     tibble::tibble()
 }
 
-
+#' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
+#' which returns a data frame with multiple rows to be used when location is set
+#' to "level" for multi-level categorical data. Calls epikit::attack_rate.
+#'
+#' @param data A data frame, passed by the gtsummary::add_stat function.
+#'
+#' @param variable Name of a variable as the outcome of interest, passed by the
+#' gtsummary::add_stat function (e.g. illness)
+#'
+#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat
+#' function (e.g. illness).
+#'
+#' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @return a single-row gtsummary object with attack rate results cases,
+#' population, attack rate, and 95% confidence interval.
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
 add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
   if(is.null(data$population)) {
     stop("`population` column, stratified by variable required")
@@ -114,28 +182,52 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
                       population = cases$population,
                       multiplier = multiplier) %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-    # dplyr::add_row(cases = NA, .before = 1) %>%
+
+    ar_label <- paste0("AR (per ", multiplier, ")")
     rename("Cases (n)" = cases,
            "Population" = population,
-           "AR (per 10,000)" = ar,
+           ar_label = ar,
            "95%CI" = ci) %>%
     tibble::tibble()
 }
 
+#' A gtsummary wrapper function that takes a tbl_uvregression gtsummary object
+#' and adds count and percentage columns.
+#'
+#' @param gt_object A data frame, passed by the gtsummary::add_stat function
 
+#' @return a tbl_merge gtsummary object with counts, percentage columns, and results
+#' of univariate regression.
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
 merge_gt_univar_counts <- function(gt_object) {
   gt_data <- gt_object$inputs$data
   by <- gt_object$inputs$y
   ## produce counts for each of the variables of interest
   cross_tab <- gt_data %>%
-    gtsummary::tbl_summary(by = by)
+    gtsummary::tbl_summary(
+      by = by,
+      digits = list(gtsummary::all_categorical() ~ c(0, 1)))
   ## combine for a full table
   gtsummary::tbl_merge(list(cross_tab, gt_object)) %>%
     gtsummary::modify_spanning_header(gtsummary::everything() ~ NA_character_) %>%
-    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ by)
+    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ all_of(by))
 }
 
+#' A gtsummary wrapper function that takes a gtsummary object and removes a
+#' column from the table body by column name
+#'
+#' @param gt_object A data frame, passed by the gtsummary::add_stat function
+#'
+#' @param col_name the column name from the gtsummary object's table_body to remove
 
+#' @return a gtsummary object without the named column
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
 gt_remove_stat <- function(gt_object, col_name = "stat_0") {
   gt_object %>% gtsummary::modify_table_body(
     ~ .x %>%
