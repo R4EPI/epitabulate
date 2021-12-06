@@ -239,12 +239,11 @@ test_that("cfr calculation returns gtsummary object and correct results for a si
     gtsummary::tbl_summary(
       statistic = everything() ~ "",
       label = DIED ~ "All participants") %>%
+    # Remove stat column from gt summary (default "n (%) column)
+    gt_remove_stat() %>%
+    # Use add stat to add attack rate by label
     gtsummary::add_stat(
       fns = list(gtsummary::everything() ~ add_gt_cfr_stat_label)
-    ) %>%
-    gtsummary::modify_table_body(
-      ~ .x %>%
-        dplyr::mutate(stat_0 = NULL)
     )
   cfr_df <- gt_cfr$table_body
 
@@ -303,17 +302,22 @@ test_that("cfr calculation returns gtsummary object and correct results for a re
 test_that("attack rate calculation returns gtsummary object and correct results for a single result", {
   # Works like add_stat - for those who want to have more control and fully customize
 
+  # calculate population total from population table
+  population_total <- sum(population_data_age$population)
+
+  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
+  #   mutate(population = population) # population data totdal
+
   expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
     merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::mutate(cases = 1, population = population, multiplier = 10000) %>%
+    dplyr::mutate(cases = 1, population = population_total, multiplier = 10000) %>%
     dplyr::select(cases, population, multiplier) %>%
     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
-      include = cases,
-      label = cases ~ "All participants") %>%
+      include = cases) %>%
     # Remove stat column from gt summary (default "n (%) column)
     gt_remove_stat() %>%
     # Use add stat to add attack rate by label
@@ -321,6 +325,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       fns = list(gtsummary::everything() ~ add_gt_attack_rate_label)
     )
 
+  gt_ar
   ar_df <- gt_ar$table_body
 
   expect_s3_class(gt_ar, "gtsummary")
@@ -342,16 +347,55 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     # add the epiweek column to table
     bind_cols(select(cases, age_group), .)
 
-  # FILL IN!
+  gt_ar <- linelist_cleaned %>%
+    # Add population and multiplier to data frame (can't pass args to add_stat)
+    dplyr::mutate(cases = 1, population = population, multiplier = 10000) %>%
+    dplyr::select(cases, age_group, population, multiplier) %>%
+    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    gtsummary::tbl_summary(
+      include = age_group) %>%
+    # Remove stat column from gt summary (default "n (%) column)
+    gt_remove_stat() %>%
+    # Use add stat to add attack rate by level
+    gtsummary::add_stat(
+      fns = list(gtsummary::everything() ~ add_gt_attack_rate_level) ,
+      location = everything() ~ "level")
   # function: add_gt_attack_rate_level
 
   ar_df <- gt_ar$table_body
 
   expect_s3_class(gt_ar, "gtsummary")
-  expect_equal(ar_df$`Cases (n)`, expected_ar$cases)
-  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
-  expect_equal(ar_df$`95%CI`, expected_ar$ci)
+  expect_equal(ar_df$`Cases (n)`[-1], expected_ar$cases)
+  expect_equal(ar_df$`AR (per 10,000)`[-1], expected_ar$ar)
+  expect_equal(ar_df$`95%CI`[-1], expected_ar$ci)
 })
+
+#
+# test_that("attack rate add_stat by level returns error if population column is not present", {
+#   # Works like gtsummary::add_stat - for those who want to have more control and fully customize
+#
+#   # FILL IN!
+#   call_ar_fn  <- function(){
+#
+#     linelist_cleaned %>%
+#       # Add population and multiplier to data frame (can't pass args to add_stat)
+#       dplyr::mutate(cases = 1, multiplier = 10000) %>%
+#       dplyr::select(cases, age_group, multiplier) %>%
+#       # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+#       gtsummary::tbl_summary(
+#         include = age_group) %>%
+#       # Remove stat column from gt summary (default "n (%) column)
+#       # gt_remove_stat() %>%
+#       # Use add stat to add attack rate by label
+#       gtsummary::add_stat(
+#         fns = list(gtsummary::everything() ~ add_gt_attack_rate_level)
+#       )
+#   }
+#
+#
+#
+#   testthat::expect_error(call_ar_fn())
+# })
 
 
 test_that("cfr calculation returns gtsummary object and correct results with any given variables", {
@@ -394,6 +438,10 @@ test_that("univariate regression with gtsummary returns counts with OR and RR", 
 })
 
 
+test_that("gt_remove_stat removes stat by column name", {
+
+
+})
 
 
 

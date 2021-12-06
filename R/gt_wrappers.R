@@ -62,14 +62,22 @@ add_gt_cfr_stat_level <- function(data, variable, by, ...) {
 
 
 add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
+  if(is.null(data$population)) {
+    stop("`population` column (equal to total population) required")
+  }
+
+  if(is.null(data$multiplier)) {
+    stop("`multiplier` column required")
+  }
+
+  if(!is.null(by)) {
+    warning("attack rate by strata is not currently available, ignoring `by` argument")
+  }
 
   population <- data$population[1]
   multiplier <- data$multiplier[1]
   cases <- nrow(data)
 
-  if(!is.null(by)) {
-    warning("cfr by strata is not currently available, ignoring `by` argument")
-  }
 
   ar <- epikit::attack_rate(cases = cases,
                             population = population,
@@ -78,18 +86,40 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
   ar %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     rename("Cases (n)" = cases,
-           "Population" = population,
            "AR (per 10,000)" = ar,
            "95%CI" = ci) %>%
-    select(-Population) %>% # drop the population column as it is not changing
+    select(-population) %>% # drop the population column as it is not changing
     tibble::tibble()
 }
 
 
 add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
-  browser()
-  # population column required
+  if(is.null(data$population)) {
+    stop("`population` column, stratified by variable required")
+  }
 
+  if(is.null(data$multiplier)) {
+    stop("`multiplier` column required")
+  }
+
+  if(!is.null(by)) {
+    warning("attack rate by strata is not currently available, ignoring `by` argument")
+  }
+
+  multiplier <- data$multiplier[1]
+  sym_var <- as.symbol(variable)
+  cases <- count(data, !!rlang::enquo(sym_var), population)
+
+  epikit::attack_rate(cases = cases$n,
+                      population = cases$population,
+                      multiplier = multiplier) %>%
+    merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
+    # dplyr::add_row(cases = NA, .before = 1) %>%
+    rename("Cases (n)" = cases,
+           "Population" = population,
+           "AR (per 10,000)" = ar,
+           "95%CI" = ci) %>%
+    tibble::tibble()
 }
 
 
