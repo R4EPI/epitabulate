@@ -127,18 +127,17 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
   cases <- nrow(data)
 
 
+  ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
+  cols_rename <- setNames("ar", ar_label)
+
   ar <- epikit::attack_rate(cases = cases,
                             population = population,
-                            multiplier = multiplier)
-
-  ar_label <- paste0("AR (per ", multiplier, ")")
-  ar %>%
+                            multiplier = multiplier) %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     rename("Cases (n)" = cases,
-           ar_label = ar,
            "95%CI" = ci) %>%
-    select(-population) %>% # drop the population column as it is not changing
-    tibble::tibble()
+    rename(all_of(cols_rename)) %>%
+    select(-population) # drop the population column as it is not changing
 }
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
@@ -177,18 +176,17 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
   multiplier <- data$multiplier[1]
   sym_var <- as.symbol(variable)
   cases <- count(data, !!rlang::enquo(sym_var), population)
+  ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
+  cols_rename <- setNames("ar", ar_label)
 
   epikit::attack_rate(cases = cases$n,
                       population = cases$population,
                       multiplier = multiplier) %>%
     merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-
-    ar_label <- paste0("AR (per ", multiplier, ")")
     rename("Cases (n)" = cases,
            "Population" = population,
-           ar_label = ar,
            "95%CI" = ci) %>%
-    tibble::tibble()
+    rename(all_of(cols_rename))
 }
 
 #' A gtsummary wrapper function that takes a tbl_uvregression gtsummary object

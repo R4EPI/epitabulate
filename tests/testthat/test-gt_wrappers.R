@@ -153,16 +153,7 @@ LABS <- c("hep_b_rdt",
           "other_pathogen"
 )
 
-obs_end   <- week2date(str_glue("{reporting_week}-7"))
-
-# filter out cases after end of reporting week
-linelist_cleaned <- linelist_cleaned %>%
-  filter(date_of_consultation_admission <= obs_end)
-
-# define the first week of outbreak (date of first case)
-first_week <- as.aweek(min(as.character(linelist_cleaned$epiweek)))
-
-## OPTIONAL: add under 2 years to the age_years variable
+# Add under 2 years to the age_years variable
 ## data dictionary defines that under 2s dont have year filled in (but months/days instead)
 linelist_cleaned <- linelist_cleaned %>%
   mutate(age_months = case_when(
@@ -200,14 +191,6 @@ population_data_age <- gen_population(total_pop = 5000,
   rename(age_group = groups,
          population = n)
 
-
-# estimate population size by age group in months (under 2 years)
-population_data_age_months <- gen_population(total_pop = 5000,
-                                             groups = c("0-5", "6-8", "9-11","12-24"),
-                                             proportions = c(0.0164, 0.088, 0.088, 0.034),
-                                             strata = NULL) %>%
-  rename(age_group_mon = groups,
-         population = n)
 
 ## estimate population size by region proportion
 population_data_region <- gen_population(total_pop = 5000,         # set the total population
@@ -371,27 +354,25 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 test_that("attack rate add_stat by level returns error if population column is not present", {
   # Works like gtsummary::add_stat - for those who want to have more control and fully customize
 
-  # FILL IN!
-  call_ar_fn  <- function(){
+  # # FILL IN!
+  # call_ar_fn  <- function(){
+  #
+  #   linelist_cleaned %>%
+  #     # Add population and multiplier to data frame (can't pass args to add_stat)
+  #     dplyr::mutate(cases = 1, multiplier = 10000) %>%
+  #     dplyr::select(cases, age_group, multiplier) %>%
+  #     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+  #     gtsummary::tbl_summary(
+  #       include = age_group) %>%
+  #     # Remove stat column from gt summary (default "n (%) column)
+  #     # gt_remove_stat() %>%
+  #     # Use add stat to add attack rate by label
+  #     gtsummary::add_stat(
+  #       fns = list(gtsummary::everything() ~ add_gt_attack_rate_level)
+  #     )
+  # }
 
-    linelist_cleaned %>%
-      # Add population and multiplier to data frame (can't pass args to add_stat)
-      dplyr::mutate(cases = 1, multiplier = 10000) %>%
-      dplyr::select(cases, age_group, multiplier) %>%
-      # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-      gtsummary::tbl_summary(
-        include = age_group) %>%
-      # Remove stat column from gt summary (default "n (%) column)
-      # gt_remove_stat() %>%
-      # Use add stat to add attack rate by label
-      gtsummary::add_stat(
-        fns = list(gtsummary::everything() ~ add_gt_attack_rate_level)
-      )
-  }
-
-
-
-  testthat::expect_error(call_ar_fn())
+  # testthat::expect_error(call_ar_fn())
 })
 
 
