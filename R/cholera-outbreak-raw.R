@@ -549,30 +549,34 @@ gtcfrageall
 # by level age_cfr  ---------------------
 
 add_cfr_stat_level <- function(data, variable, by, ...) {
-  browser()
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
   }
 
-  if(!is.null(by)) {
-    by_sym <- as.symbol(by)
-  }
-  gt_dt <- tb$table_body
-  var_levels <- gt_dt %>%
-    dplyr::filter(!is.na(stat_0)$
+  variable_ <- variable
 
   tb <- list(...)$tbl
-  browser()
+  gt_dt <- tb$table_body
+  var_dt <- gt_dt %>%
+    dplyr::filter(variable %in% c("sex") & !is.na(stat_0))
+  var_levels <- unique(var_dt$label)
+
   by_sym <- as.symbol("sex")
   deaths_var <- data$deaths_var[1]
+  deaths <- data[[deaths_var]]
   var <- rlang::enquo(variable)
   var_sym <- as.symbol("sex")
-  # by_sym <- as.symbol(by)
+  qvariable <- rlang::enquo(var_sym)
+
+
   stat_new <- data %>%
     case_fatality_rate_df(
       deaths = deaths,
       group = var_sym,
-      mergeCI = TRUE)
+      mergeCI = TRUE) %>%
+    dplyr::filter(!!qvariable %in% var_levels) %>%
+    select(deaths, population, cfr, ci)
+
 #
 #
 #   data <- data %>%
