@@ -1,5 +1,6 @@
 # gtsummary and epikit wrapper functions
 
+
 #' A case fatality rate wrapper function to be passed to the gtsummary::add_stat
 #' function, which returns a data frame with a single row to be used with
 #' dichotomous data or overall data.Calls epikit::case_fatality_rate_df.
@@ -18,10 +19,12 @@
 #' deaths, cases, cfr, and 95% confidence interval.
 #'
 #' @rdname gtsummary_wrappers
+#' @import dplyr
 #' @export
 #'
 add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
-
+  # Declare local variables for CMD check
+  deaths <- population <- cfr <- ci <- NULL
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
   }
@@ -31,7 +34,7 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
       deaths = data[[variable]],
       mergeCI = TRUE) %>%
     dplyr::mutate(deaths = as.integer(deaths)) %>%
-    rename("Deaths" = deaths,
+    dplyr::rename("Deaths" = deaths,
            "Cases" = population,
            "CFR (%)" = cfr,
            "95%CI" = ci)
@@ -58,7 +61,9 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
 #' @rdname gtsummary_wrappers
 #' @export
 #'
-add_gt_cfr_stat_level <- function(data, variable, by, ...) {
+add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
+  # Declare local variables for CMD check
+  stat_0 <- deaths <- population <- cfr <- ci <- NULL
   if(!is.null(by)) {
     warning("cfr by strata is not currently available, ignoring `by` argument")
   }
@@ -71,19 +76,19 @@ add_gt_cfr_stat_level <- function(data, variable, by, ...) {
     dplyr::filter(variable %in% variable & !is.na(stat_0))
   var_levels <- unique(var_dt$label)
 
-  deaths_var <- data$deaths_var[1]
-  deaths <- data[[deaths_var]]
-  var <- rlang::enquo(variable)
+  # create rlang::enquo objects to use in epikit::case_fatality_rate_df
+  deaths_sym <- as.symbol(deaths_var)
+  qdeaths <- rlang::enquo(deaths_sym)
   var_sym <- as.symbol(variable)
   qvariable <- rlang::enquo(var_sym)
 
-
   stat_new <- data %>%
-    epikit::case_fatality_rate_df(deaths = DIED, group = !!qvariable, mergeCI = TRUE) %>%
+    epikit::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
     dplyr::filter(!!qvariable %in% var_levels) %>%
-    select(deaths, population, cfr, ci) %>%
-    rename("Deaths" = deaths,
-           "Cases" = population,
+    dplyr::mutate(deaths = gtsummary::style_number(deaths, digits = 0)) %>%
+    dplyr::select(deaths, cfr, ci) %>%
+    dplyr::rename("Deaths" = deaths,
+           # "Cases" = population,
            "CFR (%)" = cfr,
            "95%CI" = ci)
 
@@ -109,7 +114,9 @@ add_gt_cfr_stat_level <- function(data, variable, by, ...) {
 #' @rdname gtsummary_wrappers
 #' @export
 
-add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
+add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multiplier, ...) {
+  # Declare local variables for CMD check
+  cases <- population <- ci <- NULL
   if(is.null(data$population)) {
     stop("`population` column (equal to total population) required")
   }
@@ -133,11 +140,11 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
   ar <- epikit::attack_rate(cases = cases,
                             population = population,
                             multiplier = multiplier) %>%
-    merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-    rename("Cases (n)" = cases,
+    epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
+    dplyr::rename("Cases (n)" = cases,
            "95%CI" = ci) %>%
-    rename(all_of(cols_rename)) %>%
-    select(-population) # drop the population column as it is not changing
+    dplyr::rename(dplyr::all_of(cols_rename)) %>%
+    dplyr::select(-population) # drop the population column as it is not changing
 }
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
@@ -161,6 +168,9 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, ...) {
 #' @export
 #'
 add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
+  # Declare local variables for CMD check
+  cases <- population <- ci <- NULL
+
   if(is.null(data$population)) {
     stop("`population` column, stratified by variable required")
   }
@@ -173,6 +183,8 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
     warning("attack rate by strata is not currently available, ignoring `by` argument")
   }
 
+
+
   multiplier <- data$multiplier[1]
   sym_var <- as.symbol(variable)
   cases <- count(data, !!rlang::enquo(sym_var), population)
@@ -182,11 +194,11 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
   epikit::attack_rate(cases = cases$n,
                       population = cases$population,
                       multiplier = multiplier) %>%
-    merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-    rename("Cases (n)" = cases,
+    epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
+    dplyr::rename("Cases (n)" = cases,
            "Population" = population,
            "95%CI" = ci) %>%
-    rename(all_of(cols_rename))
+    dplyr::rename(dplyr::all_of(cols_rename))
 }
 
 #' A gtsummary wrapper function that takes a tbl_uvregression gtsummary object
@@ -211,7 +223,7 @@ merge_gt_univar_counts <- function(gt_object) {
   ## combine for a full table
   gtsummary::tbl_merge(list(cross_tab, gt_object)) %>%
     gtsummary::modify_spanning_header(gtsummary::everything() ~ NA_character_) %>%
-    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ all_of(by))
+    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ gtsummary::all_of(by))
 }
 
 #' A gtsummary wrapper function that takes a gtsummary object and removes a
@@ -229,7 +241,7 @@ merge_gt_univar_counts <- function(gt_object) {
 gt_remove_stat <- function(gt_object, col_name = "stat_0") {
   gt_object %>% gtsummary::modify_table_body(
     ~ .x %>%
-      dplyr::select(-all_of(col_name)))
+      dplyr::select(-dplyr::all_of(col_name)))
 }
 
 

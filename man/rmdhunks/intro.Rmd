@@ -1,5 +1,5 @@
 
-The {epibuffet} package produces tables for descriptive epidemiological analysis.
+The {epitabulate} package produces tables for descriptive epidemiological analysis.
 It contains four functions:
 
  - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
@@ -9,13 +9,13 @@ It contains four functions:
 
 ## Installation
 
-{epibuffet} is currently under development, but you can keep up-to-date by
+{epitabulate} is currently under development, but you can keep up-to-date by
 installing it from the R4EPIs drat repository:
 
 ```{r eval = FALSE}
 # install.packages("drat")
 drat::addRepo("R4EPI")
-install.packages("epibuffet")
+install.packages("epitabulate")
 ```
 
 You can also install the in-development version from GitHub using the {remotes}
@@ -23,6 +23,6 @@ package (but there's no guarantee that it will be stable):
 
 ```{r eval = FALSE}
 # install.packages("remotes")
-remotes::install_github("R4EPI/epibuffet") 
+remotes::install_github("R4EPI/epitabulate") 
 ```
 

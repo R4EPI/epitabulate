@@ -1,7 +1,7 @@
 
 # Examples
 
-Here is an example of the tables produced by {epibuffet} from a randomly
+Here is an example of the tables produced by {epitabulate} from a randomly
 generated data set based on an MSF data dictionary for Measles data. 
 
 ```{r example}
@@ -9,7 +9,7 @@ library(epidict)
 library(matchmaker)
 library(epikit)
 library(dplyr)
-library(epibuffet)
+library(epitabulate)
 
 linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
 measles_dict <- epidict::msf_dict("Measles", compact = FALSE)

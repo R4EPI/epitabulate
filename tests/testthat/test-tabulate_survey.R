@@ -340,7 +340,7 @@ test_that("values are sensible in a transposition", {
 
 test_that("tab_survey fails when there is only one group and missing data", {
 
-  # https://github.com/R4EPI/epibuffet/issues/12
+  # https://github.com/R4EPI/epitabulate/issues/12
   dummy <- tibble::tibble(
     banana = sample(c("eat", NA), 100, replace = TRUE),
     weight = sample(1:3, 100, replace = TRUE)

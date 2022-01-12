@@ -15,7 +15,6 @@ required_packages <- c("knitr",       # create output docs
                        "matchmaker",  # dictionary-based standardization of variables
                        "incidence",   # create epicurves
                        "aweek",       # define epi weeks
-                       "epitrix",     # epi helpers and tricks
                        "sf",          # encode spatial vector data
                        "ggspatial",   # plot maps
                        "testthat"     # testing functions
@@ -43,10 +42,10 @@ linelist_cleaned <- linelist_raw
 ## Clean column names
 
 ## define clean variable names using clean_labels from the epitrix package
-cleaned_colnames <- epitrix::clean_labels(colnames(linelist_raw))
-
-## overwrite variable names with defined clean names
-colnames(linelist_cleaned) <- cleaned_colnames
+# cleaned_colnames <- epitrix::clean_labels(colnames(linelist_raw))
+#
+# ## overwrite variable names with defined clean names
+# colnames(linelist_cleaned) <- cleaned_colnames
 
 linelist_cleaned <- matchmaker::match_df(linelist_cleaned,
                                          dict  = linelist_dict,
@@ -177,9 +176,6 @@ linelist_cleaned$age_group <- age_categories(linelist_cleaned$age_years,
 
 #
 linelist_cleaned$gender <- factor(linelist_cleaned$sex, levels = c("Male", "Female"))
-# outbreak start
-# return the first day in the week of first case
-obs_start <- as.Date(first_week)
 
 
 # Population data
@@ -244,20 +240,21 @@ test_that("cfr calculation returns gtsummary object and correct results for a re
 
   gt_cfr <- linelist_cleaned %>%
     dplyr::filter(patient_facility_type == "Inpatient") %>%
-    dplyr::select(case_number, DIED, gender) %>%
-    # deaths_var needs to be added:
-        # Cannot pass add_cfr_stat_level any arguments without losing access to data and
-        # to data and variable or breaking ouputs
+    dplyr::select(DIED, gender) %>%
     dplyr::mutate(deaths_var = "DIED") %>%
     gtsummary::tbl_summary(
       include = gender,
+      statistic = gender ~ "{n}",
       missing = "no",
-      label = gender ~ "Gender") %>%
-    # gt_remove_stat() %>%
+      label = gender ~ "Gender"
+      ) %>%
     gtsummary::add_stat(
-      fns = list(gtsummary::everything() ~ add_gt_cfr_stat_level),
+      # add purrr::partial with function name and required argument `deaths_var`
+      fns = gtsummary::everything() ~ purrr::partial(
+        add_gt_cfr_stat_level, deaths_var = "DIED"),
       location = gtsummary::everything() ~ "level"
     )
+
   cfr_df <- gt_cfr$table_body
 
   male_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Male")
@@ -268,8 +265,8 @@ test_that("cfr calculation returns gtsummary object and correct results for a re
 
 
   expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(male_cfr$Deaths, male_exp_cfr$deaths)
-  expect_equal(female_cfr$Cases, female_exp_cfr$population)
+  expect_equal(as.numeric(male_cfr$Deaths), male_exp_cfr$deaths)
+  expect_equal(as.numeric(female_cfr$stat_0), female_exp_cfr$population)
   expect_equal(male_cfr$`CFR (%)`, male_exp_cfr$cfr)
   expect_equal(female_cfr$`95%CI`, female_exp_cfr$ci)
 
@@ -286,21 +283,22 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   #   mutate(population = population) # population data totdal
 
   expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
-    merge_ci_df(e = 3)
+    epikit::merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
-    # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::mutate(cases = 1, population = population_total, multiplier = 10000) %>%
-    dplyr::select(cases, population, multiplier) %>%
+    dplyr::mutate(case = 1) %>%
+    dplyr::select(case) %>%
     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
-      include = cases) %>%
+      include = case) %>%
     # Remove stat column from gt summary (default "n (%) column)
     gt_remove_stat() %>%
     # Use add stat to add attack rate by label
     gtsummary::add_stat(
-      fns = list(gtsummary::everything() ~ add_gt_attack_rate_label)
-    )
+      # Add population and multiplier in purrr::partial
+      fns = gtsummary::everything() ~ purrr::partial(
+        add_gt_attack_rate_label, population = population_total, multiplier = 10000
+    ))
 
   gt_ar
   ar_df <- gt_ar$table_body
@@ -376,17 +374,23 @@ test_that("attack rate add_stat by level returns error if population column is n
 })
 
 
-test_that("cfr calculation returns gtsummary object and correct results with any given variables", {
+test_that("cfr calculation returns gtsummary object and correct results with any given categorical variables", {
   # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
   # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
   # function: add_gt_case_fatality_rate
+
+  # linelist <-
+  #   gtsummary_case_fatality_rate()
 })
 
 
-test_that("cfr calculation returns gtsummary object and correct results with any given variables", {
+test_that("attack rate calculation returns gtsummary object and correct results with any given categorical variables", {
   # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
   # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
   # function: add_gt_attack_rate
+
+  # listlist <-
+  #   gtsummary_attack_rate()
 })
 
 test_that("univariate regression with gtsummary returns counts with OR and RR", {
