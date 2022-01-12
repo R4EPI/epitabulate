@@ -85,7 +85,8 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
   stat_new <- data %>%
     epikit::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
     dplyr::filter(!!qvariable %in% var_levels) %>%
-    dplyr::mutate(deaths = gtsummary::style_number(deaths, digits = 0)) %>%
+    dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
+    dplyr::mutate(cfr =  formatC(cfr, digits = 2, format = "f")) %>%
     dplyr::select(deaths, cfr, ci) %>%
     dplyr::rename("Deaths" = deaths,
            # "Cases" = population,
@@ -116,21 +117,21 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 
 add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multiplier, ...) {
   # Declare local variables for CMD check
-  cases <- population <- ci <- NULL
-  if(is.null(data$population)) {
-    stop("`population` column (equal to total population) required")
+  cases <- ci <- NULL
+  if(is.null(population)) {
+    stop("`population` argument (equal to total population) required")
   }
 
-  if(is.null(data$multiplier)) {
-    stop("`multiplier` column required")
+  if(is.null(multiplier)) {
+    stop("`multiplier` argument required")
   }
 
   if(!is.null(by)) {
     warning("attack rate by strata is not currently available, ignoring `by` argument")
   }
 
-  population <- data$population[1]
-  multiplier <- data$multiplier[1]
+  # population <- data$population[1]
+  # multiplier <- data$multiplier[1]
   cases <- nrow(data)
 
 
@@ -141,10 +142,13 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multip
                             population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-    dplyr::rename("Cases (n)" = cases,
-           "95%CI" = ci) %>%
+    dplyr::rename(
+      # "Cases (n)" = cases,
+      "95%CI" = ci) %>%
     dplyr::rename(dplyr::all_of(cols_rename)) %>%
-    dplyr::select(-population) # drop the population column as it is not changing
+    # drop the population column as it is not changing,
+      # and drop cases as it's in the statistic of gtsummary
+    dplyr::select(-c(population, cases))
 }
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
@@ -167,38 +171,43 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multip
 #' @rdname gtsummary_wrappers
 #' @export
 #'
-add_gt_attack_rate_level <- function(data, variable, by=NULL, ...) {
+add_gt_attack_rate_level <- function(data, variable, population, multiplier, by=NULL, ...) {
   # Declare local variables for CMD check
-  cases <- population <- ci <- NULL
+  cases <- ci <- NULL
 
-  if(is.null(data$population)) {
-    stop("`population` column, stratified by variable required")
+  if(is.null(population)) {
+    stop("`population` argument, stratified by variable required")
   }
 
-  if(is.null(data$multiplier)) {
-    stop("`multiplier` column required")
+  if(is.null(multiplier)) {
+    stop("`multiplier` argument required")
   }
 
   if(!is.null(by)) {
     warning("attack rate by strata is not currently available, ignoring `by` argument")
   }
 
-
-
-  multiplier <- data$multiplier[1]
   sym_var <- as.symbol(variable)
-  cases <- count(data, !!rlang::enquo(sym_var), population)
+  cases <- count(data, !!rlang::enquo(sym_var))
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
 
+  if(length(population) != nrow(cases)) {
+    stop("`population` argument, must have a value for each category in variable")
+  }
+
   epikit::attack_rate(cases = cases$n,
-                      population = cases$population,
+                      population = population,
                       multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
-    dplyr::rename("Cases (n)" = cases,
+    dplyr::rename(
+           # "Cases (n)" = cases,
            "Population" = population,
            "95%CI" = ci) %>%
-    dplyr::rename(dplyr::all_of(cols_rename))
+    # Addresses a cmd check
+    dplyr::rename(dplyr::all_of(cols_rename)) %>%
+    # drop cases as it's in the statistic of gtsummary
+    dplyr::select(-c(cases))
 }
 
 #' A gtsummary wrapper function that takes a tbl_uvregression gtsummary object
