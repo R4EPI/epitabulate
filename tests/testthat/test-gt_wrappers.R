@@ -425,7 +425,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
   expected_cfr_all <- linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
     case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-    mutate(cfr = formatC(cfr, digits = 2, format = "f"))
+    mutate(cfr = formatC(cfr, digits = 0, format = "f"))
   expected_cfr <-  linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
     epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
@@ -435,9 +435,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
     dplyr::filter(patient_facility_type == "Inpatient") %>%
     dplyr::select(DIED, gender) %>%
     gtsummary::tbl_summary(
-      # include = c(gender,
       statistic = list(DIED ~ "{N}", gender ~ "{n}"),
-      # missing = "no",
       label = list(gender ~ "Gender", DIED ~ "All participants")
     ) %>%
     # Use wrapper function to calculate cfr
@@ -445,21 +443,19 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
 
   cfr_df <- gt_cfr$table_body
 
-  all_p <- cfr_df %>% dplyr::filter(variable == "DIED")
-
+  all_participants <- cfr_df %>% dplyr::filter(variable == "DIED")
   male_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Male")
   female_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Female")
 
   male_cfr <- cfr_df %>% dplyr::filter(label == "Male")
   female_cfr <- cfr_df %>% dplyr::filter(label == "Female")
 
-
   expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(all_p$`CFR (%)`, expected_cfr_all$cfr)
   expect_equal(as.numeric(male_cfr$Deaths), male_exp_cfr$deaths)
   expect_equal(as.numeric(female_cfr$stat_0), female_exp_cfr$population)
   expect_equal(male_cfr$`CFR (%)`, male_exp_cfr$cfr)
   expect_equal(female_cfr$`95%CI`, female_exp_cfr$ci)
+  expect_equal(all_participants$`CFR (%)`, expected_cfr_all$cfr)
 
 })
 

@@ -33,7 +33,7 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
     epikit::case_fatality_rate_df(
       deaths = data[[variable]],
       mergeCI = TRUE) %>%
-    dplyr::mutate(deaths = formatC(deaths, digits = 2, format = "f")) %>%
+    dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
     dplyr::mutate(cfr = formatC(cfr, digits = 2, format = "f")) %>%
     dplyr::rename("Deaths" = deaths,
            # "Cases" = population,
@@ -259,7 +259,6 @@ gt_remove_stat <- function(gt_object, col_name = "stat_0") {
 
 
 gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
-  browser()
 
   summary_types <- unique(gts_object$meta_data$summary_type)
 
@@ -276,10 +275,11 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>% gtsummary::add_stat(
       # add purrr::partial with function name and required argument `deaths_var`
-      fns = list( DIED ~ add_gt_cfr_stat_label,
-                  gender ~ purrr::partial(
-        add_gt_cfr_stat_level, deaths_var = deaths_var)),
-      location = gender ~ "level"
+      fns = list( gtsummary::all_categorical() ~ purrr::partial(
+        add_gt_cfr_stat_level, deaths_var = deaths_var),
+        gtsummary::all_dichotomous() ~ add_gt_cfr_stat_label),
+      location = list(gtsummary::all_categorical() ~ "level",
+                      gtsummary::all_dichotomous() ~ "label")
     )
   }
 
