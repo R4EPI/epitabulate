@@ -208,17 +208,16 @@ test_that("cfr calculation returns gtsummary object and correct results for a si
   # Works like gtsummary::add_stat - for those who want to have more control and fully customize
   expected_cfr <-  linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
-    case_fatality_rate_df(deaths = DIED, mergeCI = TRUE)
+    case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    mutate(cfr = formatC(cfr, digits = 2, format = "f"))
 
   gt_cfr <- linelist_cleaned %>%
     dplyr::filter(patient_facility_type == "Inpatient") %>%
     dplyr::select(DIED) %>%
     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
-      statistic = everything() ~ "",
+      statistic = everything() ~ "{N}",
       label = DIED ~ "All participants") %>%
-    # Remove stat column from gt summary (default "n (%) column)
-    gt_remove_stat() %>%
     # Use add stat to add attack rate by label
     gtsummary::add_stat(
       fns = list(gtsummary::everything() ~ add_gt_cfr_stat_label)
@@ -227,7 +226,7 @@ test_that("cfr calculation returns gtsummary object and correct results for a si
 
   expect_s3_class(gt_cfr, "gtsummary")
   expect_equal(cfr_df$Deaths, expected_cfr$deaths)
-  expect_equal(cfr_df$Cases, expected_cfr$population)
+  expect_equal(as.numeric(cfr_df$stat_0), expected_cfr$population)
   expect_equal(cfr_df$`CFR (%)`, expected_cfr$cfr)
   expect_equal(cfr_df$`95%CI`, expected_cfr$ci)
 })
@@ -352,13 +351,116 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 })
 
 
-test_that("cfr calculation returns gtsummary object and correct results with any given categorical variables", {
+test_that("cfr calculation returns gtsummary object and correct results with dichotomous variables", {
   # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
   # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
   # function: add_gt_case_fatality_rate
+  expected_cfr <-  linelist_cleaned %>%
+    filter(patient_facility_type == "Inpatient") %>%
+    case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    mutate(cfr = formatC(cfr, digits = 2, format = "f"))
 
-  # linelist <-
-  #   gtsummary_case_fatality_rate()
+  gt_cfr <- linelist_cleaned %>%
+    dplyr::filter(patient_facility_type == "Inpatient") %>%
+    dplyr::select(DIED) %>%
+    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    gtsummary::tbl_summary(
+      statistic = everything() ~ "{N}",
+      label = DIED ~ "All participants") %>%
+    # Use wrapper function to calculate cfr
+    gtsummary_case_fatality_rate(deaths_var = "DIED")
+  cfr_df <- gt_cfr$table_body
+
+  expect_s3_class(gt_cfr, "gtsummary")
+  expect_equal(cfr_df$Deaths, expected_cfr$deaths)
+  expect_equal(as.numeric(cfr_df$stat_0), expected_cfr$population)
+  expect_equal(cfr_df$`CFR (%)`, expected_cfr$cfr)
+  expect_equal(cfr_df$`95%CI`, expected_cfr$ci)
+})
+
+test_that("cfr calculation returns gtsummary object and correct results with categorical variables", {
+  # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
+  # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
+  # function: add_gt_case_fatality_rate
+  expected_cfr <-  linelist_cleaned %>%
+    filter(patient_facility_type == "Inpatient") %>%
+    epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
+    mutate(cfr = formatC(cfr, 2, format = "f"))
+
+  gt_cfr <- linelist_cleaned %>%
+    dplyr::filter(patient_facility_type == "Inpatient") %>%
+    dplyr::select(DIED, gender) %>%
+    dplyr::mutate(deaths_var = "DIED") %>%
+    gtsummary::tbl_summary(
+      include = gender,
+      statistic = gender ~ "{n}",
+      missing = "no",
+      label = gender ~ "Gender"
+    ) %>%
+    # Use wrapper function to calculate cfr
+    gtsummary_case_fatality_rate(deaths_var = "DIED")
+
+  cfr_df <- gt_cfr$table_body
+
+  male_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Male")
+  female_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Female")
+
+  male_cfr <- cfr_df %>% dplyr::filter(label == "Male")
+  female_cfr <- cfr_df %>% dplyr::filter(label == "Female")
+
+
+  expect_s3_class(gt_cfr, "gtsummary")
+  expect_equal(as.numeric(male_cfr$Deaths), male_exp_cfr$deaths)
+  expect_equal(as.numeric(female_cfr$stat_0), female_exp_cfr$population)
+  expect_equal(male_cfr$`CFR (%)`, male_exp_cfr$cfr)
+  expect_equal(female_cfr$`95%CI`, female_exp_cfr$ci)
+
+})
+
+
+test_that("cfr calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
+  # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
+  # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
+  # function: add_gt_case_fatality_rate
+  expected_cfr_all <- linelist_cleaned %>%
+    filter(patient_facility_type == "Inpatient") %>%
+    case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    mutate(cfr = formatC(cfr, digits = 2, format = "f"))
+  expected_cfr <-  linelist_cleaned %>%
+    filter(patient_facility_type == "Inpatient") %>%
+    epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
+    mutate(cfr = formatC(cfr, 2, format = "f"))
+
+  gt_cfr <- linelist_cleaned %>%
+    dplyr::filter(patient_facility_type == "Inpatient") %>%
+    dplyr::select(DIED, gender) %>%
+    gtsummary::tbl_summary(
+      # include = c(gender,
+      statistic = list(DIED ~ "{N}", gender ~ "{n}"),
+      # missing = "no",
+      label = list(gender ~ "Gender", DIED ~ "All participants")
+    ) %>%
+    # Use wrapper function to calculate cfr
+    gtsummary_case_fatality_rate(deaths_var = "DIED")
+
+  cfr_df <- gt_cfr$table_body
+
+  all_p <- cfr_df %>% dplyr::filter(variable == "DIED")
+
+  male_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Male")
+  female_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Female")
+
+  male_cfr <- cfr_df %>% dplyr::filter(label == "Male")
+  female_cfr <- cfr_df %>% dplyr::filter(label == "Female")
+
+
+  expect_s3_class(gt_cfr, "gtsummary")
+  expect_equal(all_p$`CFR (%)`, expected_cfr_all$cfr)
+  expect_equal(as.numeric(male_cfr$Deaths), male_exp_cfr$deaths)
+  expect_equal(as.numeric(female_cfr$stat_0), female_exp_cfr$population)
+  expect_equal(male_cfr$`CFR (%)`, male_exp_cfr$cfr)
+  expect_equal(female_cfr$`95%CI`, female_exp_cfr$ci)
+
 })
 
 

@@ -33,11 +33,13 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
     epikit::case_fatality_rate_df(
       deaths = data[[variable]],
       mergeCI = TRUE) %>%
-    dplyr::mutate(deaths = as.integer(deaths)) %>%
+    dplyr::mutate(deaths = formatC(deaths, digits = 2, format = "f")) %>%
+    dplyr::mutate(cfr = formatC(cfr, digits = 2, format = "f")) %>%
     dplyr::rename("Deaths" = deaths,
-           "Cases" = population,
+           # "Cases" = population,
            "CFR (%)" = cfr,
-           "95%CI" = ci)
+           "95%CI" = ci) %>%
+    dplyr::select(-population)
 }
 
 
@@ -63,36 +65,38 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
 #'
 add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
   # Declare local variables for CMD check
-  stat_0 <- deaths <- population <- cfr <- ci <- NULL
-  if(!is.null(by)) {
-    warning("cfr by strata is not currently available, ignoring `by` argument")
+
+  if(variable != deaths_var) {
+    stat_0 <- deaths <- population <- cfr <- ci <- NULL
+    if(!is.null(by)) {
+      warning("cfr by strata is not currently available, ignoring `by` argument")
+    }
+
+    variable_ <- variable
+
+    tb <- list(...)$tbl
+    gt_dt <- tb$table_body
+    var_dt <- gt_dt %>%
+      dplyr::filter(variable %in% variable & !is.na(stat_0))
+    var_levels <- unique(var_dt$label)
+
+    # create rlang::enquo objects to use in epikit::case_fatality_rate_df
+    deaths_sym <- as.symbol(deaths_var)
+    qdeaths <- rlang::enquo(deaths_sym)
+    var_sym <- as.symbol(variable)
+    qvariable <- rlang::enquo(var_sym)
+
+    stat_new <- data %>%
+      epikit::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
+      dplyr::filter(!!qvariable %in% var_levels) %>%
+      dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
+      dplyr::mutate(cfr =  formatC(cfr, digits = 2, format = "f")) %>%
+      dplyr::select(deaths, cfr, ci) %>%
+      dplyr::rename("Deaths" = deaths,
+                    # "Cases" = population,
+                    "CFR (%)" = cfr,
+                    "95%CI" = ci)
   }
-
-  variable_ <- variable
-
-  tb <- list(...)$tbl
-  gt_dt <- tb$table_body
-  var_dt <- gt_dt %>%
-    dplyr::filter(variable %in% variable & !is.na(stat_0))
-  var_levels <- unique(var_dt$label)
-
-  # create rlang::enquo objects to use in epikit::case_fatality_rate_df
-  deaths_sym <- as.symbol(deaths_var)
-  qdeaths <- rlang::enquo(deaths_sym)
-  var_sym <- as.symbol(variable)
-  qvariable <- rlang::enquo(var_sym)
-
-  stat_new <- data %>%
-    epikit::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
-    dplyr::filter(!!qvariable %in% var_levels) %>%
-    dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
-    dplyr::mutate(cfr =  formatC(cfr, digits = 2, format = "f")) %>%
-    dplyr::select(deaths, cfr, ci) %>%
-    dplyr::rename("Deaths" = deaths,
-           # "Cases" = population,
-           "CFR (%)" = cfr,
-           "95%CI" = ci)
-
 }
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat
@@ -251,6 +255,34 @@ gt_remove_stat <- function(gt_object, col_name = "stat_0") {
   gt_object %>% gtsummary::modify_table_body(
     ~ .x %>%
       dplyr::select(-dplyr::all_of(col_name)))
+}
+
+
+gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
+  browser()
+
+  summary_types <- unique(gts_object$meta_data$summary_type)
+
+  if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
+    gts_object %>%  gtsummary::add_stat(
+        fns = gtsummary::all_dichotomous() ~ add_gt_cfr_stat_label)
+  } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
+    gts_object %>% gtsummary::add_stat(
+        # add purrr::partial with function name and required argument `deaths_var`
+        fns = gtsummary::everything() ~ purrr::partial(
+          add_gt_cfr_stat_level, deaths_var = deaths_var),
+        location = gtsummary::everything() ~ "level"
+      )
+  } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
+    gts_object %>% gtsummary::add_stat(
+      # add purrr::partial with function name and required argument `deaths_var`
+      fns = list( DIED ~ add_gt_cfr_stat_label,
+                  gender ~ purrr::partial(
+        add_gt_cfr_stat_level, deaths_var = deaths_var)),
+      location = gender ~ "level"
+    )
+  }
+
 }
 
 
