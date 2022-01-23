@@ -119,7 +119,8 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 #' @rdname gtsummary_wrappers
 #' @export
 
-add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multiplier, ...) {
+add_gt_attack_rate_label <-
+  function(data, variable, by=NULL, population, multiplier, drop_population = TRUE, ...) {
   # Declare local variables for CMD check
   cases <- ci <- NULL
   if(is.null(population)) {
@@ -141,18 +142,23 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multip
 
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
-
   ar <- epikit::attack_rate(cases = cases,
                             population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     dplyr::rename(
-      # "Cases (n)" = cases,
+      "Population" = population,
       "95%CI" = ci) %>%
     dplyr::rename(dplyr::all_of(cols_rename)) %>%
-    # drop the population column as it is not changing,
-      # and drop cases as it's in the statistic of gtsummary
-    dplyr::select(-c(population, cases))
+    # and drop cases as it's in the statistic of gtsummary
+    dplyr::select(-cases)
+
+  if(drop_population){
+    # drop the population if specified (default)
+    ar <- ar %>% dplyr::select(-Population)
+  }
+
+  ar
 }
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
@@ -175,7 +181,7 @@ add_gt_attack_rate_label <- function(data, variable, by=NULL, population, multip
 #' @rdname gtsummary_wrappers
 #' @export
 #'
-add_gt_attack_rate_level <- function(data, variable, population, multiplier, by=NULL, ...) {
+add_gt_attack_rate_level <- function(data, variable, by=NULL, population, multiplier, ...) {
   # Declare local variables for CMD check
   cases <- ci <- NULL
 
@@ -190,7 +196,6 @@ add_gt_attack_rate_level <- function(data, variable, population, multiplier, by=
   if(!is.null(by)) {
     warning("attack rate by strata is not currently available, ignoring `by` argument")
   }
-
   sym_var <- as.symbol(variable)
   cases <- count(data, !!rlang::enquo(sym_var))
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
@@ -199,7 +204,6 @@ add_gt_attack_rate_level <- function(data, variable, population, multiplier, by=
   if(length(population) != nrow(cases)) {
     stop("`population` argument, must have a value for each category in variable")
   }
-  browser()
   epikit::attack_rate(cases = cases$n,
                       population = population,
                       multiplier = multiplier) %>%
@@ -287,7 +291,6 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 }
 
 gtsummary_attack_rate <- function(gts_object, population, multiplier) {
-
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
@@ -298,24 +301,26 @@ gtsummary_attack_rate <- function(gts_object, population, multiplier) {
         fns = gtsummary::everything() ~ purrr::partial(
           add_gt_attack_rate_label, population = population, multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
+
     gts_object %>%
       # Use add stat to add attack rate by level
       gtsummary::add_stat(
         fns = gtsummary::everything() ~ purrr::partial(
-          add_gt_attack_rate_level, population = population$population, multiplier = multiplier),
+          add_gt_attack_rate_level, population = population, multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    browser()
-    total_population <- sum(population$population)
-
+    total_population <- sum(population)
     gts_object %>%
     gtsummary::add_stat(
       # Add population and multiplier in purrr::partial
       fns = list(
         gtsummary::all_categorical() ~ purrr::partial(
-          add_gt_attack_rate_level, population = population$population, multiplier = multiplier),
+          add_gt_attack_rate_level, population = population, multiplier = multiplier),
         gtsummary::all_dichotomous() ~ purrr::partial(
-          add_gt_attack_rate_label, population = total_population, multiplier = multiplier)),
+          add_gt_attack_rate_label,
+          population = total_population,
+          multiplier = multiplier,
+          drop_population = FALSE)),
       location = list(
         gtsummary::all_categorical() ~ "level",
         gtsummary::all_dichotomous() ~ "label"

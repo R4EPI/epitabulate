@@ -225,7 +225,7 @@ test_that("cfr calculation returns gtsummary object and correct results for a si
   cfr_df <- gt_cfr$table_body
 
   expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(cfr_df$Deaths, expected_cfr$deaths)
+  expect_equal(as.numeric(cfr_df$Deaths), expected_cfr$deaths)
   expect_equal(as.numeric(cfr_df$stat_0), expected_cfr$population)
   expect_equal(cfr_df$`CFR (%)`, expected_cfr$cfr)
   expect_equal(cfr_df$`95%CI`, expected_cfr$ci)
@@ -316,13 +316,8 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
     left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
 
-  linelist_cleaned$population <- NULL
-  linelist_cleaned <- merge(linelist_cleaned, population_data_age, by = "age_group")
-
   # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE) %>%
-    # add the epiweek column to table
-    bind_cols(select(cases, age_group), .)
+  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
 
   gt_ar_lev <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
@@ -372,7 +367,7 @@ test_that("cfr calculation returns gtsummary object and correct results with dic
   cfr_df <- gt_cfr$table_body
 
   expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(cfr_df$Deaths, expected_cfr$deaths)
+  expect_equal(as.numeric(cfr_df$Deaths), expected_cfr$deaths)
   expect_equal(as.numeric(cfr_df$stat_0), expected_cfr$population)
   expect_equal(cfr_df$`CFR (%)`, expected_cfr$cfr)
   expect_equal(cfr_df$`95%CI`, expected_cfr$ci)
@@ -496,21 +491,17 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   # calculate population total from population table
   population_total <- sum(population_data_age$population)
 
-  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
-  #   mutate(population = population) # population data totdal
-
   expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
   pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
     left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
 
-  linelist_cleaned$population <- NULL
-  linelist_cleaned <- merge(linelist_cleaned, population_data_age, by = "age_group")
+  # linelist_cleaned$population <- NULL
+  # linelist_cleaned <- merge(linelist_cleaned, population_data_age, by = "age_group")
 
   # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE) %>%
-    # add the epiweek column to table
-    bind_cols(select(cases, age_group), .)
+  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
+
 
   gt_ar_lev <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
@@ -534,28 +525,20 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df_lev$`95%CI`[-1], expected_ar_lev$ci)
 })
 
-test_that("cfr calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
-  # calculate population total from population table
+test_that("attack rate calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
+  # calculate population total and population table by age from population data age table
   population_total <- sum(population_data_age$population)
-
-  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
-  #   mutate(population = population) # population data totdal
+  pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
+    left_join(population_data_age, by = "age_group") # merge population data (required
 
   expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
-    epikit::merge_ci_df(e = 3)
-
-  pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
-    left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
-
-  linelist_cleaned$population <- NULL
-  linelist_cleaned <- merge(linelist_cleaned, population_data_age, by = "age_group")
+    epikit::merge_ci_df(e = 3) %>%
+    dplyr::mutate(cases = as.character(cases))
 
   # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE) %>%
-    # add the epiweek column to table
-    bind_cols(select(cases, age_group), .)
+  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
 
-  gt_ar_lev <- linelist_cleaned %>%
+  gt_ar <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
     dplyr::mutate(cases = 1) %>%
     dplyr::select(cases, age_group) %>%
@@ -563,18 +546,21 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
       statistic = list(cases ~ "{N}", age_group ~ "{n}"),
       label = list(cases ~ "All participants", age_group ~ "Age Group")
     ) %>%
-    gtsummary_attack_rate(population = pop_table, multiplier = 10000)
+    gtsummary_attack_rate(population = pop_table$population, multiplier = 10000)
 
-})
+  ar_df <- gt_ar$table_body
 
+  expect_s3_class(gt_ar, "gtsummary")
 
-test_that("attack rate calculation returns gtsummary object and correct results with any given categorical variables", {
-  # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
-  # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
-  # function: add_gt_attack_rate
+  # Tests for dichotomous
+  expect_equal(ar_df$stat_0[1], expected_ar$cases)
+  expect_equal(ar_df$`AR (per 10,000)`[1], expected_ar$ar)
+  expect_equal(ar_df$`95%CI`[1], expected_ar$ci)
 
-  # listlist <-
-  #   gtsummary_attack_rate()
+  # Tests for categorical
+  expect_equal(as.numeric(ar_df$stat_0[-c(1,2)]), expected_ar_lev$cases)
+  expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
+  expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
 })
 
 test_that("univariate regression with gtsummary returns counts with OR and RR", {
