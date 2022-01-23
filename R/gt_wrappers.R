@@ -199,7 +199,7 @@ add_gt_attack_rate_level <- function(data, variable, population, multiplier, by=
   if(length(population) != nrow(cases)) {
     stop("`population` argument, must have a value for each category in variable")
   }
-
+  browser()
   epikit::attack_rate(cases = cases$n,
                       population = population,
                       multiplier = multiplier) %>%
@@ -275,7 +275,8 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>% gtsummary::add_stat(
       # add purrr::partial with function name and required argument `deaths_var`
-      fns = list( gtsummary::all_categorical() ~ purrr::partial(
+      fns = list(
+        gtsummary::all_categorical() ~ purrr::partial(
         add_gt_cfr_stat_level, deaths_var = deaths_var),
         gtsummary::all_dichotomous() ~ add_gt_cfr_stat_label),
       location = list(gtsummary::all_categorical() ~ "level",
@@ -285,4 +286,41 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 
 }
 
+gtsummary_attack_rate <- function(gts_object, population, multiplier) {
+
+  summary_types <- unique(gts_object$meta_data$summary_type)
+
+  if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
+    gts_object %>%
+      # Use add stat to add attack rate by label
+      gtsummary::add_stat(
+        # Add population and multiplier in purrr::partial
+        fns = gtsummary::everything() ~ purrr::partial(
+          add_gt_attack_rate_label, population = population, multiplier = multiplier))
+  } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
+    gts_object %>%
+      # Use add stat to add attack rate by level
+      gtsummary::add_stat(
+        fns = gtsummary::everything() ~ purrr::partial(
+          add_gt_attack_rate_level, population = population$population, multiplier = multiplier),
+        location = everything() ~ "level")
+  } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
+    browser()
+    total_population <- sum(population$population)
+
+    gts_object %>%
+    gtsummary::add_stat(
+      # Add population and multiplier in purrr::partial
+      fns = list(
+        gtsummary::all_categorical() ~ purrr::partial(
+          add_gt_attack_rate_level, population = population$population, multiplier = multiplier),
+        gtsummary::all_dichotomous() ~ purrr::partial(
+          add_gt_attack_rate_label, population = total_population, multiplier = multiplier)),
+      location = list(
+        gtsummary::all_categorical() ~ "level",
+        gtsummary::all_dichotomous() ~ "label"
+      )
+    )
+  }
+}
 
