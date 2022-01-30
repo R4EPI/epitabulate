@@ -487,6 +487,37 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })
 
+test_that("attack rate calculation returns gtsummary object and correct results with dichotomous variables", {
+
+  # calculate population total from population table
+  population_total <- sum(population_data_age$population)
+
+  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
+  #   mutate(population = population) # population data totdal
+
+  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3)
+
+  gt_ar <- linelist_cleaned %>%
+    dplyr::mutate(test = rep(x = c("a","b"),150)) %>%
+    dplyr::select(test) %>%
+    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
+    gtsummary::tbl_summary(
+      include = test,
+      statistic = test ~ "{n}",
+      label = test ~ "Test")  %>%
+    gtsummary_attack_rate(population = c(population_total, population_total), multiplier = 10000)
+
+  gt_ar
+  ar_df <- gt_ar$table_body
+
+  expect_s3_class(gt_ar, "gtsummary")
+  expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
+  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
+  expect_equal(ar_df$`95%CI`, expected_ar$ci)
+})
+
+
 test_that("attack rate calculation returns gtsummary object and correct results with categorical variables", {
   # calculate population total from population table
   population_total <- sum(population_data_age$population)

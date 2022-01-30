@@ -65,7 +65,7 @@ add_gt_cfr_stat_label  <- function(data, variable, by, ...) {
 #'
 add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
   # Declare local variables for CMD check
-
+browser()
   if(variable != deaths_var) {
     stat_0 <- deaths <- population <- cfr <- ci <- NULL
     if(!is.null(by)) {
@@ -261,7 +261,8 @@ gt_remove_stat <- function(gt_object, col_name = "stat_0") {
       dplyr::select(-dplyr::all_of(col_name)))
 }
 
-
+#' @export
+#'
 gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 
   summary_types <- unique(gts_object$meta_data$summary_type)
@@ -290,6 +291,9 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 
 }
 
+
+#' @export
+#'
 gtsummary_attack_rate <- function(gts_object, population, multiplier) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
