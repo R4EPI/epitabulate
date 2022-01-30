@@ -202,148 +202,6 @@ population <- sum(population_data_age$population)
 # Tests start ------------------------------------------------------------------
 
 
-test_that("cfr calculation returns gtsummary object and correct results for a single result", {
-  # This should be used with dichotomus data types without showing missing value
-  # and for gtsummary::add_stat by location = "label"
-  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
-  expected_cfr <-  linelist_cleaned %>%
-    filter(patient_facility_type == "Inpatient") %>%
-    case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-    mutate(cfr = formatC(cfr, digits = 2, format = "f"))
-
-  gt_cfr <- linelist_cleaned %>%
-    dplyr::filter(patient_facility_type == "Inpatient") %>%
-    dplyr::select(DIED) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-    gtsummary::tbl_summary(
-      statistic = everything() ~ "{N}",
-      label = DIED ~ "All participants") %>%
-    # Use add stat to add attack rate by label
-    gtsummary::add_stat(
-      fns = list(gtsummary::everything() ~ add_gt_cfr_stat_label)
-    )
-  cfr_df <- gt_cfr$table_body
-
-  expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(as.numeric(cfr_df$Deaths), expected_cfr$deaths)
-  expect_equal(as.numeric(cfr_df$stat_0), expected_cfr$population)
-  expect_equal(cfr_df$`CFR (%)`, expected_cfr$cfr)
-  expect_equal(cfr_df$`95%CI`, expected_cfr$ci)
-})
-
-test_that("cfr calculation returns gtsummary object and correct results for a result by variable level", {
-  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
-  expected_cfr <-  linelist_cleaned %>%
-    filter(patient_facility_type == "Inpatient") %>%
-    epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
-    mutate(cfr = formatC(cfr, 2, format = "f"))
-
-  gt_cfr <- linelist_cleaned %>%
-    dplyr::filter(patient_facility_type == "Inpatient") %>%
-    dplyr::select(DIED, gender) %>%
-    dplyr::mutate(deaths_var = "DIED") %>%
-    gtsummary::tbl_summary(
-      include = gender,
-      statistic = gender ~ "{n}",
-      missing = "no",
-      label = gender ~ "Gender"
-      ) %>%
-    gtsummary::add_stat(
-      # add purrr::partial with function name and required argument `deaths_var`
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_gt_cfr_stat_level, deaths_var = "DIED"),
-      location = gtsummary::everything() ~ "level"
-    )
-
-  cfr_df <- gt_cfr$table_body
-
-  male_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Male")
-  female_exp_cfr <- expected_cfr %>% dplyr::filter(gender == "Female")
-
-  male_cfr <- cfr_df %>% dplyr::filter(label == "Male")
-  female_cfr <- cfr_df %>% dplyr::filter(label == "Female")
-
-
-  expect_s3_class(gt_cfr, "gtsummary")
-  expect_equal(as.numeric(male_cfr$Deaths), male_exp_cfr$deaths)
-  expect_equal(as.numeric(female_cfr$stat_0), female_exp_cfr$population)
-  expect_equal(male_cfr$`CFR (%)`, male_exp_cfr$cfr)
-  expect_equal(female_cfr$`95%CI`, female_exp_cfr$ci)
-
-})
-
-
-test_that("attack rate calculation returns gtsummary object and correct results for a single result", {
-  # Works like add_stat - for those who want to have more control and fully customize
-
-  # calculate population total from population table
-  population_total <- sum(population_data_age$population)
-
-  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
-  #   mutate(population = population) # population data totdal
-
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
-    epikit::merge_ci_df(e = 3)
-
-  gt_ar <- linelist_cleaned %>%
-    dplyr::mutate(case = 1) %>%
-    dplyr::select(case) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-    gtsummary::tbl_summary(
-      include = case,
-      statistic = case ~ "{n}",
-      label = case ~ "Case") %>%
-    # Use add stat to add attack rate by label
-    gtsummary::add_stat(
-      # Add population and multiplier in purrr::partial
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_gt_attack_rate_label, population = population_total, multiplier = 10000
-    ))
-
-  gt_ar
-  ar_df <- gt_ar$table_body
-
-  expect_s3_class(gt_ar, "gtsummary")
-  expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
-  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
-  expect_equal(ar_df$`95%CI`, expected_ar$ci)
-})
-
-
-test_that("attack rate calculation returns gtsummary object and correct results for a result by variable level", {
-  # Works like gtsummary::add_stat - for those who want to have more control and fully customize
-
-  pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
-    left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
-
-  # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
-
-  gt_ar_lev <- linelist_cleaned %>%
-    # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::mutate(cases = 1, population = population, multiplier = 10000) %>%
-    dplyr::select(cases, age_group, population, multiplier) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
-    gtsummary::tbl_summary(
-      include = age_group,
-      statistic = age_group ~ "{n}",
-      label = age_group ~ "Age group") %>%
-    # Use add stat to add attack rate by level
-    gtsummary::add_stat(
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_gt_attack_rate_level, population = pop_table$population, multiplier = 10000),
-      location = everything() ~ "level")
-  # function: add_gt_attack_rate_level
-
-  ar_df_lev <- gt_ar_lev$table_body
-  ar_df_lev <- ar_df_lev %>% filter(label != "Age Group")
-  # ar_df_lev <- ar_df_lev[, -1]
-
-  expect_s3_class(gt_ar_lev, "gtsummary")
-  expect_equal(as.numeric(ar_df_lev$stat_0[-1]), expected_ar_lev$cases)
-  expect_equal(ar_df_lev$`AR (per 10,000)`[-1], expected_ar_lev$ar)
-  expect_equal(ar_df_lev$`95%CI`[-1], expected_ar_lev$ci)
-})
 
 
 test_that("cfr calculation returns gtsummary object and correct results with dichotomous variables", {
@@ -495,18 +353,20 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
   #   mutate(population = population) # population data totdal
 
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
+  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
-    dplyr::mutate(test = rep(x = c("a","b"),150)) %>%
-    dplyr::select(test) %>%
+    dplyr::mutate(case = 1) %>%
+    dplyr::select(case) %>%
     # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
-      include = test,
-      statistic = test ~ "{n}",
-      label = test ~ "Test")  %>%
-    gtsummary_attack_rate(population = c(population_total, population_total), multiplier = 10000)
+      include = case,
+      statistic = case ~ "{n}",
+      label = case ~ "Case")  %>%
+    gtsummary_attack_rate(population = population_total, multiplier = 10000)
+
+
 
   gt_ar
   ar_df <- gt_ar$table_body
