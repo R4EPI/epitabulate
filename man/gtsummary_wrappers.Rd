@@ -11,13 +11,28 @@
 function, which returns a data frame with a single row to be used with
 dichotomous data or overall data.Calls epikit::case_fatality_rate_df.}
 \usage{
-add_gt_cfr_stat_label(data, variable, by, ...)
+add_gt_cfr_stat_label(data, variable, by, deaths_var, ...)
 
-add_gt_cfr_stat_level(data, variable, by, ...)
+add_gt_cfr_stat_level(data, variable, by, deaths_var, ...)
 
-add_gt_attack_rate_label(data, variable, by = NULL, ...)
+add_gt_attack_rate_label(
+  data,
+  variable,
+  by = NULL,
+  population,
+  multiplier,
+  drop_population = TRUE,
+  ...
+)
 
-add_gt_attack_rate_level(data, variable, by = NULL, ...)
+add_gt_attack_rate_level(
+  data,
+  variable,
+  by = NULL,
+  population,
+  multiplier,
+  ...
+)
 
 merge_gt_univar_counts(gt_object)
 
@@ -31,6 +46,9 @@ gtsummary::add_stat function (e.g. illness)}
 
 \item{by}{Name of a variable for stratifying, passed by the gtsummary::add_stat
 function (e.g. illness).}
+
+\item{deaths_var}{the name of a logical column in the data that indicates that the case died,
+is passed as the first argument to \code{epikit::case_fatality_rate_df}}
 
 \item{...}{additional params that may be passed from gtsummary functions.}
 

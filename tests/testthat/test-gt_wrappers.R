@@ -202,8 +202,6 @@ population <- sum(population_data_age$population)
 # Tests start ------------------------------------------------------------------
 
 
-
-
 test_that("cfr calculation returns gtsummary object and correct results with dichotomous variables", {
   # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
   # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
@@ -270,8 +268,6 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
 
 })
 
-
-
 test_that("cfr calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
   # Uses gtsummary::add_stat but simiplifies it - trade off some customisability/transparency for convenience
   # should be able to handle dichot, logical, multi-level variables - both label and level gtsummary::add_stat
@@ -318,16 +314,12 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   # calculate population total from population table
   population_total <- sum(population_data_age$population)
 
-  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
-  #   mutate(population = population) # population data totdal
-
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
+  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
     dplyr::mutate(case = 1) %>%
     dplyr::select(case) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
       include = case,
       statistic = case ~ "{n}",
@@ -350,16 +342,12 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   # calculate population total from population table
   population_total <- sum(population_data_age$population)
 
-  # linelist_cleaned <- linelist_cleaned %>%    # cases for each age_group
-  #   mutate(population = population) # population data totdal
-
   expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
     dplyr::mutate(case = 1) %>%
     dplyr::select(case) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
       include = case,
       statistic = case ~ "{n}",
@@ -377,7 +365,6 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })
 
-
 test_that("attack rate calculation returns gtsummary object and correct results with categorical variables", {
   # calculate population total from population table
   population_total <- sum(population_data_age$population)
@@ -387,9 +374,6 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
     left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
 
-  # linelist_cleaned$population <- NULL
-  # linelist_cleaned <- merge(linelist_cleaned, population_data_age, by = "age_group")
-
   # attack rate for each group
   expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
 
@@ -397,18 +381,14 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   gt_ar_lev <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
     dplyr::select(age_group) %>%
-    # case_fatality_rate_df(deaths = DIED, mergeCI = TRUE) %>%
     gtsummary::tbl_summary(
       include = age_group,
       statistic = age_group ~ "{n}",
       label = age_group ~ "Age group") %>%
     gtsummary_attack_rate(population = pop_table$population, multiplier = 10000)
 
-  # function: add_gt_attack_rate_level
-
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Age Group")
-  # ar_df_lev <- ar_df_lev[, -1]
 
   expect_s3_class(gt_ar_lev, "gtsummary")
   expect_equal(as.numeric(ar_df_lev$stat_0[-1]), expected_ar_lev$cases)
@@ -485,7 +465,6 @@ test_that("univariate regression with gtsummary returns counts with OR and RR", 
          "missing spanner heading")
 })
 
-
 test_that("gt_remove_stat removes stat by column name", {
   gt <- linelist_cleaned %>%
     select(DIED, gender, age_group) %>%
@@ -498,9 +477,3 @@ test_that("gt_remove_stat removes stat by column name", {
     expect(is.null(gt_removed$table_body$stat_0), "column exists")
   )
 })
-
-
-
-
-
-
