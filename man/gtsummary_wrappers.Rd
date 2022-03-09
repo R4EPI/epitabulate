@@ -8,7 +8,6 @@
 \alias{add_gt_cfr_stat_level}
 \alias{add_gt_attack_rate_label}
 \alias{add_gt_attack_rate_level}
-\alias{merge_gt_univar_counts}
 \title{An attack rate wrapper function (using gtsummary and epikit packages)that takes
 a gtsummary object and returns a gtsummary object withattack rate (per given
 multiple) with 95\% confidence interval}
@@ -41,8 +40,6 @@ add_gt_attack_rate_level(
   multiplier,
   ...
 )
-
-merge_gt_univar_counts(gt_object)
 }
 \arguments{
 \item{population}{the number of individuals in the population, passed to
@@ -92,9 +89,6 @@ cases, attack rate, and 95\% confidence interval.
 
 a single-row gtsummary object with attack rate results cases,
 population, attack rate, and 95\% confidence interval.
-
-a tbl_merge gtsummary object with counts, percentage columns, and results
-of univariate regression.
 }
 \description{
 An attack rate wrapper function (using gtsummary and epikit packages)that takes
@@ -123,7 +117,4 @@ dichotomous data or overall data. Calls epikit::attack_rate.
 An attack rate wrapper function to be passed to the gtsummary::add_stat function,
 which returns a data frame with multiple rows to be used when location is set
 to "level" for multi-level categorical data. Calls epikit::attack_rate.
-
-A gtsummary wrapper function that takes a tbl_uvregression gtsummary object
-and adds count and percentage columns.
 }
