@@ -219,7 +219,7 @@ test_that("cfr calculation returns gtsummary object and correct results with dic
       statistic = everything() ~ "{N}",
       label = DIED ~ "All participants") %>%
     # Use wrapper function to calculate cfr
-    gtsummary_case_fatality_rate(deaths_var = "DIED")
+    add_cfr(deaths_var = "DIED")
   cfr_df <- gt_cfr$table_body
 
   expect_s3_class(gt_cfr, "gtsummary")
@@ -249,7 +249,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
       label = gender ~ "Gender"
     ) %>%
     # Use wrapper function to calculate cfr
-    gtsummary_case_fatality_rate(deaths_var = "DIED")
+    add_cfr(deaths_var = "DIED")
 
   cfr_df <- gt_cfr$table_body
 
@@ -289,7 +289,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
       label = list(gender ~ "Gender", DIED ~ "All participants")
     ) %>%
     # Use wrapper function to calculate cfr
-    gtsummary_case_fatality_rate(deaths_var = "DIED")
+    add_cfr(deaths_var = "DIED")
 
   cfr_df <- gt_cfr$table_body
 
@@ -324,7 +324,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       include = case,
       statistic = case ~ "{n}",
       label = case ~ "Case")  %>%
-    gtsummary_attack_rate(population = population_total, multiplier = 10000)
+    add_ar(population = population_total, multiplier = 10000)
 
 
 
@@ -352,7 +352,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       include = case,
       statistic = case ~ "{n}",
       label = case ~ "Case")  %>%
-    gtsummary_attack_rate(population = population_total, multiplier = 10000)
+    add_ar(population = population_total, multiplier = 10000)
 
 
 
@@ -385,7 +385,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       include = age_group,
       statistic = age_group ~ "{n}",
       label = age_group ~ "Age group") %>%
-    gtsummary_attack_rate(population = pop_table$population, multiplier = 10000)
+    add_ar(population = pop_table$population, multiplier = 10000)
 
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Age Group")
@@ -413,7 +413,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       statistic = setting ~ "{n}",
       label = setting ~ "Setting",
       type = setting ~ "categorical") %>%
-    gtsummary_attack_rate(population = setting_population, multiplier = 10000)
+    add_ar(population = setting_population, multiplier = 10000)
 
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Setting")
@@ -444,7 +444,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       statistic = list(cases ~ "{N}", age_group ~ "{n}"),
       label = list(cases ~ "All participants", age_group ~ "Age Group")
     ) %>%
-    gtsummary_attack_rate(population = pop_table$population, multiplier = 10000)
+    add_ar(population = pop_table$population, multiplier = 10000)
 
   ar_df <- gt_ar$table_body
 
@@ -481,18 +481,48 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
     group_by(recent_travel, diarrhoea) %>%
     count()
 
-  gt_cs <- add_gtsummary_cross_tab(
+  gt_cs <- add_cs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
     show_overall = TRUE,
     exposure_label = "Recent travel",
-    outcome_label = "Diarrhoea")
+    outcome_label = "Diarrhoea",
+    two_by_two = TRUE)
 
   gt_df <- gt_cs$table_body
 
   expect_s3_class(gt_cs, "gtsummary")
   expect_true(grepl(paste0("^", count_table[1,3]), gt_df$stat_1[2]))
   expect_true(grepl(paste0("^", count_table[4,3]), gt_df$stat_2[3]))
-  expect_equal(unique(gts$table_styling$header$spanning_header), c(NA, "Diarrhoea"))
+  expect_equal(unique(gt_cs$table_styling$header$spanning_header), c(NA, "Diarrhoea"))
+})
+
+
+test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
+
+  gt_cs <- add_cs(
+    data = linelist_cleaned,
+    exposure = "recent_travel",
+    outcome = "diarrhoea",
+    var = "gender",
+    show_overall = TRUE,
+    exposure_label = "Recent travel",
+    outcome_label = "Diarrhoea",
+    var_label = "Gender",
+    two_by_two = FALSE)
+
+  gt_df <- gt_cs$table_body
+
+  col_names <- c("variable", "var_label", "row_type", "label", "var_type_1",
+                 "stat_1_1", "stat_2_1", "var_type_2", "stat_1_2", "stat_2_2",
+                 "var_type_3", "stat_0_3")
+
+  span_heads <- c(NA, "**Table 1**", "**Cases**", "**Table 2**", "**Controls**",
+                  "**Table 3**", "**Overall**")
+
+
+  expect_s3_class(gt_cs, "gtsummary")
+  expect_equal(names(gt_df), col_names)
+  expect_equal(unique(gt_cs$table_styling$header$spanning_header), span_heads)
 })
