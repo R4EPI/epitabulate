@@ -69,7 +69,10 @@ is passed as the first argument to \code{epikit::case_fatality_rate_df}}
 
 \item{data}{A data frame, passed by the gtsummary::add_stat function.}
 
-\item{exposure}{Name of the exposure variable}
+\item{exposure}{Name of the exposure variable, which should be a factor ordered
+by case and control - in that order (eg if case = 1, control = 0, factor levels
+should be ordered as 1,0. The code labels the Cases as the first pair of
+gstummary stat columns and the second pair as Controls.}
 
 \item{outcome}{Name of the outcome variable}
 
