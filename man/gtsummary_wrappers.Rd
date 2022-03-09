@@ -42,6 +42,8 @@ add_gt_attack_rate_level(
 )
 }
 \arguments{
+\item{gts_object}{A data frame, passed by the gtsummary::add_stat function.}
+
 \item{population}{the number of individuals in the population, passed to
 \code{epikit::attack_rate}}
 

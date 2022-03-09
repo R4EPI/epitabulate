@@ -5,7 +5,7 @@
 #' a gtsummary object and returns a gtsummary object withattack rate (per given
 #'  multiple) with 95% confidence interval
 #'
-#' @param data A data frame, passed by the gtsummary::add_stat function.
+#' @param gts_object A data frame, passed by the gtsummary::add_stat function.
 #'
 #' @param variable Name of a variable as the outcome of interest, passed by the
 #' gtsummary::add_stat function (e.g. illness)
