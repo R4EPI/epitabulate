@@ -131,7 +131,7 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 #' A gtsummary wrapper function that takes a gtsummary object and removes a
 #' column from the table body by column name
 #'
-#' @param gt_object A data frame, passed by the gtsummary::add_stat function
+#' @param gts_object A data frame, passed by the gtsummary::add_stat function
 #'
 #' @param col_name the column name from the gtsummary object's table_body to remove
 
@@ -140,10 +140,129 @@ gtsummary_case_fatality_rate <- function(gts_object, deaths_var) {
 #' @rdname gtsummary_wrappers
 #' @export
 #'
-gt_remove_stat <- function(gt_object, col_name = "stat_0") {
+gt_remove_stat <- function(gts_object, col_name = "stat_0") {
   gt_object %>% gtsummary::modify_table_body(
     ~ .x %>%
       dplyr::select(-dplyr::all_of(col_name)))
+}
+
+#' A gtsummary wrapper function that takes a data frame and adds cross tabs
+#' by exposure and outcome
+#'
+#' @param data A data frame with an exposure and outcome variable
+#'
+#' @param exposure Name of the exposure variable
+#'
+#' @param outcome Name of the outcome variable
+#'
+#' @param show_overall Logical argument to include overall column in gtsummary output;
+#' defaults to TRUE
+#'
+#' @param exposure_label exposure label for the gtsummary output, if none passed,
+#' exposure variable name is used instead
+#'
+#' @param outcome_label outcome label for the gtsummary output, if none passed,
+#' outcome variable name is used instead
+#'
+#' @rdname gtsummary_wrappers
+#'
+#' @export
+
+add_gtsummary_cross_tab <- function(
+  data, exposure, outcome, var = NULL, show_overall = TRUE,
+  exposure_label = NULL, outcome_label = NULL, two_by_two = FALSE) {
+
+  exposure_sym <- as.symbol(exposure)
+  qexposure <- rlang::enquo(exposure_sym)
+
+  outcome_sym <- as.symbol(outcome)
+  qoutcome <- rlang::enquo(outcome_sym)
+
+  if (is.null(exposure_label)) exposure_label <- exposure
+  if (is.null(outcome_label)) outcome_label <- outcome
+
+  if (!two_by_two) {
+    gts <- data %>%
+      select(!!qexposure, !!qoutcome) %>%
+      gtsummary::tbl_summary(
+        include = !!qexposure,
+        by = !!qoutcome,
+        type = exposure ~ "categorical",
+        label = exposure ~ exposure_label
+      ) %>%
+      gtsummary::modify_header(label ~ "") %>%
+      gtsummary::modify_spanning_header(c("stat_1", "stat_2") ~ outcome_label)
+
+    if (show_overall) {
+      gts <- gts %>% gtsummary::add_overall(last = TRUE)
+    }
+  } else {
+    if(is.null(var)) stop("value for `var` required for stratified cross tabs")
+    var <- "gender"
+    var_sym <- as.symbol(var)
+    qvar <- rlang::enquo(var_sym)
+    footnote <- paste0(
+      paste0("Case defined as ", paste(exposure_label, "value of", exposure_levels[1])),
+      "; ",
+      paste0("Control defined as ", paste(exposure_label, "value of", exposure_levels[2])))
+    if (is.null(var_label)) var_label <- var
+
+    gts_l <- linelist_cleaned %>%
+      dplyr::select(!!qvar, !!qexposure, !!qoutcome) %>%
+      # group_nest(!!qexposure) %>%
+      # rowwise() %>%
+      # dplyr::mutate(
+      #   tbl = gtsummary::tbl_summary(
+      #     .x,
+      #     include = !!qvar,
+      #     by = !!qoutcome,
+      #     type = var ~ "categorical",
+      #     label = var ~ var_label,
+      #     missing = "ifany"
+      # ))  %>% list()
+    var_levels <- levels(linelist_cleaned[[var]])
+
+    # gts <-
+    #   var_levels %>%
+    #   purrr::imap(
+    #     function(strata_variable, n) {
+          # margin_assignment <- switch(n == 1 & FALSE == TRUE, "row") # only include crude for first row
+          df_strata <-
+            data %>%
+            dplyr::select(dplyr::all_of(c(var, outcome, exposure))) %>%
+            tidyr::nest(data = -dplyr::all_of(exposure)) %>%
+            dplyr::mutate(
+              tbl = purrr::map(data, ~gtsummary::tbl_summary(.x,
+                                                             include = !!qvar,
+                                                                 by = !!qoutcome,
+                                                                 type = var ~ "categorical",
+                                                                 label = var ~ var_label,
+                                                                 missing = "ifany"
+                                                             # label = everything() ~ var_label,
+                                                           # margin = margin_assignment,
+                                                           # margin_text = overall_label
+                                                           ))
+            )
+          gts <- gtsummary::tbl_merge(df_strata$tbl)
+
+
+
+    exposure_levels <- levels(linelist_cleaned[[exposure]])
+    gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
+      gtsummary::modify_header(label ~ outcome_label) %>%
+      gtsummary::modify_spanning_header(list(
+        c("stat_1_1", "stat_2_1") ~ "**Cases**"),
+        c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
+      gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
+
+    gts
+  }
+
+  count_table <- linelist_cleaned %>%
+    group_by(recent_travel, diarrhoea, gender) %>%
+    count()
+
+  return(gts)
 }
 
 #' A case fatality rate wrapper function to be passed to the gtsummary::add_stat

@@ -4,6 +4,7 @@
 \alias{gtsummary_attack_rate}
 \alias{gtsummary_case_fatality_rate}
 \alias{gt_remove_stat}
+\alias{add_gtsummary_cross_tab}
 \alias{add_gt_cfr_stat_label}
 \alias{add_gt_cfr_stat_level}
 \alias{add_gt_attack_rate_label}
@@ -16,7 +17,16 @@ gtsummary_attack_rate(gts_object, population, multiplier)
 
 gtsummary_case_fatality_rate(gts_object, deaths_var)
 
-gt_remove_stat(gt_object, col_name = "stat_0")
+gt_remove_stat(gts_object, col_name = "stat_0")
+
+add_gtsummary_cross_tab(
+  data,
+  exposure,
+  outcome,
+  show_overall = TRUE,
+  exposure_label = NULL,
+  outcome_label = NULL
+)
 
 add_gt_cfr_stat_label(data, variable, by, deaths_var, ...)
 
@@ -42,7 +52,7 @@ add_gt_attack_rate_level(
 )
 }
 \arguments{
-\item{gts_object}{A data frame, passed by the gtsummary::add_stat function.}
+\item{gts_object}{A data frame, passed by the gtsummary::add_stat function}
 
 \item{population}{the number of individuals in the population, passed to
 \code{epikit::attack_rate}}
@@ -52,11 +62,22 @@ add_gt_attack_rate_level(
 \item{deaths_var}{the name of a logical column in the data that indicates that the case died,
 is passed as the first argument to \code{epikit::case_fatality_rate_df}}
 
-\item{gt_object}{A data frame, passed by the gtsummary::add_stat function}
-
 \item{col_name}{the column name from the gtsummary object's table_body to remove}
 
 \item{data}{A data frame, passed by the gtsummary::add_stat function.}
+
+\item{exposure}{Name of the exposure variable}
+
+\item{outcome}{Name of the outcome variable}
+
+\item{show_overall}{Logical argument to include overall column in gtsummary output;
+defaults to TRUE}
+
+\item{exposure_label}{exposure label for the gtsummary output, if none passed,
+exposure variable name is used instead}
+
+\item{outcome_label}{outcome label for the gtsummary output, if none passed,
+outcome variable name is used instead}
 
 \item{variable}{Name of a variable as the outcome of interest, passed by the
 gtsummary::add_stat function (e.g. illness)}
@@ -103,6 +124,9 @@ of deaths, case fatality rate, and 95\% confidence interval.
 
 A gtsummary wrapper function that takes a gtsummary object and removes a
 column from the table body by column name
+
+A gtsummary wrapper function that takes a data frame and adds cross tabs
+by exposure and outcome
 
 A case fatality rate wrapper function to be passed to the gtsummary::add_stat
 function, which returns a data frame with a single row to be used with

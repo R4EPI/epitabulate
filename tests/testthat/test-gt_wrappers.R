@@ -473,3 +473,26 @@ test_that("gt_remove_stat removes stat by column name", {
     expect(is.null(gt_removed$table_body$stat_0), "column exists")
   )
 })
+
+
+test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
+  count_table <- linelist_cleaned %>%
+    dplyr::select(recent_travel, diarrhoea) %>%
+    group_by(recent_travel, diarrhoea) %>%
+    count()
+
+  gt_cs <- add_gtsummary_cross_tab(
+    data = linelist_cleaned,
+    exposure = "recent_travel",
+    outcome = "diarrhoea",
+    show_overall = TRUE,
+    exposure_label = "Recent travel",
+    outcome_label = "Diarrhoea")
+
+  gt_df <- gt_cs$table_body
+
+  expect_s3_class(gt_cs, "gtsummary")
+  expect_true(grepl(paste0("^", count_table[1,3]), gt_df$stat_1[2]))
+  expect_true(grepl(paste0("^", count_table[4,3]), gt_df$stat_2[3]))
+  expect_equal(unique(gts$table_styling$header$spanning_header), c(NA, "Diarrhoea"))
+})
