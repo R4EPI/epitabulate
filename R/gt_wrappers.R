@@ -278,7 +278,7 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 add_gt_attack_rate_label <-
   function(data, variable, by=NULL, population, multiplier, drop_population = TRUE, ...) {
   # Declare local variables for CMD check
-  cases <- ci <- NULL
+  cases <- ci <- Population <- NULL
   if(is.null(population)) {
     stop("`population` argument (equal to total population) required")
   }
@@ -379,30 +379,5 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, population, multip
     dplyr::rename(dplyr::all_of(cols_rename)) %>%
     # drop cases as it's in the statistic of gtsummary
     dplyr::select(-c(cases))
-}
-
-#' A gtsummary wrapper function that takes a tbl_uvregression gtsummary object
-#' and adds count and percentage columns.
-#'
-#' @param gt_object A data frame, passed by the gtsummary::add_stat function
-
-#' @return a tbl_merge gtsummary object with counts, percentage columns, and results
-#' of univariate regression.
-#'
-#' @rdname gtsummary_wrappers
-#' @export
-#'
-merge_gt_univar_counts <- function(gt_object) {
-  gt_data <- gt_object$inputs$data
-  by <- gt_object$inputs$y
-  ## produce counts for each of the variables of interest
-  cross_tab <- gt_data %>%
-    gtsummary::tbl_summary(
-      by = by,
-      digits = list(gtsummary::all_categorical() ~ c(0, 1)))
-  ## combine for a full table
-  gtsummary::tbl_merge(list(cross_tab, gt_object)) %>%
-    gtsummary::modify_spanning_header(gtsummary::everything() ~ NA_character_) %>%
-    gtsummary::modify_spanning_header(gtsummary::all_stat_cols() ~ gtsummary::all_of(by))
 }
 

@@ -396,6 +396,33 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df_lev$`95%CI`[-1], expected_ar_lev$ci)
 })
 
+test_that("attack rate calculation returns gtsummary object and correct results with dichotomous variable forced to categorical", {
+  # Create dichotomous variable to force to categorical
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(setting = factor(
+           sample(c("rural", "urban"), nrow(linelist_cleaned), prob = c(0.25, 0.75), replace = TRUE),
+           levels = c("rural", "urban")))
+  # create fake population numbers for urban/rural
+  setting_population <- c(4000, 10000)
+
+  gt_ar_lev <- linelist_cleaned %>%
+    # Add population and multiplier to data frame (can't pass args to add_stat)
+    dplyr::select(setting) %>%
+    gtsummary::tbl_summary(
+      include = setting,
+      statistic = setting ~ "{n}",
+      label = setting ~ "Setting",
+      type = setting ~ "categorical") %>%
+    gtsummary_attack_rate(population = setting_population, multiplier = 10000)
+
+  ar_df_lev <- gt_ar_lev$table_body
+  ar_df_lev <- ar_df_lev %>% filter(label != "Setting")
+  totals <- linelist_cleaned %>% group_by(setting) %>% count()
+
+  expect_s3_class(gt_ar_lev, "gtsummary")
+  expect_equal(as.numeric(ar_df_lev$stat_0), totals$n)
+})
+
 test_that("attack rate calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
   # calculate population total and population table by age from population data age table
   population_total <- sum(population_data_age$population)
@@ -432,37 +459,6 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(as.numeric(ar_df$stat_0[-c(1,2)]), expected_ar_lev$cases)
   expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
-})
-
-test_that("univariate regression with gtsummary returns counts with OR and RR", {
-  linelist_3_14 <- count(linelist_cleaned, age_group, DIED) %>%
-    filter(age_group == "3-14" & DIED == FALSE)
-  linelist_total <- count(linelist_cleaned, DIED) %>%
-    filter(DIED == FALSE)
-  expected_percent <- formatC((linelist_3_14$n / linelist_total$n) * 100,
-                              format = "f", digits = 1)
-  expected_count_val <- paste0(linelist_3_14$n, " (", expected_percent, "%)")
-
-  gt_uni <- linelist_cleaned %>%
-    select(DIED, gender, age_group) %>%     ## keep variables of interest
-    gtsummary::tbl_uvregression(            ## produce univariate table
-      method = glm,                         ## define regression want to run (generalised linear model)
-      y = DIED,                             ## define outcome variable
-      method.args = list(family = binomial),  ## define what type of glm want to run (logistic)
-      exponentiate = TRUE,                    ## exponentiate to produce odds ratios (rather than log odds)
-      hide_n = TRUE                       ## dont include overall counts in regression table
-    ) %>%
-    merge_gt_univar_counts()
-
-  uni_df <- gt_uni$table_body
-  age_3_14 <- uni_df %>% dplyr::filter(label == "3-14")
-
-  expect_s3_class(gt_uni, "gtsummary")
-  # check death counts and percentage are in stat_1 cols
-  expect_equal(age_3_14$stat_1_1, expected_count_val)
-  # check spanner heading label matches regression y input
-  expect("DIED" %in% gt_uni$table_styling$header$spanning_header,
-         "missing spanner heading")
 })
 
 test_that("gt_remove_stat removes stat by column name", {
