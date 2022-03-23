@@ -345,34 +345,32 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   linelist_cleaned <- linelist_cleaned %>%
     mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
-    epikit::merge_ci_df(e = 3)
+  counts <- linelist_cleaned %>%
+    dplyr::group_by(age_group, case) %>%
+    dplyr::count(name = "case_n") %>%
+    dplyr::group_by(age_group) %>%
+    dplyr::mutate(total = sum(case_n)) %>%
+    dplyr::filter(case == T)
+
   # calculate population total from population table
-  population_total <- sum(population_data_age$population)
-
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
+  expected_ar_lev <- attack_rate(counts$case_n, counts$total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
-  pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
-    left_join(population_data_age, by = "age_group") # merge population data (required for attack rate function)
-
-  # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
 
 
   gt_ar_lev <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::select(age_group) %>%
+    dplyr::select(age_group, case) %>%
     gtsummary::tbl_summary(
       include = age_group,
       statistic = age_group ~ "{n}",
       label = age_group ~ "Age group") %>%
-    add_ar(case_car = "case", multiplier = 10000)
+    add_ar(case_var = "case", multiplier = 10000)
 
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Age Group")
 
   expect_s3_class(gt_ar_lev, "gtsummary")
-  expect_equal(as.numeric(ar_df_lev$stat_0[-1]), expected_ar_lev$cases)
+  expect_equal(as.numeric(ar_df_lev$Cases[-1]), expected_ar_lev$cases)
   expect_equal(ar_df_lev$`AR (per 10,000)`[-1], expected_ar_lev$ar)
   expect_equal(ar_df_lev$`95%CI`[-1], expected_ar_lev$ci)
 })
@@ -398,7 +396,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
   gt_ar_lev <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::select(setting) %>%
+    dplyr::select(setting, case) %>%
     gtsummary::tbl_summary(
       include = setting,
       statistic = setting ~ "{n}",
