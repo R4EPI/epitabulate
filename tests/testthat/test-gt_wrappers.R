@@ -310,51 +310,23 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
 })
 
 test_that("attack rate calculation returns gtsummary object and correct results with dichotomous variables", {
+  # Case variable but be a logical (T/F or 1,0) with no missing data (NAs)
+  # Since there is no missing data forthese  symptoms in linelist, we can code to
+  # logical using ifelse - can also be coded as 1,0
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
-  # calculate population total from population table
-  population_total <- sum(population_data_age$population)
-
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
+  case_count <- sum(linelist_cleaned$case)
+  total_pop <- nrow(linelist_cleaned)
+  expected_ar <- attack_rate( case_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
   gt_ar <- linelist_cleaned %>%
-    dplyr::mutate(case = 1) %>%
-    dplyr::select(case) %>%
     gtsummary::tbl_summary(
       include = case,
       statistic = case ~ "{n}",
       label = case ~ "Case")  %>%
-    add_ar(population = population_total, multiplier = 10000)
-
-
-
-  gt_ar
-  ar_df <- gt_ar$table_body
-
-  expect_s3_class(gt_ar, "gtsummary")
-  expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
-  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
-  expect_equal(ar_df$`95%CI`, expected_ar$ci)
-})
-
-test_that("attack rate calculation returns gtsummary object and correct results with dichotomous variables", {
-
-  # calculate population total from population table
-  population_total <- sum(population_data_age$population)
-
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
-    epikit::merge_ci_df(e = 3)
-
-  gt_ar <- linelist_cleaned %>%
-    dplyr::mutate(case = 1) %>%
-    dplyr::select(case) %>%
-    gtsummary::tbl_summary(
-      include = case,
-      statistic = case ~ "{n}",
-      label = case ~ "Case")  %>%
-    add_ar(population = population_total, multiplier = 10000)
-
-
+    add_ar(case_var = "case", multiplier = 10000)
 
   gt_ar
   ar_df <- gt_ar$table_body
@@ -366,6 +338,15 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 })
 
 test_that("attack rate calculation returns gtsummary object and correct results with categorical variables", {
+
+  # Case variable but be a logical (T/F or 1,0) with no missing data (NAs)
+  # Since there is no missing data forthese  symptoms in linelist, we can code to
+  # logical using ifelse - can also be coded as 1,0
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
+
+  expected_ar <- attack_rate(nrow(linelist_cleaned), population_total, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3)
   # calculate population total from population table
   population_total <- sum(population_data_age$population)
 
@@ -385,7 +366,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       include = age_group,
       statistic = age_group ~ "{n}",
       label = age_group ~ "Age group") %>%
-    add_ar(population = pop_table$population, multiplier = 10000)
+    add_ar(case_car = "case", multiplier = 10000)
 
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Age Group")
@@ -397,7 +378,17 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 })
 
 test_that("attack rate calculation returns gtsummary object and correct results with dichotomous variable forced to categorical", {
-  # Create dichotomous variable to force to categorical
+  # Case variable but be a logical (T/F or 1,0) with no missing data (NAs)
+  # Since there is no missing data forthese  symptoms in linelist, we can code to
+  # logical using ifelse - can also be coded as 1,0
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
+
+  case_count <- sum(linelist_cleaned$case)
+  total_pop <- nrow(linelist_cleaned)
+  expected_ar <- attack_rate( case_count,  total_pop, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3)
+   # Create dichotomous variable to force to categorical
   linelist_cleaned <- linelist_cleaned %>%
     mutate(setting = factor(
            sample(c("rural", "urban"), nrow(linelist_cleaned), prob = c(0.25, 0.75), replace = TRUE),
@@ -413,7 +404,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
       statistic = setting ~ "{n}",
       label = setting ~ "Setting",
       type = setting ~ "categorical") %>%
-    add_ar(population = setting_population, multiplier = 10000)
+    add_ar(case_var = "case")
 
   ar_df_lev <- gt_ar_lev$table_body
   ar_df_lev <- ar_df_lev %>% filter(label != "Setting")
@@ -525,4 +516,32 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
   expect_s3_class(gt_cs, "gtsummary")
   expect_equal(names(gt_df), col_names)
   expect_equal(unique(gt_cs$table_styling$header$spanning_header), span_heads)
+})
+
+test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables", {
+
+  # calculate population total from population table
+  population_total <- sum(population_data_age$population)
+
+  expected_mr <- epikit::mortality_rate(nrow(linelist_cleaned), population_total) %>%
+    epikit::merge_ci_df(e = 3)
+
+  gt_ar <- linelist_cleaned %>%
+    dplyr::mutate(case = 1) %>%
+    dplyr::select(case) %>%
+    gtsummary::tbl_summary(
+      include = case,
+      statistic = case ~ "{n}",
+      label = case ~ "Case")  %>%
+    add_mr(population = population_total, multiplier = 10000)
+
+
+
+  gt_ar
+  ar_df <- gt_ar$table_body
+
+  expect_s3_class(gt_ar, "gtsummary")
+  expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
+  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
+  expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })
