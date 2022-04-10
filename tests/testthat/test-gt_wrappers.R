@@ -333,7 +333,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
   expect_s3_class(gt_ar, "gtsummary")
   expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
-  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
+  expect_equal(ar_df$`AR (per 10,000)`, formatC(expected_ar$ar, digits = 2, format = "f"))
   expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })
 
@@ -371,7 +371,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
   expect_s3_class(gt_ar_lev, "gtsummary")
   expect_equal(as.numeric(ar_df_lev$Cases[-1]), expected_ar_lev$cases)
-  expect_equal(ar_df_lev$`AR (per 10,000)`[-1], expected_ar_lev$ar)
+  expect_equal(ar_df_lev$`AR (per 10,000)`[-1], formatC(expected_ar_lev$ar, digits = 2, format = "f"))
   expect_equal(ar_df_lev$`95%CI`[-1], expected_ar_lev$ci)
 })
 
@@ -413,12 +413,12 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 })
 
 test_that("attack rate calculation returns gtsummary object and correct results with categorical and dichotomous variables", {
-  # calculate population total and population table by age from population data age table
-  population_total <- sum(population_data_age$population)
-  pop_table <- count(linelist_cleaned, age_group) %>%    # cases for each age_group
-    left_join(population_data_age, by = "age_group") # merge population data (required
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
-  expected_ar <- attack_rate(nrow(linelist_cleaned), population, multiplier = 10000) %>%
+
+  cases <- sum(linelist_cleaned$case)
+  expected_ar <- attack_rate( cases, nrow(linelist_cleaned), multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(cases = as.character(cases))
 
@@ -427,13 +427,13 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
   gt_ar <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
-    dplyr::mutate(cases = 1) %>%
-    dplyr::select(cases, age_group) %>%
+    dplyr::select(case, age_group) %>%
     gtsummary::tbl_summary(
-      statistic = list(cases ~ "{N}", age_group ~ "{n}"),
-      label = list(cases ~ "All participants", age_group ~ "Age Group")
+      statistic = list(case ~ "{N}",
+                       age_group ~ "{n}"),
+      label = list(case ~ "All participants", age_group ~ "Age Group")
     ) %>%
-    add_ar(population = pop_table$population, multiplier = 10000)
+    add_ar(case_var = "case")
 
   ar_df <- gt_ar$table_body
 

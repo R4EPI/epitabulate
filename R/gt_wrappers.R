@@ -27,7 +27,7 @@
 #'
 add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
-  browser()
+
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>%
       # Use add stat to add attack rate by label
@@ -107,6 +107,7 @@ add_ar <- function(gts_object, case_var, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
+
     gts_object %>%
       # Use add stat to add attack rate by label
       gtsummary::add_stat(
@@ -126,18 +127,17 @@ add_ar <- function(gts_object, case_var, multiplier = 10^4) {
           multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    total_population <- sum(population)
     gts_object %>%
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
         fns = list(
           gtsummary::all_categorical() ~ purrr::partial(
-            add_gt_attack_rate_level, population = population, multiplier = multiplier),
+            add_gt_attack_rate_level, case_var = case_var, multiplier = multiplier),
           gtsummary::all_dichotomous() ~ purrr::partial(
             add_gt_attack_rate_stat_label,
-            population = total_population,
+            case_var = case_var,
             multiplier = multiplier,
-            drop_total = FALSE)),
+            drop_cases = FALSE)),
         location = list(
           gtsummary::all_categorical() ~ "level",
           gtsummary::all_dichotomous() ~ "label"
@@ -481,9 +481,10 @@ add_gt_attack_rate_stat_label <-
   ar <- epikit::attack_rate(cases = cases,
                             population = nrow(data),
                             multiplier = multiplier) %>%
+    epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(cases = formatC(cases, digits = 0, format = "f")) %>%
     dplyr::mutate(ar = formatC(ar, digits = 2, format = "f")) %>%
-    epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
+     # merge the lower and upper CI into one column
     dplyr::rename(
       "Cases" = cases,
       "Total" = population,
@@ -527,8 +528,8 @@ add_gt_attack_rate_stat_label <-
 #'
 #' @rdname gtsummary_wrappers
 #'
-add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var,
-                                     multiplier = 10^4, drop_total = TRUE, ...) {
+add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var, multiplier = 10^4,
+                                     drop_total = TRUE, drop_cases = TRUE, ...) {
   # Declare local variables for CMD check
   cases <- ci <- Total <- NULL
 
