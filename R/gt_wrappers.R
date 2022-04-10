@@ -7,6 +7,8 @@
 #'
 #' @param gts_object A data frame, passed by the gtsummary::add_stat function.
 #'
+#' @param deaths_var logical variable name that indicates deaths
+#'
 #' @param variable Name of a variable as the outcome of interest, passed by the
 #' gtsummary::add_stat function (e.g. illness)
 #'
@@ -14,7 +16,7 @@
 #' function (e.g. illness).
 #'
 #'#'@param population the number of individuals in the population, passed to
-#'`epikit::attack_rate`
+#'`epikit::mortality_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -24,7 +26,6 @@
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-#'
 add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
