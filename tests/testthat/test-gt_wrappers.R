@@ -417,13 +417,25 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
 
-  cases <- sum(linelist_cleaned$case)
-  expected_ar <- attack_rate( cases, nrow(linelist_cleaned), multiplier = 10000) %>%
+  cases <- linelist_cleaned %>%
+    dplyr::group_by(age_group, case) %>%
+    dplyr::count(name = "cases") %>%
+    group_by(age_group) %>%
+    dplyr::mutate(total = sum(cases)) %>%
+    dplyr::filter(case == TRUE)
+
+  # attack rate for all
+  case_count <- sum(linelist_cleaned$case)
+  total_pop <- nrow(linelist_cleaned)
+  expected_ar <- attack_rate( case_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
-    dplyr::mutate(cases = as.character(cases))
+    mutate(ar = formatC(ar, 2, format = "f"))
 
   # attack rate for each group
-  expected_ar_lev <- attack_rate(pop_table$n, pop_table$population, multiplier = 10000, mergeCI = TRUE)
+  expected_ar_lev <- epikit::attack_rate(cases$cases, cases$total, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3) %>%
+    dplyr::mutate(cases = as.character(cases)) %>%
+    mutate(ar = formatC(ar, 2, format = "f"))
 
   gt_ar <- linelist_cleaned %>%
     # Add population and multiplier to data frame (can't pass args to add_stat)
@@ -440,12 +452,12 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_s3_class(gt_ar, "gtsummary")
 
   # Tests for dichotomous
-  expect_equal(ar_df$stat_0[1], expected_ar$cases)
+  expect_equal(as.numeric(ar_df$Cases[1]), expected_ar$cases)
   expect_equal(ar_df$`AR (per 10,000)`[1], expected_ar$ar)
   expect_equal(ar_df$`95%CI`[1], expected_ar$ci)
 
   # Tests for categorical
-  expect_equal(as.numeric(ar_df$stat_0[-c(1,2)]), expected_ar_lev$cases)
+  expect_equal(ar_df$Cases[-c(1,2)], expected_ar_lev$cases)
   expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
 })
@@ -517,29 +529,27 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
 })
 
 test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables", {
-
-  # calculate population total from population table
-  population_total <- sum(population_data_age$population)
-
-  expected_mr <- epikit::mortality_rate(nrow(linelist_cleaned), population_total) %>%
+  deaths_count <- sum(linelist_cleaned$DIED)
+  total_pop <- nrow(linelist_cleaned)
+  expected_mr <- epikit::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
-  gt_ar <- linelist_cleaned %>%
-    dplyr::mutate(case = 1) %>%
-    dplyr::select(case) %>%
+
+  gt_mr <- linelist_cleaned %>%
     gtsummary::tbl_summary(
-      include = case,
-      statistic = case ~ "{n}",
-      label = case ~ "Case")  %>%
-    add_mr(population = population_total, multiplier = 10000)
+      include = DIED, age_group,
+      statistic = DIED ~ "{n}",
+      label = DIED ~ "Deaths")  %>%
+    add_mr(deaths_var = "DIED", multiplier = 10000)
 
+  gt_mr
+  mr_df <- gt_mr$table_body
 
+  expect_s3_class(gt_mr, "gtsummary")
+  expect_equal(as.numeric(mr_df$stat_0), expected_mr$deaths)
+  expect_equal(
+    mr_df$`MR (per 10,000)`,
+    formatC(expected_mr$`mortality per 10 000`, digits = 2, format = "f"))
+  expect_equal(mr_df$`95%CI`, expected_mr$ci)
 
-  gt_ar
-  ar_df <- gt_ar$table_body
-
-  expect_s3_class(gt_ar, "gtsummary")
-  expect_equal(as.numeric(ar_df$stat_0), expected_ar$cases)
-  expect_equal(ar_df$`AR (per 10,000)`, expected_ar$ar)
-  expect_equal(ar_df$`95%CI`, expected_ar$ci)
 })

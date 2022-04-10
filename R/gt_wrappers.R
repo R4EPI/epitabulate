@@ -27,7 +27,7 @@
 #'
 add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
-
+  browser()
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>%
       # Use add stat to add attack rate by label
@@ -582,33 +582,48 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var, multipli
   return(ar)
 }
 
-add_gt_mortality_rate_stat_label  <- function(data, variable, by, deaths_var,
-                                              population, multiplier = 10^4, ...) {
-  # Declare local variables for CMD check
-  deaths <- mr <- ci <- NULL
-  if(is.null(population)) {
-    stop("`population` argument, stratified by variable required")
-  }
+add_gt_mortality_rate_stat_label <-
+  function(data, variable, by=NULL, deaths_var,
+           multiplier = 10^4, drop_total = TRUE, drop_deaths = TRUE, ...) {
+    # Declare local variables for CMD check
 
-  if(!is.null(by)) {
-    warning("attack rate by strata is not currently available, ignoring `by` argument")
-  }
+    deaths <- ci <- Total <- NULL
 
-  deaths <- sum(linelist_cleaned[[deaths_var]])
-  total <- nrow(linelist)
-  length()
-  stat_new <-
-    epikit::mortality_rate(
-      deaths = data[[deaths_var]],
-      population = population,
-      mortality = mortality,
-      mergeCI = TRUE) %>%
-    dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
-    dplyr::mutate(mr = formatC(cfr, digits = 2, format = "f")) %>%
-    dplyr::rename("Deaths" = deaths,
-                  # "Cases" = population,
-                  "Mortality rate (%)" = mr,
-                  "95%CI" = ci) %>%
-    dplyr::select(-population)
-}
+    if(is.null(multiplier)) {
+      stop("`multiplier` argument required")
+    }
+
+    if(!is.null(by)) {
+      warning("death rate by strata is not currently available, ignoring `by` argument")
+    }
+
+    deaths <- sum(data[[deaths_var]])
+    mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
+    cols_rename <- setNames("mortality per 10 000", mr_label)
+    mr <- epikit::mortality_rate(deaths = deaths,
+                                 population = nrow(data),
+                                 multiplier = multiplier) %>%
+      epikit::merge_ci_df(e = 3) %>%
+      dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
+      dplyr::mutate(`mortality per 10 000` =
+                      formatC(`mortality per 10 000`, digits = 2, format = "f")) %>%
+      # merge the lower and upper CI into one column
+      dplyr::rename(
+        "Deaths" = deaths,
+        "Total" = population,
+        "95%CI" = ci) %>%
+      dplyr::rename(dplyr::all_of(cols_rename))
+
+    if(drop_deaths){
+      # can drop the population if specified (default)
+      mr <- mr %>% dplyr::select(-Deaths)
+    }
+
+    if(drop_total){
+      # drop the population if specified (default)
+      mr <- mr %>% dplyr::select(-Total)
+    }
+
+    mr
+  }
 
