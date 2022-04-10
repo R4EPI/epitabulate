@@ -529,27 +529,51 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
 })
 
 test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables", {
+  # Deaths variable but be a logical (T/F or 1,0) with no missing data (NAs)
+
+  deaths <- linelist_cleaned %>%
+    dplyr::group_by(age_group, DIED) %>%
+    dplyr::count(name = "deaths") %>%
+    group_by(age_group) %>%
+    dplyr::mutate(total = sum(deaths)) %>%
+    dplyr::filter(DIED == TRUE)
+
+  # attack rate for each group
+  expected_mr_lev <- epikit::mortality_rate(deaths$deaths, deaths$total, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3) %>%
+    dplyr::mutate(deaths = as.character(deaths)) %>%
+    dplyr::mutate(mr = `mortality per 10 000`) %>%
+    mutate(mr = formatC(mr, 2, format = "f"))
+
   deaths_count <- sum(linelist_cleaned$DIED)
   total_pop <- nrow(linelist_cleaned)
+
   expected_mr <- epikit::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
 
   gt_mr <- linelist_cleaned %>%
+    dplyr::select(DIED, age_group) %>%
     gtsummary::tbl_summary(
-      include = DIED, age_group,
-      statistic = DIED ~ "{n}",
-      label = DIED ~ "Deaths")  %>%
+      statistic = list(DIED ~ "{N}",
+                       age_group ~ "{n}"),
+      label = list(DIED ~ "All participants", age_group ~ "Age Group"))  %>%
     add_mr(deaths_var = "DIED", multiplier = 10000)
 
   gt_mr
   mr_df <- gt_mr$table_body
 
   expect_s3_class(gt_mr, "gtsummary")
-  expect_equal(as.numeric(mr_df$stat_0), expected_mr$deaths)
+  expect_equal(as.numeric(mr_df$Deaths[1]), expected_mr$deaths)
   expect_equal(
-    mr_df$`MR (per 10,000)`,
+    mr_df$`MR (per 10,000)`[1],
     formatC(expected_mr$`mortality per 10 000`, digits = 2, format = "f"))
-  expect_equal(mr_df$`95%CI`, expected_mr$ci)
+  expect_equal(mr_df$`95%CI`[1], expected_mr$ci)
+
+  # Tests for categorical
+  expect_equal(mr_df$Deaths[-c(1,2)], expected_mr_lev$deaths)
+  expect_equal(mr_df$`MR (per 10,000)`[-c(1,2)], expected_mr_lev$mr)
+  expect_equal(mr_df$`95%CI`[-c(1,2)], expected_mr_lev$ci)
 
 })
+

@@ -27,7 +27,7 @@
 #'
 add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
-  browser()
+
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>%
       # Use add stat to add attack rate by label
@@ -36,7 +36,6 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
         fns = gtsummary::everything() ~ purrr::partial(
           add_gt_mortality_rate_stat_label,
           deaths = deaths_var,
-          population = population,
           multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
 
@@ -46,11 +45,9 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
         fns = gtsummary::everything() ~ purrr::partial(
           add_gt_mortality_rate_level,
           deaths = deaths_var,
-          population = population,
           multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    total_population <- sum(population)
     gts_object %>%
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
@@ -58,14 +55,14 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
           gtsummary::all_categorical() ~ purrr::partial(
             add_gt_mortality_rate_level,
             deaths = deaths_var,
-            population = population,
-            multiplier = multiplier),
+            multiplier = multiplier,
+            drop_deaths = FALSE),
           gtsummary::all_dichotomous() ~ purrr::partial(
             add_gt_mortality_rate_stat_label,
             deaths = deaths_var,
-            population = total_population,
             multiplier = multiplier,
-            drop_total = FALSE)),
+            drop_total = TRUE,
+            drop_deaths = FALSE)),
         location = list(
           gtsummary::all_categorical() ~ "level",
           gtsummary::all_dichotomous() ~ "label"
@@ -627,3 +624,89 @@ add_gt_mortality_rate_stat_label <-
     mr
   }
 
+
+#' A mortality rate wrapper function to be passed to the gtsummary::add_stat function,
+#' which returns a data frame with multiple rows to be used when location is set
+#' to "level" for multi-level categorical data. Calls epikit::attack_rate.
+#'
+#' @param data A data frame, passed by the gtsummary::add_stat function.
+#'
+#' @param variable Name of a variable as the outcome of interest, passed by the
+#' gtsummary::add_stat function (e.g. illness)
+#'
+#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat
+#' function (e.g. illness).
+#'
+#'@param multiplier The base by which to multiply the output:
+# '1: multiplier = 1: ratio between 0 and 1;
+# '2: multiplier = 100:proportion;
+# '3: multiplier = 10^4: x per 10,000 people; passed to `epikit::attack_rate`
+#'
+#' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @return a single-row gtsummary object with attack rate results cases,
+#' population, attack rate, and 95% confidence interval.
+#'
+#' @rdname gtsummary_wrappers
+#'
+add_gt_mortality_rate_level <- function(data, variable, by=NULL, deaths_var, multiplier = 10^4,
+                                        drop_total = TRUE, drop_deaths = TRUE, ...) {
+  # Declare local variables for CMD check
+  deaths <- ci <- Total <- NULL
+
+  if (is.null(deaths_var) | is.null(data[[deaths_var]])) {
+    stop("`deaths_var` argument is required and must be a column in the data")
+  }
+
+  data[[deaths_var]] <- as.logical(data[[deaths_var]])
+  if (!is.logical(data[[deaths_var]]) & sum(is.na(data[[deaths_var]])) != nrow(data)){
+    stop("`deaths_var` column must be logical or convertable to logical using `as.logical`")
+  }
+
+  if (is.null(multiplier)) {
+    stop("`multiplier` argument required")
+  }
+
+  if (!is.null(by)) {
+    warning("mortality rate by strata is not currently available, ignoring `by` argument")
+  }
+
+  sym_var <- as.symbol(variable)
+  sym_deaths <- as.symbol(deaths_var)
+
+  counts <- data %>%
+    dplyr::group_by(!!sym_var, !!sym_deaths) %>%
+    dplyr::count(name = "deaths_n") %>%
+    dplyr::group_by(!!sym_var) %>%
+    dplyr::mutate(total = sum(deaths_n)) %>%
+    dplyr::filter(!!sym_deaths == TRUE)
+
+  mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
+  cols_rename <- setNames("mortality per 10 000", mr_label)
+  mr <- epikit::mortality_rate(deaths = counts$deaths_n,
+                               population = counts$total,
+                               multiplier = multiplier) %>%
+    epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
+    dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
+    dplyr::mutate(
+      `mortality per 10 000` =
+        formatC(`mortality per 10 000`, digits = 2, format = "f")) %>%
+    dplyr::rename(
+      "Deaths" = deaths,
+      "Total" = population,
+      "95%CI" = ci) %>%
+    dplyr::rename(dplyr::all_of(cols_rename))
+
+
+  if(drop_deaths){
+    # can drop the population if specified (default)
+    mr <- mr %>% dplyr::select(-Deaths)
+  }
+
+  if(drop_total){
+    # drop the population if specified (default)
+    mr <- mr %>% dplyr::select(-Total)
+  }
+
+  mr
+}
