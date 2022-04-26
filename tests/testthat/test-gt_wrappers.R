@@ -17,7 +17,7 @@ required_packages <- c("knitr",       # create output docs
                        #"incidence",   # create epicurves
                        "aweek",       # define epi weeks
                        #"sf",          # encode spatial vector data
-                      # "ggspatial",   # plot maps
+                       #"ggspatial",   # plot maps
                        "testthat"     # testing functions
                        )
 
@@ -633,5 +633,56 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
 
 })
 
+test_that("attack rate calculation returns gtsummary object and correct results with categorical and dichotomous variables with population provided", {
+  linelist_cleaned <- linelist_cleaned %>%
+    mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
+
+  cases <- linelist_cleaned %>%
+    dplyr::group_by(age_group, case) %>%
+    dplyr::count(name = "cases") %>%
+    group_by(age_group) %>%
+    dplyr::mutate(total = sum(cases)) %>%
+    dplyr::filter(case == TRUE)
+
+  population_arg <- cases$total * 15
+  total_pop <- sum(population_arg)
+
+  # attack rate for all
+  case_count <- sum(linelist_cleaned$case)
+  expected_ar <- attack_rate( case_count,  total_pop, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3) %>%
+    mutate(ar = formatC(ar, 2, format = "f"))
+
+  # attack rate for each group
+  expected_ar_lev <- epikit::attack_rate(cases$cases, population_arg, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3) %>%
+    dplyr::mutate(cases = as.character(cases)) %>%
+    mutate(ar = formatC(ar, 2, format = "f"))
+
+  gt_ar <- linelist_cleaned %>%
+    # Add population and multiplier to data frame (can't pass args to add_stat)
+    dplyr::select(case, age_group) %>%
+    gtsummary::tbl_summary(
+      statistic = list(case ~ "{N}",
+                       age_group ~ "{n}"),
+      label = list(case ~ "All participants", age_group ~ "Age Group")
+    ) %>%
+    add_ar(case_var = "case", population = population_arg)
+
+  gt_ar
+  ar_df <- gt_ar$table_body
+
+  expect_s3_class(gt_ar, "gtsummary")
+
+  # Tests for dichotomous
+  expect_equal(as.numeric(ar_df$Cases[1]), expected_ar$cases)
+  expect_equal(ar_df$`AR (per 10,000)`[1], expected_ar$ar)
+  expect_equal(ar_df$`95%CI`[1], expected_ar$ci)
+
+  # Tests for categorical
+  expect_equal(ar_df$Cases[-c(1,2)], expected_ar_lev$cases)
+  expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
+  expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
+})
 

@@ -105,7 +105,7 @@ add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4)
 #'
 #' @export
 #'
-add_ar <- function(gts_object, case_var, multiplier = 10^4) {
+add_ar <- function(gts_object, case_var, population = NULL, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
@@ -115,8 +115,10 @@ add_ar <- function(gts_object, case_var, multiplier = 10^4) {
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
         fns = gtsummary::everything() ~ purrr::partial(
-          add_gt_attack_rate_stat_label, case_var = case_var,
-          population = gts_object$N, multiplier = multiplier))
+          add_gt_attack_rate_stat_label,
+          case_var = case_var,
+          population = population,
+          multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
 
     gts_object %>%
@@ -134,10 +136,14 @@ add_ar <- function(gts_object, case_var, multiplier = 10^4) {
         # Add population and multiplier in purrr::partial
         fns = list(
           gtsummary::all_categorical() ~ purrr::partial(
-            add_gt_attack_rate_level, case_var = case_var, multiplier = multiplier),
+            add_gt_attack_rate_level,
+            case_var = case_var,
+            population = population,
+            multiplier = multiplier),
           gtsummary::all_dichotomous() ~ purrr::partial(
             add_gt_attack_rate_stat_label,
             case_var = case_var,
+            population = population,
             multiplier = multiplier,
             drop_cases = FALSE)),
         location = list(
@@ -462,7 +468,7 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 #' @rdname gtsummary_wrappers
 
 add_gt_attack_rate_stat_label <-
-  function(data, variable, by=NULL, case_var,
+  function(data, variable, by=NULL, case_var, population = population,
            multiplier = 10^4, drop_total = TRUE, drop_cases = TRUE, ...) {
   # Declare local variables for CMD check
 
@@ -476,12 +482,19 @@ add_gt_attack_rate_stat_label <-
     warning("attack rate by strata is not currently available, ignoring `by` argument")
   }
 
+  if(is.null(population)) {
+    population <- nrow(data)
+  } else {
+    population <- sum(population)
+    drop_total <- FALSE
+  }
+
   cases <- sum(data[[case_var]])
 
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
   ar <- epikit::attack_rate(cases = cases,
-                            population = nrow(data),
+                            population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(cases = formatC(cases, digits = 0, format = "f")) %>%
@@ -530,8 +543,9 @@ add_gt_attack_rate_stat_label <-
 #'
 #' @rdname gtsummary_wrappers
 #'
-add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var, multiplier = 10^4,
-                                     drop_total = TRUE, drop_cases = TRUE, ...) {
+add_gt_attack_rate_level <-
+  function(data, variable, by=NULL, case_var, population = NULL,
+           multiplier = 10^4, drop_total = TRUE, drop_cases = TRUE, ...) {
   # Declare local variables for CMD check
   cases <- ci <- Total <- NULL
 
@@ -562,10 +576,16 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var, multipli
     dplyr::mutate(total = sum(case_n)) %>%
     dplyr::filter(!!sym_case == TRUE)
 
+  if(is.null(population)) {
+    population <- counts$total
+  } else {
+    drop_total <- FALSE
+  }
+
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
   ar <- epikit::attack_rate(cases = counts$case_n,
-                            population = counts$total,
+                            population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     dplyr::mutate(cases = formatC(cases, digits = 0, format = "f")) %>%
@@ -708,7 +728,6 @@ add_gt_mortality_rate_level <- function(data,
     # if no population argument is passed, population will be the number of rows in each level
     population <- counts$total
   } else {
-
     drop_total = FALSE
   }
 
