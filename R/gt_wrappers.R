@@ -26,7 +26,7 @@
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
+add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
@@ -37,6 +37,7 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
         fns = gtsummary::everything() ~ purrr::partial(
           add_gt_mortality_rate_stat_label,
           deaths = deaths_var,
+          population = population,
           multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
 
@@ -46,6 +47,7 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
         fns = gtsummary::everything() ~ purrr::partial(
           add_gt_mortality_rate_level,
           deaths = deaths_var,
+          population = population,
           multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
@@ -56,11 +58,13 @@ add_mr <- function(gts_object, deaths_var, population, multiplier = 10^4) {
           gtsummary::all_categorical() ~ purrr::partial(
             add_gt_mortality_rate_level,
             deaths = deaths_var,
+            population = population,
             multiplier = multiplier,
             drop_deaths = FALSE),
           gtsummary::all_dichotomous() ~ purrr::partial(
             add_gt_mortality_rate_stat_label,
             deaths = deaths_var,
+            population = population,
             multiplier = multiplier,
             drop_total = TRUE,
             drop_deaths = FALSE)),
@@ -581,7 +585,7 @@ add_gt_attack_rate_level <- function(data, variable, by=NULL, case_var, multipli
 }
 
 add_gt_mortality_rate_stat_label <-
-  function(data, variable, by=NULL, deaths_var,
+  function(data, variable, by=NULL, deaths_var, population = NULL,
            multiplier = 10^4, drop_total = TRUE, drop_deaths = TRUE, ...) {
     # Declare local variables for CMD check
 
@@ -595,11 +599,22 @@ add_gt_mortality_rate_stat_label <-
       warning("death rate by strata is not currently available, ignoring `by` argument")
     }
 
+
+    if(is.null(population)) {
+      # if no population argument is passed, population will be the number of rows in the data
+      population <- nrow(data)
+    } else {
+      population <- sum(population)
+      drop_total <- FALSE
+      # msg <- "population value is the sum of the population provided"
+      # warning(paste(msg, "\n", "Population: ", population))
+    }
+
     deaths <- sum(data[[deaths_var]])
     mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
     cols_rename <- setNames("mortality per 10 000", mr_label)
     mr <- epikit::mortality_rate(deaths = deaths,
-                                 population = nrow(data),
+                                 population = population,
                                  multiplier = multiplier) %>%
       epikit::merge_ci_df(e = 3) %>%
       dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
@@ -650,8 +665,14 @@ add_gt_mortality_rate_stat_label <-
 #'
 #' @rdname gtsummary_wrappers
 #'
-add_gt_mortality_rate_level <- function(data, variable, by=NULL, deaths_var, multiplier = 10^4,
-                                        drop_total = TRUE, drop_deaths = TRUE, ...) {
+add_gt_mortality_rate_level <- function(data,
+                                        variable,
+                                        by=NULL,
+                                        deaths_var,
+                                        population = NULL,
+                                        multiplier = 10^4,
+                                        drop_total = TRUE,
+                                        drop_deaths = TRUE, ...) {
   # Declare local variables for CMD check
   deaths <- ci <- Total <- NULL
 
@@ -672,6 +693,7 @@ add_gt_mortality_rate_level <- function(data, variable, by=NULL, deaths_var, mul
     warning("mortality rate by strata is not currently available, ignoring `by` argument")
   }
 
+
   sym_var <- as.symbol(variable)
   sym_deaths <- as.symbol(deaths_var)
 
@@ -682,10 +704,18 @@ add_gt_mortality_rate_level <- function(data, variable, by=NULL, deaths_var, mul
     dplyr::mutate(total = sum(deaths_n)) %>%
     dplyr::filter(!!sym_deaths == TRUE)
 
+  if(is.null(population)) {
+    # if no population argument is passed, population will be the number of rows in each level
+    population <- counts$total
+  } else {
+
+    drop_total = FALSE
+  }
+
   mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("mortality per 10 000", mr_label)
   mr <- epikit::mortality_rate(deaths = counts$deaths_n,
-                               population = counts$total,
+                               population = population,
                                multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
     dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
@@ -711,3 +741,4 @@ add_gt_mortality_rate_level <- function(data, variable, by=NULL, deaths_var, mul
 
   mr
 }
+

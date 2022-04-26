@@ -5,6 +5,7 @@
 required_packages <- c("knitr",       # create output docs
                        "here",        # find your files
                        "dplyr",       # clean/shape data
+                       "epikit",      # clean/shape data
                        "forcats",     # clean/shape data
                        "stringr",     # clean text
                        "rio",         # read in data
@@ -12,11 +13,11 @@ required_packages <- c("knitr",       # create output docs
                        "patchwork",   # combine plots in one
                        "sitrep",      # MSF field epi functions
                        "linelist",    # Functions for cleaning/standardising data/dates
-                       "matchmaker",  # dictionary-based standardization of variables
-                       "incidence",   # create epicurves
+                       #"matchmaker",  # dictionary-based standardization of variables
+                       #"incidence",   # create epicurves
                        "aweek",       # define epi weeks
-                       "sf",          # encode spatial vector data
-                       "ggspatial",   # plot maps
+                       #"sf",          # encode spatial vector data
+                      # "ggspatial",   # plot maps
                        "testthat"     # testing functions
                        )
 
@@ -166,12 +167,12 @@ linelist_cleaned <- linelist_cleaned %>%
   ))
 
 ## create age group variable for under 5 years based on months
-linelist_cleaned$age_group_mon <- age_categories(linelist_cleaned$age_months,
+linelist_cleaned$age_group_mon <- epikit::age_categories(linelist_cleaned$age_months,
                                                  breakers = c(0, 6, 9, 12, 24),
                                                  ceiling = TRUE)
 
 ## create an age group variable by specifying categorical breaks
-linelist_cleaned$age_group <- age_categories(linelist_cleaned$age_years,
+linelist_cleaned$age_group <- epikit::age_categories(linelist_cleaned$age_years,
                                              breakers = c(0, 3, 15, 30, 45))
 
 #
@@ -576,4 +577,61 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   expect_equal(mr_df$`95%CI`[-c(1,2)], expected_mr_lev$ci)
 
 })
+
+
+
+test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables with population provided", {
+  # Deaths variable but be a logical (T/F or 1,0) with no missing data (NAs)
+
+  deaths <- linelist_cleaned %>%
+    dplyr::group_by(age_group, DIED) %>%
+    dplyr::count(name = "deaths") %>%
+    group_by(age_group) %>%
+    dplyr::mutate(total = sum(deaths)) %>%
+    dplyr::filter(DIED == TRUE)
+
+  population_arg <- deaths$total * 15
+
+  # attack rate for each group
+  expected_mr_lev <- epikit::mortality_rate(deaths$deaths, population_arg, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3) %>%
+    dplyr::mutate(deaths = as.character(deaths)) %>%
+    dplyr::mutate(mr = `mortality per 10 000`) %>%
+    mutate(mr = formatC(mr, 2, format = "f"))
+
+  deaths_count <- sum(linelist_cleaned$DIED)
+  total_pop <- sum(population_arg)
+
+  expected_mr <- epikit::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
+    epikit::merge_ci_df(e = 3)
+
+
+  gt_mr <- linelist_cleaned %>%
+    dplyr::select(DIED, age_group) %>%
+    gtsummary::tbl_summary(
+      statistic = list(DIED ~ "{N}",
+                       age_group ~ "{n}"),
+      label = list(DIED ~ "All participants", age_group ~ "Age Group"))  %>%
+    add_mr(deaths_var = "DIED", population = population_arg, multiplier = 10000)
+
+  gt_mr
+  mr_df <- gt_mr$table_body
+
+  expect_s3_class(gt_mr, "gtsummary")
+  expect_equal(as.numeric(mr_df$Deaths[1]), expected_mr$deaths)
+  # the following should be the expected if population argument not given divided by 15
+  # (set by the population_arg variable above)
+  expect_equal(
+    mr_df$`MR (per 10,000)`[1],
+    formatC(expected_mr$`mortality per 10 000`, digits = 2, format = "f"))
+  expect_equal(mr_df$`95%CI`[1], expected_mr$ci)
+
+  # Tests for categorical
+  expect_equal(mr_df$Deaths[-c(1,2)], expected_mr_lev$deaths)
+  expect_equal(mr_df$`MR (per 10,000)`[-c(1,2)], expected_mr_lev$mr)
+  expect_equal(mr_df$`95%CI`[-c(1,2)], expected_mr_lev$ci)
+
+})
+
+
 
