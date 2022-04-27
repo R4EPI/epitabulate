@@ -611,7 +611,10 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
       statistic = list(DIED ~ "{N}",
                        age_group ~ "{n}"),
       label = list(DIED ~ "All participants", age_group ~ "Age Group"))  %>%
-    add_mr(deaths_var = "DIED", population = population_arg, multiplier = 10000)
+    add_mr(deaths_var = "DIED",
+           population = population_arg,
+           multiplier = 10000,
+           drop_tblsummary_stat = TRUE)
 
   gt_mr
   mr_df <- gt_mr$table_body

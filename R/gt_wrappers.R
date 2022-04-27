@@ -79,7 +79,7 @@ add_mr <- function(gts_object,
       )
   }
 
-  if("Deaths" %in% names(gts_object)) {
+  if("Deaths" %in% names(gt_mr$table_body)) {
     gts_object <- gts_object %>%
       gtsummary::modify_table_body(~.x %>% dplyr::relocate(Deaths, .after = label))
   }
@@ -172,7 +172,7 @@ add_ar <- function(gts_object,
       )
   }
 
-  if("Cases" %in% names(gts_object)) {
+  if("Cases" %in% names(gt_mr$table_body)) {
     gts_object <- gts_object %>%
       gtsummary::modify_table_body(~.x %>% dplyr::relocate(Cases, .after = label))
   }
@@ -502,7 +502,7 @@ add_gt_attack_rate_stat_label <-
            multiplier = 10^4, drop_total = TRUE, drop_cases = TRUE, ...) {
   # Declare local variables for CMD check
 
-  cases <- ci <- Total <- NULL
+  cases <- ci <- Population <- NULL
 
   if(is.null(multiplier)) {
     stop("`multiplier` argument required")
@@ -532,7 +532,7 @@ add_gt_attack_rate_stat_label <-
      # merge the lower and upper CI into one column
     dplyr::rename(
       "Cases" = cases,
-      "Total" = population,
+      "Population" = population,
       "95%CI" = ci) %>%
     dplyr::rename(dplyr::all_of(cols_rename))
 
@@ -543,7 +543,7 @@ add_gt_attack_rate_stat_label <-
 
   if(drop_total){
     # drop the population if specified (default)
-    ar <- ar %>% dplyr::select(-Total)
+    ar <- ar %>% dplyr::select(-Population)
   }
 
   ar
@@ -577,7 +577,7 @@ add_gt_attack_rate_level <-
   function(data, variable, by=NULL, case_var, population = NULL,
            multiplier = 10^4, drop_total = TRUE, drop_cases = TRUE, ...) {
   # Declare local variables for CMD check
-  cases <- ci <- Total <- NULL
+  cases <- ci <- Population <- NULL
 
   if (is.null(case_var) | is.null(data[[case_var]])) {
     stop("`case_var` argument is required and must be a column in the data")
@@ -622,13 +622,13 @@ add_gt_attack_rate_level <-
     dplyr::mutate(ar = formatC(ar, digits = 2, format = "f")) %>%
     dplyr::rename(
       "Cases" = cases,
-      "Total" = population,
+      "Population" = population,
       "95%CI" = ci) %>%
     dplyr::rename(dplyr::all_of(cols_rename))
 
   if(drop_total){
     # drop the population if specified (default)
-    ar <- ar %>% dplyr::select(-Total)
+    ar <- ar %>% dplyr::select(-Population)
   }
 
   return(ar)
@@ -639,7 +639,7 @@ add_gt_mortality_rate_stat_label <-
            multiplier = 10^4, drop_total = TRUE, drop_deaths = TRUE, ...) {
     # Declare local variables for CMD check
 
-    deaths <- ci <- Total <- NULL
+    deaths <- ci <- Population <- NULL
 
     if(is.null(multiplier)) {
       stop("`multiplier` argument required")
@@ -673,7 +673,7 @@ add_gt_mortality_rate_stat_label <-
       # merge the lower and upper CI into one column
       dplyr::rename(
         "Deaths" = deaths,
-        "Total" = population,
+        "Population" = population,
         "95%CI" = ci) %>%
       dplyr::rename(dplyr::all_of(cols_rename))
 
@@ -684,7 +684,7 @@ add_gt_mortality_rate_stat_label <-
 
     if(drop_total){
       # drop the population if specified (default)
-      mr <- mr %>% dplyr::select(-Total)
+      mr <- mr %>% dplyr::select(-Population)
     }
 
     mr
@@ -724,7 +724,7 @@ add_gt_mortality_rate_level <- function(data,
                                         drop_total = TRUE,
                                         drop_deaths = TRUE, ...) {
   # Declare local variables for CMD check
-  deaths <- ci <- Total <- NULL
+  deaths <- ci <- Population <- NULL
 
   if (is.null(deaths_var) | is.null(data[[deaths_var]])) {
     stop("`deaths_var` argument is required and must be a column in the data")
@@ -773,7 +773,7 @@ add_gt_mortality_rate_level <- function(data,
         formatC(`mortality per 10 000`, digits = 2, format = "f")) %>%
     dplyr::rename(
       "Deaths" = deaths,
-      "Total" = population,
+      "Population" = population,
       "95%CI" = ci) %>%
     dplyr::rename(dplyr::all_of(cols_rename))
 
@@ -785,7 +785,7 @@ add_gt_mortality_rate_level <- function(data,
 
   if(drop_total){
     # drop the population if specified (default)
-    mr <- mr %>% dplyr::select(-Total)
+    mr <- mr %>% dplyr::select(-Population)
   }
 
   mr
