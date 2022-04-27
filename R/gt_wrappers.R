@@ -26,11 +26,15 @@
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4) {
+add_mr <- function(gts_object,
+                   deaths_var,
+                   population = NULL,
+                   multiplier = 10^4,
+                   drop_tblsummary_stat = FALSE) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    gts_object %>%
+    gts_object <- gts_object %>%
       # Use add stat to add attack rate by label
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
@@ -41,7 +45,7 @@ add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4)
           multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
 
-    gts_object %>%
+    gts_object <- gts_object %>%
       # Use add stat to add attack rate by level
       gtsummary::add_stat(
         fns = gtsummary::everything() ~ purrr::partial(
@@ -51,7 +55,7 @@ add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4)
           multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    gts_object %>%
+    gts_object <- gts_object %>%
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
         fns = list(
@@ -74,6 +78,17 @@ add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4)
         )
       )
   }
+
+  if("Deaths" %in% names(gts_object)) {
+    gts_object <- gts_object %>%
+      gtsummary::modify_table_body(~.x %>% dplyr::relocate(Deaths, .after = label))
+  }
+
+  if(drop_tblsummary_stat) {
+    gts_object <- gts_object %>% gt_remove_stat(col_name = "stat_0")
+  }
+
+  return(gts_object)
 }
 
 #' An attack rate wrapper function (using gtsummary and epikit packages)that takes
@@ -105,12 +120,16 @@ add_mr <- function(gts_object, deaths_var, population = NULL, multiplier = 10^4)
 #'
 #' @export
 #'
-add_ar <- function(gts_object, case_var, population = NULL, multiplier = 10^4) {
+add_ar <- function(gts_object,
+                   case_var,
+                   population = NULL,
+                   multiplier = 10^4,
+                   drop_tblsummary_stat = FALSE) {
   summary_types <- unique(gts_object$meta_data$summary_type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
 
-    gts_object %>%
+    gts_object <- gts_object %>%
       # Use add stat to add attack rate by label
       gtsummary::add_stat(
         # Add population and multiplier in purrr::partial
@@ -121,7 +140,7 @@ add_ar <- function(gts_object, case_var, population = NULL, multiplier = 10^4) {
           multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
 
-    gts_object %>%
+    gts_object <- gts_object %>%
       # Use add stat to add attack rate by level
       gtsummary::add_stat(
         fns = gtsummary::everything() ~ purrr::partial(
@@ -131,9 +150,9 @@ add_ar <- function(gts_object, case_var, population = NULL, multiplier = 10^4) {
           multiplier = multiplier),
         location = everything() ~ "level")
   } else if ("categorical" %in% summary_types & "dichotomous" %in% summary_types) {
-    gts_object %>%
+    gts_object <-  gts_object %>%
       gtsummary::add_stat(
-        # Add population and multiplier in purrr::partial
+        # Add AR, population, and multiplier in purrr::partial
         fns = list(
           gtsummary::all_categorical() ~ purrr::partial(
             add_gt_attack_rate_level,
@@ -152,6 +171,17 @@ add_ar <- function(gts_object, case_var, population = NULL, multiplier = 10^4) {
         )
       )
   }
+
+  if("Cases" %in% names(gts_object)) {
+    gts_object <- gts_object %>%
+      gtsummary::modify_table_body(~.x %>% dplyr::relocate(Cases, .after = label))
+  }
+
+  if(drop_tblsummary_stat) {
+    gts_object <- gts_object %>% gt_remove_stat(col_name = "stat_0")
+  }
+
+  return(gts_object)
 }
 
 

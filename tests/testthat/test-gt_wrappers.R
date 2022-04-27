@@ -579,7 +579,6 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
 })
 
 
-
 test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables with population provided", {
   # Deaths variable but be a logical (T/F or 1,0) with no missing data (NAs)
 
@@ -655,7 +654,10 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     mutate(ar = formatC(ar, 2, format = "f"))
 
   # attack rate for each group
-  expected_ar_lev <- epikit::attack_rate(cases$cases, population_arg, multiplier = 10000) %>%
+  expected_ar_lev <- epikit::attack_rate(
+    cases$cases,
+    population_arg,
+    multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(cases = as.character(cases)) %>%
     mutate(ar = formatC(ar, 2, format = "f"))
@@ -668,7 +670,9 @@ test_that("attack rate calculation returns gtsummary object and correct results 
                        age_group ~ "{n}"),
       label = list(case ~ "All participants", age_group ~ "Age Group")
     ) %>%
-    add_ar(case_var = "case", population = population_arg)
+    add_ar(case_var = "case",
+           population = population_arg,
+           drop_tblsummary_stat = TRUE)
 
   gt_ar
   ar_df <- gt_ar$table_body
