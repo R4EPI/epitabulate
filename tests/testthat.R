@@ -1,4 +1,4 @@
 library(testthat)
-library(epibuffet)
+library(epitabulate)
 
-test_check("epibuffet")
+test_check("epitabulate")
