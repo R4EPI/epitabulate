@@ -833,3 +833,62 @@ add_gt_mortality_rate_level <- function(data,
   mr
 }
 
+
+# ==================================================================
+# WILL MOVE THESE TO APPROPRIATE PLACE IN FILE WHEN WRAPPING UP FEATURE
+add_stat_mh_label <- function(data, variable, by, mh_odds_ratio, ci, ...) {
+  tb <- tibble::tibble(
+    "Odds ratio" = mh_odds_ratio,
+    "95% CI" = ci,
+  )
+
+  return(tb)
+}
+
+
+
+
+
+#' A function that adds mh odds ratio to an existing gtsummary object with same
+#' dimenstions (will add to this later.)
+#'
+#' @rdname gtsummary_wrappers
+#'
+#' @export
+add_mh_single <- function(gt_object) {
+  exposure <- gt_object$meta_data$exposure
+  outcome <- gt_object$meta_data$outcome
+  df <- gt_object$data
+  # meta_data <- data$meta_data
+
+  mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
+
+  mh_gt <- gtsummary::tbl_summary(df)
+
+  gto <- gtsummary::tbl_summary(df,
+                                include = c("All"),
+                                statistic = everything() ~ "") %>%
+    gt_remove_stat()
+
+
+
+
+  ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
+  ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
+              "--",
+              formatC(mh_results$upper, digits = 2, format = "f"))
+
+  gt_mh <- gto %>%
+    gtsummary::add_stat(
+      # Add population and multiplier in purrr::partial
+      fns = gtsummary::everything() ~ purrr::partial(
+        add_stat_mh_label,
+        mh_odds_ratio = ratio, ci = ci))
+
+  gt_combined <-
+    gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
+
+
+  return(gt_combined)
+}
+

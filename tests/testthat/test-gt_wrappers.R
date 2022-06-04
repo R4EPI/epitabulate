@@ -774,14 +774,18 @@ test_that("univariate adds mh odds to gtsummary object", {
         add_stat_mh_label,
         mh_odds_ratio = ratio, ci = ci))
 
-    browser()
     gt_combined <-
-      gtsummary::tbl_merge(c(gt_object, gt_mh))
+      gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
 
 
     return(gt_combined)
   }
 
+
+  gt_mh_object <- add_mh_single(gts)
+
+  expect_equal(gt_mh_object$table_body$label[1], "All")
+  # Add tests for values of mh and table styling
 
 })
 
