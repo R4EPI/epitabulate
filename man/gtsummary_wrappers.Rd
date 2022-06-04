@@ -15,9 +15,21 @@
 a gtsummary object and returns a gtsummary object with attack rate (per given
 multiple) with 95\% confidence interval}
 \usage{
-add_mr(gts_object, deaths_var, population, multiplier = 10^4)
+add_mr(
+  gts_object,
+  deaths_var,
+  population = NULL,
+  multiplier = 10^4,
+  drop_tblsummary_stat = FALSE
+)
 
-add_ar(gts_object, case_var, multiplier = 10^4)
+add_ar(
+  gts_object,
+  case_var,
+  population = NULL,
+  multiplier = 10^4,
+  drop_tblsummary_stat = FALSE
+)
 
 add_cfr(gts_object, deaths_var)
 
@@ -44,6 +56,7 @@ add_gt_attack_rate_stat_label(
   variable,
   by = NULL,
   case_var,
+  population = population,
   multiplier = 10^4,
   drop_total = TRUE,
   drop_cases = TRUE,
@@ -55,6 +68,7 @@ add_gt_attack_rate_level(
   variable,
   by = NULL,
   case_var,
+  population = NULL,
   multiplier = 10^4,
   drop_total = TRUE,
   drop_cases = TRUE,
@@ -66,6 +80,7 @@ add_gt_mortality_rate_level(
   variable,
   by = NULL,
   deaths_var,
+  population = NULL,
   multiplier = 10^4,
   drop_total = TRUE,
   drop_deaths = TRUE,

@@ -19,7 +19,7 @@ required_packages <- c("knitr",       # create output docs
                        #"sf",          # encode spatial vector data
                        #"ggspatial",   # plot maps
                        "testthat"     # testing functions
-                       )
+)
 
 for (pkg in required_packages) {
   # install packages if not already present
@@ -168,12 +168,12 @@ linelist_cleaned <- linelist_cleaned %>%
 
 ## create age group variable for under 5 years based on months
 linelist_cleaned$age_group_mon <- epikit::age_categories(linelist_cleaned$age_months,
-                                                 breakers = c(0, 6, 9, 12, 24),
-                                                 ceiling = TRUE)
+                                                         breakers = c(0, 6, 9, 12, 24),
+                                                         ceiling = TRUE)
 
 ## create an age group variable by specifying categorical breaks
 linelist_cleaned$age_group <- epikit::age_categories(linelist_cleaned$age_years,
-                                             breakers = c(0, 3, 15, 30, 45))
+                                                     breakers = c(0, 3, 15, 30, 45))
 
 #
 linelist_cleaned$gender <- factor(linelist_cleaned$sex, levels = c("Male", "Female"))
@@ -199,6 +199,7 @@ population_data_region <- gen_population(total_pop = 5000,         # set the tot
 
 
 population <- sum(population_data_age$population)
+
 
 # Tests start ------------------------------------------------------------------
 
@@ -477,7 +478,7 @@ test_that("gt_remove_stat removes stat by column name", {
 })
 
 
-test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
+test_that("gt_cross_tab adds stat columns showing outcome by exposure in two by two table", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
@@ -501,13 +502,37 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
 })
 
 
+test_that("gt_cross_tab adds stat columns showing outcome by exposure in single row", {
+  count_table <- linelist_cleaned %>%
+    dplyr::select(recent_travel, diarrhoea) %>%
+    group_by(recent_travel, diarrhoea) %>%
+    count()
+
+  gt_cs <- add_cs(
+    data = linelist_cleaned,
+    exposure = "recent_travel",
+    outcome = "diarrhoea",
+    show_overall = TRUE,
+    exposure_label = "Recent travel",
+    outcome_label = "Diarrhoea",
+    two_by_two = FALSE)
+
+  gt_df <- gt_cs$table_body
+
+  expect_s3_class(gt_cs, "gtsummary")
+  expect_true(grepl(paste0("^", count_table[1,3]), gt_df$stat_1_1[1]))
+  expect_true(grepl(paste0("^", count_table[4,3]), gt_df$stat_2_2[1]))
+  expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
+})
+
+
 test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
 
   gt_cs <- add_cs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
-    var = "gender",
+    var_name = "gender",
     show_overall = TRUE,
     exposure_label = "Recent travel",
     outcome_label = "Diarrhoea",
@@ -691,5 +716,72 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$Cases[-c(1,2)], expected_ar_lev$cases)
   expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
+})
+
+
+test_that("univariate adds mh odds to gtsummary object", {
+
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
+
+  gts <- cases %>%
+    add_cs(exposure = "water_source_tank", outcome = "typhoid_logical", show_overall = FALSE)
+
+
+
+  last_table <- length(gts$tbls)
+  gt_tbl <- gts$tbls[[last_table]]
+
+  add_stat_mh_label <- function(data, variable, by, mh_odds_ratio, ci, ...) {
+   tb <- tibble::tibble(
+     "Odds ratio" = mh_odds_ratio,
+     "95% CI" = ci,
+   )
+
+   return(tb)
+  }
+
+  add_mh_single <- function(gt_object) {
+    exposure <- gt_object$meta_data$exposure
+    outcome <- gt_object$meta_data$outcome
+    df <- gt_object$data
+    # meta_data <- data$meta_data
+
+    mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
+
+    mh_gt <- gtsummary::tbl_summary(df)
+
+    gto <- gtsummary::tbl_summary(df,
+                           include = c("All"),
+                           statistic = everything() ~ "") %>%
+      gt_remove_stat()
+
+
+
+
+    ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
+    ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
+                "--",
+                formatC(mh_results$upper, digits = 2, format = "f"))
+
+    gt_mh <- gto %>%
+    gtsummary::add_stat(
+      # Add population and multiplier in purrr::partial
+      fns = gtsummary::everything() ~ purrr::partial(
+        add_stat_mh_label,
+        mh_odds_ratio = ratio, ci = ci))
+
+    browser()
+    gt_combined <-
+      gtsummary::tbl_merge(c(gt_object, gt_mh))
+
+
+    return(gt_combined)
+  }
+
+
 })
 

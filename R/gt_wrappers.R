@@ -287,9 +287,9 @@ gt_remove_stat <- function(gts_object, col_name = "stat_0") {
 #' @export
 
 add_cs <- function(
-  data, exposure, outcome, var = NULL, show_overall = TRUE,
+  data, exposure, outcome, var_name = NULL, show_overall = TRUE,
   exposure_label = NULL, outcome_label = NULL, var_label = NULL,
-  two_by_two = FALSE) {
+  two_by_two = FALSE, gt_statistic = "{n}") {
 
   exposure_sym <- as.symbol(exposure)
   qexposure <- rlang::enquo(exposure_sym)
@@ -300,11 +300,23 @@ add_cs <- function(
   if (is.null(exposure_label)) exposure_label <- exposure
   if (is.null(outcome_label)) outcome_label <- outcome
 
+  # if (is.logical(data[[exposure]])) {
+  #   message("Ordering logical factors TRUE False")
+  #   data[[(exposure)]] <- factor(data[[(exposure)]], levels = c(TRUE, FALSE))
+  # }
+  #
+  # if (is.logical(data[[exposure]])) {
+  #   data <- data %>%
+  #     mutate(exposure = factor(!!qexposure, levels = c(TRUE, FALSE)))
+  # }
+
+
   if (two_by_two) {
     gts <- data %>%
       dplyr::select(!!qexposure, !!qoutcome) %>%
       gtsummary::tbl_summary(
         include = !!qexposure,
+        statistic = everything() ~ gt_statistic,
         by = !!qoutcome,
         type = exposure ~ "categorical",
         label = exposure ~ exposure_label
@@ -316,8 +328,15 @@ add_cs <- function(
       gts <- gts %>% gtsummary::add_overall(last = TRUE)
     }
   } else {
-    if(is.null(var)) stop("value for `var` required for stratified cross tabs")
-    var_sym <- as.symbol(var)
+    if(is.null(var_name)) {
+      var_name <- "All"
+      data <- data %>% mutate(All = TRUE)
+      summary_type <- "dichotomous"
+
+    } else {
+      summary_type <- "categorical"
+    }
+    var_sym <- as.symbol(var_name)
     qvar <- rlang::enquo(var_sym)
     exposure_levels <- levels(data[[exposure]])
 
@@ -325,28 +344,32 @@ add_cs <- function(
       paste0("Case defined as ", paste(exposure_label, "value of", exposure_levels[1])),
       "; ",
       paste0("Control defined as ", paste(exposure_label, "value of", exposure_levels[2])))
-    if (is.null(var_label)) var_label <- var
-    var_levels <- levels(data[[var]])
+    if (is.null(var_label)) var_label <- var_name
+    var_levels <- levels(data[[var_name]])
     df_strata <-
       data %>%
-      dplyr::select(dplyr::all_of(c(var, outcome, exposure))) %>%
+      dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
       tidyr::nest(data = -dplyr::all_of(exposure)) %>%
       dplyr::mutate(
         tbl = purrr::map(
           data, ~ gtsummary::tbl_summary(
             .x,
             include = !!qvar,
+            statistic = everything() ~ gt_statistic,
             by = !!qoutcome,
-            type = var ~ "categorical",
-            label = var ~ var_label,
+            type = var_name ~ summary_type,
+            label = var_name ~ var_label,
             missing = "ifany"
           ))
       )
     # gts <- gtsummary::tbl_merge(df_strata$tbl)
     if (show_overall) {
       gt_overall <- data %>%
-        dplyr::select(dplyr::all_of(c(var, outcome))) %>%
-        gtsummary::tbl_summary(include = var, label = var ~ var_label)
+        dplyr::select(dplyr::all_of(c(var_name, outcome))) %>%
+        gtsummary::tbl_summary(
+          include = var_name,
+          statistic = everything() ~ gt_statistic,
+          label = var_name ~ var_label)
 
       tbls <- df_strata$tbl
       tbls[[3]] <- gt_overall
@@ -368,8 +391,27 @@ add_cs <- function(
     }
   }
 
+  gts[["data"]] <- data
+  gts[["meta_data"]] <- list(
+    exposure = exposure,
+    outcome = outcome,
+    var_name = var_name,
+    show_overall = show_overall,
+    exposure_label = exposure_label,
+    outcome_label = outcome_label,
+    var_name = ifelse(!is.null(var_name), var_name, NULL),
+    var_label = ifelse(!is.null(var_label), var_label, NULL),
+    two_by_two = two_by_two,
+    gt_statistic = gt_statistic
+  )
+
   return(gts)
 }
+
+
+
+
+# Internal functions (not exported) ----------------------------------------
 
 #' A case fatality rate wrapper function to be passed to the gtsummary::add_stat
 #' function, which returns a data frame with a single row to be used with
