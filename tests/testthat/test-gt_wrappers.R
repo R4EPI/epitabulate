@@ -348,10 +348,11 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     mutate(case = ifelse(diarrhoea == "Yes" & bleeding == "Yes" & fever == "Yes", T, F))
 
   counts <- linelist_cleaned %>%
-    dplyr::group_by(age_group, case) %>%
+    dplyr::mutate(case = factor(case)) %>%
+    dplyr::group_by(age_group, case, .drop = FALSE) %>%
     dplyr::count(name = "case_n") %>%
     dplyr::group_by(age_group) %>%
-    dplyr::mutate(total = sum(case_n)) %>%
+    dplyr::mutate(total = sum(case_n), .drop = FALSE) %>%
     dplyr::filter(case == T)
 
   # calculate population total from population table
@@ -420,9 +421,10 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
 
   cases <- linelist_cleaned %>%
-    dplyr::group_by(age_group, case) %>%
+    dplyr::mutate(case = factor(case)) %>%
+    dplyr::group_by(age_group, case, .drop = FALSE) %>%
     dplyr::count(name = "cases") %>%
-    group_by(age_group) %>%
+    group_by(age_group, .drop = FALSE) %>%
     dplyr::mutate(total = sum(cases)) %>%
     dplyr::filter(case == TRUE)
 
@@ -478,7 +480,7 @@ test_that("gt_remove_stat removes stat by column name", {
 })
 
 
-test_that("gt_cross_tab adds stat columns showing outcome by exposure in two by two table", {
+test_that("add_cs adds stat columns showing outcome by exposure in two by two table", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
@@ -525,8 +527,35 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure in single 
   expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
 })
 
+test_that("add_cs adds stat columns showing outcome by exposure", {
 
-test_that("gt_cross_tab adds stat columns showing outcome by exposure", {
+  gt_cs <- add_cs(
+    data = linelist_cleaned,
+    exposure = "recent_travel",
+    outcome = "diarrhoea",
+    var_name = "gender",
+    show_overall = TRUE,
+    exposure_label = "Recent travel",
+    outcome_label = "Diarrhoea",
+    var_label = "Gender",
+    two_by_two = FALSE)
+
+  gt_df <- gt_cs$table_body
+
+  col_names <- c("variable", "var_label", "row_type", "label", "var_type_1",
+                 "stat_1_1", "stat_2_1", "var_type_2", "stat_1_2", "stat_2_2",
+                 "var_type_3", "stat_0_3")
+
+  span_heads <- c(NA, "**Table 1**", "**Cases**", "**Table 2**", "**Controls**",
+                  "**Table 3**", "**Overall**")
+
+
+  expect_s3_class(gt_cs, "gtsummary")
+  expect_equal(names(gt_df), col_names)
+  expect_equal(unique(gt_cs$table_styling$header$spanning_header), span_heads)
+})
+
+test_that("add_cs adds stat columns showing outcome by exposure", {
 
   gt_cs <- add_cs(
     data = linelist_cleaned,
@@ -666,9 +695,10 @@ test_that("attack rate calculation returns gtsummary object and correct results 
 
 
   cases <- linelist_cleaned %>%
-    dplyr::group_by(age_group, case) %>%
+    dplyr::mutate(case = factor(case)) %>%
+    dplyr::group_by(age_group, case, .drop = FALSE) %>%
     dplyr::count(name = "cases") %>%
-    group_by(age_group) %>%
+    group_by(age_group, .drop = FALSE) %>%
     dplyr::mutate(total = sum(cases)) %>%
     dplyr::filter(case == TRUE)
 
@@ -716,76 +746,5 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$Cases[-c(1,2)], expected_ar_lev$cases)
   expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
-})
-
-
-test_that("univariate adds mh odds to gtsummary object", {
-
-
-  cases <- linelist_cleaned %>%
-    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
-    filter(typhoid %in% c("Positive", "Negative")) %>%
-    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
-
-  gts <- cases %>%
-    add_cs(exposure = "water_source_tank", outcome = "typhoid_logical", show_overall = FALSE)
-
-
-
-  last_table <- length(gts$tbls)
-  gt_tbl <- gts$tbls[[last_table]]
-
-  add_stat_mh_label <- function(data, variable, by, mh_odds_ratio, ci, ...) {
-   tb <- tibble::tibble(
-     "Odds ratio" = mh_odds_ratio,
-     "95% CI" = ci,
-   )
-
-   return(tb)
-  }
-
-  add_mh_single <- function(gt_object) {
-    exposure <- gt_object$meta_data$exposure
-    outcome <- gt_object$meta_data$outcome
-    df <- gt_object$data
-    # meta_data <- data$meta_data
-
-    mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
-
-    mh_gt <- gtsummary::tbl_summary(df)
-
-    gto <- gtsummary::tbl_summary(df,
-                           include = c("All"),
-                           statistic = everything() ~ "") %>%
-      gt_remove_stat()
-
-
-
-
-    ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
-    ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
-                "--",
-                formatC(mh_results$upper, digits = 2, format = "f"))
-
-    gt_mh <- gto %>%
-    gtsummary::add_stat(
-      # Add population and multiplier in purrr::partial
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_stat_mh_label,
-        mh_odds_ratio = ratio, ci = ci))
-
-    gt_combined <-
-      gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
-
-
-    return(gt_combined)
-  }
-
-
-  gt_mh_object <- add_mh_single(gts)
-
-  expect_equal(gt_mh_object$table_body$label[1], "All")
-  # Add tests for values of mh and table styling
-
 })
 

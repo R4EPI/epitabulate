@@ -79,7 +79,7 @@ add_mr <- function(gts_object,
       )
   }
 
-  if("Deaths" %in% names(gt_mr$table_body)) {
+  if("Deaths" %in% names(gts_object$table_body)) {
     gts_object <- gts_object %>%
       gtsummary::modify_table_body(~.x %>% dplyr::relocate(Deaths, .after = label))
   }
@@ -139,7 +139,6 @@ add_ar <- function(gts_object,
           population = population,
           multiplier = multiplier))
   } else if("categorical" %in% summary_types & !"dichotomous" %in% summary_types) {
-
     gts_object <- gts_object %>%
       # Use add stat to add attack rate by level
       gtsummary::add_stat(
@@ -172,7 +171,7 @@ add_ar <- function(gts_object,
       )
   }
 
-  if("Cases" %in% names(gt_mr$table_body)) {
+  if("Cases" %in% names(gts_object$table_body)) {
     gts_object <- gts_object %>%
       gtsummary::modify_table_body(~.x %>% dplyr::relocate(Cases, .after = label))
   }
@@ -287,9 +286,9 @@ gt_remove_stat <- function(gts_object, col_name = "stat_0") {
 #' @export
 
 add_cs <- function(
-  data, exposure, outcome, var_name = NULL, show_overall = TRUE,
-  exposure_label = NULL, outcome_label = NULL, var_label = NULL,
-  two_by_two = FALSE, gt_statistic = "{n}") {
+    data, exposure, outcome, var_name = NULL, show_overall = TRUE,
+    exposure_label = NULL, outcome_label = NULL, var_label = NULL,
+    two_by_two = FALSE, gt_statistic = "{n}") {
 
   exposure_sym <- as.symbol(exposure)
   qexposure <- rlang::enquo(exposure_sym)
@@ -300,16 +299,15 @@ add_cs <- function(
   if (is.null(exposure_label)) exposure_label <- exposure
   if (is.null(outcome_label)) outcome_label <- outcome
 
-  # if (is.logical(data[[exposure]])) {
-  #   message("Ordering logical factors TRUE False")
-  #   data[[(exposure)]] <- factor(data[[(exposure)]], levels = c(TRUE, FALSE))
-  # }
-  #
-  # if (is.logical(data[[exposure]])) {
-  #   data <- data %>%
-  #     mutate(exposure = factor(!!qexposure, levels = c(TRUE, FALSE)))
-  # }
+  if (is.logical(data[[exposure]])) {
+    message("Ordering logical factors TRUE False")
+    data[[(exposure)]] <- factor(data[[(exposure)]], levels = c(TRUE, FALSE))
+  }
 
+  if (is.logical(data[[exposure]])) {
+    data <- data %>%
+      mutate(exposure = factor(!!qexposure, levels = c(TRUE, FALSE)))
+  }
 
   if (two_by_two) {
     gts <- data %>%
@@ -345,7 +343,8 @@ add_cs <- function(
       "; ",
       paste0("Control defined as ", paste(exposure_label, "value of", exposure_levels[2])))
     if (is.null(var_label)) var_label <- var_name
-    var_levels <- levels(data[[var_name]])
+    # var_levels <- levels(data[[var_name]])
+
     df_strata <-
       data %>%
       dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
@@ -361,7 +360,12 @@ add_cs <- function(
             label = var_name ~ var_label,
             missing = "ifany"
           ))
-      )
+      ) %>%
+      # mutate(!!qexposure = factor(!!qexposure, exposure_levels))
+      mutate_at(vars(exposure), as.factor) %>%
+      mutate(!!qexposure := fct_relevel(!! rlang::sym(exposure), exposure_levels)) %>%
+      arrange(!!qexposure)
+
     # gts <- gtsummary::tbl_merge(df_strata$tbl)
     if (show_overall) {
       gt_overall <- data %>%
@@ -382,12 +386,12 @@ add_cs <- function(
         gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
 
     } else {
-    gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
-      gtsummary::modify_header(label ~ outcome_label) %>%
-      gtsummary::modify_spanning_header(list(
-        c("stat_1_1", "stat_2_1") ~ "**Cases**"),
-        c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
-      gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
+      gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
+        gtsummary::modify_header(label ~ outcome_label) %>%
+        gtsummary::modify_spanning_header(list(
+          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
+          c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
+        gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
     }
   }
 
@@ -399,8 +403,8 @@ add_cs <- function(
     show_overall = show_overall,
     exposure_label = exposure_label,
     outcome_label = outcome_label,
-    var_name = ifelse(!is.null(var_name), var_name, NULL),
-    var_label = ifelse(!is.null(var_label), var_label, NULL),
+    var_name = ifelse(!is.null(var_name), var_name, NA),
+    var_label = ifelse(!is.null(var_label), var_label, NA),
     two_by_two = two_by_two,
     gt_statistic = gt_statistic
   )
@@ -618,6 +622,7 @@ add_gt_attack_rate_stat_label <-
 add_gt_attack_rate_level <-
   function(data, variable, by=NULL, case_var, population = NULL,
            multiplier = 10^4, drop_total = TRUE, drop_cases = TRUE, ...) {
+
   # Declare local variables for CMD check
   cases <- ci <- Population <- NULL
 
@@ -640,13 +645,14 @@ add_gt_attack_rate_level <-
 
   sym_var <- as.symbol(variable)
   sym_case <- as.symbol(case_var)
-
   counts <- data %>%
-    dplyr::group_by(!!sym_var, !!sym_case) %>%
+    # change to factor and keep all counts (including 0 counts)
+    dplyr::mutate(!!case_var := factor(!!sym_case)) %>%
+    dplyr::group_by(!!sym_var, !!sym_case, .drop = FALSE) %>%
     dplyr::count(name = "case_n") %>%
-    dplyr::group_by(!!sym_var) %>%
+    dplyr::group_by(!!sym_var, .drop = FALSE) %>%
     dplyr::mutate(total = sum(case_n)) %>%
-    dplyr::filter(!!sym_case == TRUE)
+    dplyr::filter(!!sym_case == 'TRUE')
 
   if(is.null(population)) {
     population <- counts$total
@@ -672,6 +678,7 @@ add_gt_attack_rate_level <-
     # drop the population if specified (default)
     ar <- ar %>% dplyr::select(-Population)
   }
+
 
   return(ar)
 }
@@ -790,9 +797,11 @@ add_gt_mortality_rate_level <- function(data,
   sym_deaths <- as.symbol(deaths_var)
 
   counts <- data %>%
-    dplyr::group_by(!!sym_var, !!sym_deaths) %>%
+    # change to factor and keep all counts (including 0 counts)
+    dplyr::mutate(!!deaths_var := factor(!!sym_deaths)) %>%
+    dplyr::group_by(!!sym_var, !!sym_deaths, .drop = FALSE) %>%
     dplyr::count(name = "deaths_n") %>%
-    dplyr::group_by(!!sym_var) %>%
+    dplyr::group_by(!!sym_var, .drop = FALSE) %>%
     dplyr::mutate(total = sum(deaths_n)) %>%
     dplyr::filter(!!sym_deaths == TRUE)
 
@@ -831,64 +840,5 @@ add_gt_mortality_rate_level <- function(data,
   }
 
   mr
-}
-
-
-# ==================================================================
-# WILL MOVE THESE TO APPROPRIATE PLACE IN FILE WHEN WRAPPING UP FEATURE
-add_stat_mh_label <- function(data, variable, by, mh_odds_ratio, ci, ...) {
-  tb <- tibble::tibble(
-    "Odds ratio" = mh_odds_ratio,
-    "95% CI" = ci,
-  )
-
-  return(tb)
-}
-
-
-
-
-
-#' A function that adds mh odds ratio to an existing gtsummary object with same
-#' dimenstions (will add to this later.)
-#'
-#' @rdname gtsummary_wrappers
-#'
-#' @export
-add_mh_single <- function(gt_object) {
-  exposure <- gt_object$meta_data$exposure
-  outcome <- gt_object$meta_data$outcome
-  df <- gt_object$data
-  # meta_data <- data$meta_data
-
-  mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
-
-  mh_gt <- gtsummary::tbl_summary(df)
-
-  gto <- gtsummary::tbl_summary(df,
-                                include = c("All"),
-                                statistic = everything() ~ "") %>%
-    gt_remove_stat()
-
-
-
-
-  ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
-  ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
-              "--",
-              formatC(mh_results$upper, digits = 2, format = "f"))
-
-  gt_mh <- gto %>%
-    gtsummary::add_stat(
-      # Add population and multiplier in purrr::partial
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_stat_mh_label,
-        mh_odds_ratio = ratio, ci = ci))
-
-  gt_combined <-
-    gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
-
-
-  return(gt_combined)
 }
 
