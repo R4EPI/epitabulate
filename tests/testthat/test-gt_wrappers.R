@@ -748,3 +748,33 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
 })
 
+<<<<<<< HEAD
+=======
+
+test_that("univariate adds mh odds to gtsummary object", {
+
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
+
+  gts <- cases %>%
+    add_cs(exposure = "water_source_tank", outcome = "typhoid_logical", show_overall = FALSE)
+
+
+
+  last_table <- length(gts$tbls)
+  gt_tbl <- gts$tbls[[last_table]]
+
+
+
+
+  gt_mh_object <- add_mh_single(gts)
+
+  expect_equal(gt_mh_object$table_body$label[1], "All")
+  # Add tests for values of mh and table styling
+
+})
+
+>>>>>>> 09d9b2e (add stat mh single row)
