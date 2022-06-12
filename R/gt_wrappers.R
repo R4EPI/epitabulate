@@ -911,7 +911,7 @@ add_mh_single <- function(gt_object) {
 
 
 add_stat_mh_label <- function(data, variable, by=NULL, mh_odds_ratio, ci, ...) {
-  data.frame(OR = mh_odds_ratio, `95% CI` = ci)
+  data.frame(OR = mh_odds_ratio, CI = ci)
 }
 
 
