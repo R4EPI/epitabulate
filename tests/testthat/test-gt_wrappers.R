@@ -493,7 +493,8 @@ test_that("add_cs adds stat columns showing outcome by exposure in two by two ta
     show_overall = TRUE,
     exposure_label = "Recent travel",
     outcome_label = "Diarrhoea",
-    two_by_two = TRUE)
+    two_by_two = TRUE,
+    show_N_header = TRUE)
 
   gt_df <- gt_cs$table_body
 
@@ -504,7 +505,7 @@ test_that("add_cs adds stat columns showing outcome by exposure in two by two ta
 })
 
 
-test_that("gt_cross_tab adds stat columns showing outcome by exposure in single row", {
+test_that("add_cs adds stat columns showing outcome by exposure in single row", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
@@ -748,33 +749,49 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
 })
 
-<<<<<<< HEAD
-=======
-
 test_that("univariate adds mh odds to gtsummary object", {
-
 
   cases <- linelist_cleaned %>%
     mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
     filter(typhoid %in% c("Positive", "Negative")) %>%
     mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
 
-  gts <- cases %>%
-    add_cs(exposure = "water_source_tank", outcome = "typhoid_logical", show_overall = FALSE)
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  tab_vars <-
+    cases %>%
+    group_by(water_source_tank, typhoid_logical) %>%
+    count() %>%
+    rename(exposed = water_source_tank, outcome = typhoid_logical) %>%
+    arrange(-exposed)
+
+  cases_pos_outcomes <- tab_vars %>% filter(exposed == TRUE & outcome == TRUE)
+
+  gt_mh <- cases %>%
+    add_cs(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      show_overall = FALSE) %>%
+    add_mh_single()
 
 
-
-  last_table <- length(gts$tbls)
-  gt_tbl <- gts$tbls[[last_table]]
-
-
-
-
-  gt_mh_object <- add_mh_single(gts)
-
+  mh_df <- gt_mh$table_body
   expect_equal(gt_mh_object$table_body$label[1], "All")
-  # Add tests for values of mh and table styling
+  # OR matches
+  expect_equal(mh_df$OR_2, formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # CIs match
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  # for good measure - cases /false matches tab_vars ()
+  expect_equal(mh_df$stat_1_1_1[1], as.character(cases_pos_outcomes$n))
+
 
 })
 
->>>>>>> 09d9b2e (add stat mh single row)

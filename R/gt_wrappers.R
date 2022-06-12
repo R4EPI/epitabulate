@@ -288,7 +288,7 @@ gt_remove_stat <- function(gts_object, col_name = "stat_0") {
 add_cs <- function(
     data, exposure, outcome, var_name = NULL, show_overall = TRUE,
     exposure_label = NULL, outcome_label = NULL, var_label = NULL,
-    two_by_two = FALSE, gt_statistic = "{n}") {
+    two_by_two = FALSE, gt_statistic = "{n}", show_N_header = FALSE) {
 
   exposure_sym <- as.symbol(exposure)
   qexposure <- rlang::enquo(exposure_sym)
@@ -300,13 +300,9 @@ add_cs <- function(
   if (is.null(outcome_label)) outcome_label <- outcome
 
   if (is.logical(data[[exposure]])) {
-    message("Ordering logical factors TRUE False")
-    data[[(exposure)]] <- factor(data[[(exposure)]], levels = c(TRUE, FALSE))
-  }
-
-  if (is.logical(data[[exposure]])) {
+    message("Ordering exposure to logical factor TRUE False")
     data <- data %>%
-      mutate(exposure = factor(!!qexposure, levels = c(TRUE, FALSE)))
+      mutate(!!qexposure := factor(!!qexposure, levels = c(TRUE, FALSE)))
   }
 
   if (two_by_two) {
@@ -324,16 +320,21 @@ add_cs <- function(
 
     if (show_overall) {
       gts <- gts %>% gtsummary::add_overall(last = TRUE)
+
+      if(!show_N_header) {
+        gts <- gts %>%
+          gtsummary::modify_header(c("stat_1", "stat_2") ~ "**{level}**")
+      }
     }
   } else {
     if(is.null(var_name)) {
       var_name <- "All"
       data <- data %>% mutate(All = TRUE)
       summary_type <- "dichotomous"
-
     } else {
       summary_type <- "categorical"
     }
+
     var_sym <- as.symbol(var_name)
     qvar <- rlang::enquo(var_sym)
     exposure_levels <- levels(data[[exposure]])
@@ -343,7 +344,6 @@ add_cs <- function(
       "; ",
       paste0("Control defined as ", paste(exposure_label, "value of", exposure_levels[2])))
     if (is.null(var_label)) var_label <- var_name
-    # var_levels <- levels(data[[var_name]])
 
     df_strata <-
       data %>%
@@ -361,7 +361,6 @@ add_cs <- function(
             missing = "ifany"
           ))
       ) %>%
-      # mutate(!!qexposure = factor(!!qexposure, exposure_levels))
       mutate_at(vars(exposure), as.factor) %>%
       mutate(!!qexposure := fct_relevel(!! rlang::sym(exposure), exposure_levels)) %>%
       arrange(!!qexposure)
@@ -375,16 +374,26 @@ add_cs <- function(
           statistic = everything() ~ gt_statistic,
           label = var_name ~ var_label)
 
+      if(!show_N_header) {
+        gt_overall <- gt_overall %>%
+          gtsummary::modify_header(gtsummary::all_stat_cols() ~ "**N**", )
+      }
+
       tbls <- df_strata$tbl
       tbls[[3]] <- gt_overall
       gts <- gtsummary::tbl_merge(tbls) %>%
         gtsummary::modify_header(label ~ outcome_label) %>%
         gtsummary::modify_spanning_header(list(
-          c("stat_1_1", "stat_2_1",) ~ "**Cases**"),
+          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
           c("stat_1_2", "stat_2_2") ~ "**Controls**",
           "stat_0_3" ~ "**Overall**") %>%
         gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
 
+      if (!show_N_header) {
+        gts <- gts %>%
+          gtsummary::modify_header(
+            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
+      }
     } else {
       gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
         gtsummary::modify_header(label ~ outcome_label) %>%
@@ -392,6 +401,11 @@ add_cs <- function(
           c("stat_1_1", "stat_2_1") ~ "**Cases**"),
           c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
         gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
+      if (!show_N_header) {
+        gts <- gts %>%
+          gtsummary::modify_header(
+            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
+      }
     }
   }
 
@@ -841,4 +855,63 @@ add_gt_mortality_rate_level <- function(data,
 
   mr
 }
+
+
+
+
+#' A function that adds mh odds ratio to an existing gtsummary object with same
+#' dimenstions (will add to this later.)
+#'
+#' @rdname gtsummary_wrappers
+#'
+#' @export
+add_mh_single <- function(gt_object) {
+  exposure <- gt_object$meta_data$exposure
+  outcome <- gt_object$meta_data$outcome
+
+  exposure_sym <- as.symbol(exposure)
+  qexposure <- rlang::enquo(exposure_sym)
+
+  outcome_sym <- as.symbol(outcome)
+  qoutcome <- rlang::enquo(outcome_sym)
+
+  df <- gt_object$data
+
+  if(!is.logical(df[[exposure]])) {
+    df <- df %>% mutate(!!qexposure := as.logical(!!qexposure))
+  }
+
+  mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
+
+  gto <-
+    gtsummary::tbl_summary(
+      df,
+      include = c("All"),
+      statistic = everything() ~ "") %>%
+    gt_remove_stat()
+
+  ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
+  ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
+              "--",
+              formatC(mh_results$upper, digits = 2, format = "f"))
+
+  gt_mh <- gto %>%
+    gtsummary::add_stat(
+      # Add population and multiplier in purrr::partial
+      fns = gtsummary::everything() ~ purrr::partial(
+        add_stat_mh_label,
+        mh_odds_ratio = ratio, ci = ci))
+
+  gt_combined <-
+    gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
+
+
+  return(gt_combined)
+}
+
+
+add_stat_mh_label <- function(data, variable, by=NULL, mh_odds_ratio, ci, ...) {
+  data.frame(OR = mh_odds_ratio, `95% CI` = ci)
+}
+
 
