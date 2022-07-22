@@ -617,9 +617,11 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
     add_mr(deaths_var = "DIED", multiplier = 10000)
 
   gt_mr
-  mr_df <- gt_mr$table_body
+  # Remove 0 from comparison df, because they won't be in expected df
+  mr_df <- gt_mr$table_body %>% filter(Deaths != 0)
 
   expect_s3_class(gt_mr, "gtsummary")
+  # Check all participants deaths
   expect_equal(as.numeric(mr_df$Deaths[1]), expected_mr$deaths)
   expect_equal(
     mr_df$`MR (per 10,000)`[1],
@@ -627,9 +629,9 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   expect_equal(mr_df$`95%CI`[1], expected_mr$ci)
 
   # Tests for categorical
-  expect_equal(mr_df$Deaths[-c(1,2)], expected_mr_lev$deaths)
-  expect_equal(mr_df$`MR (per 10,000)`[-c(1,2)], expected_mr_lev$mr)
-  expect_equal(mr_df$`95%CI`[-c(1,2)], expected_mr_lev$ci)
+  expect_equal(mr_df$Deaths[-c(1)], expected_mr_lev$deaths)
+  expect_equal(mr_df$`MR (per 10,000)`[-c(1)], expected_mr_lev$mr)
+  expect_equal(mr_df$`95%CI`[-c(1)], expected_mr_lev$ci)
 
 })
 
@@ -637,11 +639,15 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
 test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables with population provided", {
   # Deaths variable but be a logical (T/F or 1,0) with no missing data (NAs)
 
+  age_groups <- levels(linelist_cleaned$age_group)
   deaths <- linelist_cleaned %>%
-    dplyr::group_by(age_group, DIED) %>%
+    dplyr::group_by(age_group, DIED, .drop = FALSE) %>%
     dplyr::count(name = "deaths") %>%
-    group_by(age_group) %>%
+    dplyr::group_by(age_group, .drop = FALSE) %>%
     dplyr::mutate(total = sum(deaths)) %>%
+    # dplyr::group_by(age_group, DIED)  %>%
+    ungroup() %>%
+    tidyr::complete(age_group, DIED, fill = list(deaths = 0, total = 0)) %>%
     dplyr::filter(DIED == TRUE)
 
   population_arg <- deaths$total * 15
@@ -791,7 +797,5 @@ test_that("univariate adds mh odds to gtsummary object", {
               formatC(expected_OR$upper, digits = 2, format = "f"))
   # for good measure - cases /false matches tab_vars ()
   expect_equal(mh_df$stat_1_1_1[1], as.character(cases_pos_outcomes$n))
-
-
 })
 
