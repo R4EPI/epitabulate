@@ -5,7 +5,7 @@
 \alias{add_ar}
 \alias{add_cfr}
 \alias{gt_remove_stat}
-\alias{add_cs}
+\alias{add_crosstabs}
 \alias{add_gt_cfr_stat_label}
 \alias{add_gt_cfr_stat_level}
 \alias{add_gt_attack_rate_stat_label}
@@ -35,7 +35,7 @@ add_cfr(gts_object, deaths_var)
 
 gt_remove_stat(gts_object, col_name = "stat_0")
 
-add_cs(
+add_crosstabs(
   data,
   exposure,
   outcome,

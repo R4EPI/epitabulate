@@ -480,13 +480,13 @@ test_that("gt_remove_stat removes stat by column name", {
 })
 
 
-test_that("add_cs adds stat columns showing outcome by exposure in two by two table", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure in two by two table", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
     count()
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -505,13 +505,13 @@ test_that("add_cs adds stat columns showing outcome by exposure in two by two ta
 })
 
 
-test_that("add_cs adds stat columns showing outcome by exposure in single row", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure in single row", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
     count()
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -528,9 +528,9 @@ test_that("add_cs adds stat columns showing outcome by exposure in single row", 
   expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
 })
 
-test_that("add_cs adds stat columns showing outcome by exposure", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure", {
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -556,9 +556,9 @@ test_that("add_cs adds stat columns showing outcome by exposure", {
   expect_equal(unique(gt_cs$table_styling$header$spanning_header), span_heads)
 })
 
-test_that("add_cs adds stat columns showing outcome by exposure", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure", {
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -779,7 +779,7 @@ test_that("univariate adds mh odds to gtsummary object", {
   cases_pos_outcomes <- tab_vars %>% filter(exposed == TRUE & outcome == TRUE)
 
   gt_mh <- cases %>%
-    add_cs(
+    add_crosstabs(
       exposure = "water_source_tank",
       outcome = "typhoid_logical",
       exposure_label = "Water source - tank",

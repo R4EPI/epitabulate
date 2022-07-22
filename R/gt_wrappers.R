@@ -285,11 +285,12 @@ gt_remove_stat <- function(gts_object, col_name = "stat_0") {
 #'
 #' @export
 
-add_cs <- function(
-    data, exposure, outcome, var_name = NULL, show_overall = TRUE,
+add_crosstabs <- function(
+    data, exposure, outcome, case_reference = "outcome", var_name = NULL, show_overall = TRUE,
     exposure_label = NULL, outcome_label = NULL, var_label = NULL,
     two_by_two = FALSE, gt_statistic = "{n}", show_N_header = FALSE) {
 
+  # Create exposure and outcome variables and labels ----
   exposure_sym <- as.symbol(exposure)
   qexposure <- rlang::enquo(exposure_sym)
 
@@ -304,6 +305,13 @@ add_cs <- function(
     data <- data %>%
       mutate(!!qexposure := factor(!!qexposure, levels = c(TRUE, FALSE)))
   }
+
+  if (is.logical(data[[outcome]])) {
+    message("Ordering outcome to logical factor TRUE False")
+    data <- data %>%
+      mutate(!!qoutcome := factor(!!qoutcome, levels = c(TRUE, FALSE)))
+  }
+
 
   if (two_by_two) {
     gts <- data %>%
@@ -335,40 +343,55 @@ add_cs <- function(
       summary_type <- "categorical"
     }
 
+
+     # browser()
+
+    # # Set Case and Controls ----------
+    # if(case_ref == "outcome") {
+    #   case_sym <- as.symbol(exposure)
+    #   qcontrol <- rlang::enquo(exposure_sym)
+    #
+    #   case_sym <- as.symbol(outcome)
+    #   qoutcome <- rlang::enquo(outcome_sym)
+    #   case_levels <- levels(data[[outcomes]])
+    #   case_label <- outcome_label
+    # }
     var_sym <- as.symbol(var_name)
     qvar <- rlang::enquo(var_sym)
     exposure_levels <- levels(data[[exposure]])
+    outcome_levels <- levels(data[[outcome]])
+
 
     footnote <- paste0(
-      paste0("Case defined as ", paste(exposure_label, "value of", exposure_levels[1])),
+      paste0("Case defined as ", paste(outcome_label, "value of", outcome_levels[1])),
       "; ",
-      paste0("Control defined as ", paste(exposure_label, "value of", exposure_levels[2])))
+      paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])))
     if (is.null(var_label)) var_label <- var_name
 
     df_strata <-
       data %>%
       dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
-      tidyr::nest(data = -dplyr::all_of(exposure)) %>%
+      tidyr::nest(data = -dplyr::all_of(outcome)) %>%
       dplyr::mutate(
         tbl = purrr::map(
           data, ~ gtsummary::tbl_summary(
             .x,
             include = !!qvar,
             statistic = everything() ~ gt_statistic,
-            by = !!qoutcome,
+            by = !!qexposure,
             type = var_name ~ summary_type,
             label = var_name ~ var_label,
             missing = "ifany"
           ))
       ) %>%
-      mutate_at(vars(exposure), as.factor) %>%
-      mutate(!!qexposure := fct_relevel(!! rlang::sym(exposure), exposure_levels)) %>%
-      arrange(!!qexposure)
+      mutate_at(vars(outcome), as.factor) %>%
+      mutate(!!qoutcome := fct_relevel(!! rlang::sym(outcome), outcome_levels)) %>%
+      arrange(!!qoutcome)
 
     # gts <- gtsummary::tbl_merge(df_strata$tbl)
     if (show_overall) {
       gt_overall <- data %>%
-        dplyr::select(dplyr::all_of(c(var_name, outcome))) %>%
+        dplyr::select(dplyr::all_of(c(var_name, exposure))) %>%
         gtsummary::tbl_summary(
           include = var_name,
           statistic = everything() ~ gt_statistic,
@@ -382,7 +405,7 @@ add_cs <- function(
       tbls <- df_strata$tbl
       tbls[[3]] <- gt_overall
       gts <- gtsummary::tbl_merge(tbls) %>%
-        gtsummary::modify_header(label ~ outcome_label) %>%
+        gtsummary::modify_header(label ~ exposure_label) %>%
         gtsummary::modify_spanning_header(list(
           c("stat_1_1", "stat_2_1") ~ "**Cases**"),
           c("stat_1_2", "stat_2_2") ~ "**Controls**",
@@ -396,7 +419,7 @@ add_cs <- function(
       }
     } else {
       gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
-        gtsummary::modify_header(label ~ outcome_label) %>%
+        gtsummary::modify_header(label ~ exposure_label) %>%
         gtsummary::modify_spanning_header(list(
           c("stat_1_1", "stat_2_1") ~ "**Cases**"),
           c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
@@ -409,6 +432,9 @@ add_cs <- function(
     }
   }
 
+
+  data <- data %>%
+    mutate(!!qoutcome := as.logical(!!qoutcome))
   gts[["data"]] <- data
   gts[["meta_data"]] <- list(
     exposure = exposure,
@@ -865,7 +891,7 @@ add_gt_mortality_rate_level <- function(data,
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-add_mh_single <- function(gt_object) {
+add_mh <- function(gt_object) {
   exposure <- gt_object$meta_data$exposure
   outcome <- gt_object$meta_data$outcome
 
