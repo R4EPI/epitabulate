@@ -778,18 +778,16 @@ test_that("univariate adds mh odds to gtsummary object", {
 
   cases_pos_outcomes <- tab_vars %>% filter(exposed == TRUE & outcome == TRUE)
 
-  gt_mh <- cases %>%
-    add_crosstabs(
+  gt_obj <- cases %>%
+    gt_mh(
       exposure = "water_source_tank",
       outcome = "typhoid_logical",
       exposure_label = "Water source - tank",
-      outcome_label = "Typhoid fever",
-      show_overall = FALSE) %>%
-    add_mh_single()
+      outcome_label = "Typhoid fever")
 
 
   mh_df <- gt_mh$table_body
-  expect_equal(gt_mh_object$table_body$label[1], "All")
+  expect_equal(gt_mh$table_body$label[1], "All")
   # OR matches
   expect_equal(mh_df$OR_2, formatC(expected_OR$ratio, digits = 2, format = "f"))
   # CIs match

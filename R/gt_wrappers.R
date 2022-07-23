@@ -935,9 +935,26 @@ add_mh <- function(gt_object) {
   return(gt_combined)
 }
 
-
 add_stat_mh_label <- function(data, variable, by=NULL, mh_odds_ratio, ci, ...) {
   data.frame(OR = mh_odds_ratio, CI = ci)
 }
+
+#' @rdname gtsummary_wrappers
+#'add
+#' @export
+gt_mh <- function(data, exposure, outcome, exposure_label = NULL,
+    outcome_label = NULL, how_overall = FALSE) {
+      gt_obj <- data %>%
+        add_crosstabs(
+          exposure = "water_source_tank",
+          outcome = "typhoid_logical",
+          exposure_label = "Water source - tank",
+          outcome_label = "Typhoid fever",
+          show_overall = FALSE) %>%
+        add_mh()
+
+    return(gt_obj)
+  }
+
 
 
