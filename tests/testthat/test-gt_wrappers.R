@@ -769,6 +769,8 @@ test_that("univariate adds mh odds to gtsummary object", {
       outcome = "typhoid_logical",
       measure = "OR")
 
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
   tab_vars <-
     cases %>%
     group_by(water_source_tank, typhoid_logical) %>%
@@ -776,7 +778,10 @@ test_that("univariate adds mh odds to gtsummary object", {
     rename(exposed = water_source_tank, outcome = typhoid_logical) %>%
     arrange(-exposed)
 
-  cases_pos_outcomes <- tab_vars %>% filter(exposed == TRUE & outcome == TRUE)
+  cases_pos_exp <- tab_vars %>% filter(exposed == TRUE & outcome == TRUE)
+  cases_neg_exp <- tab_vars %>% filter(exposed == FALSE & outcome == TRUE)
+  controls_pos_exp <- tab_vars %>% filter(exposed == TRUE & outcome ==FALSE )
+  controls_neg_exp <- tab_vars %>% filter(exposed == FALSE & outcome ==FALSE )
 
   gt_obj <- cases %>%
     gt_mh(
@@ -786,14 +791,15 @@ test_that("univariate adds mh odds to gtsummary object", {
       outcome_label = "Typhoid fever")
 
 
-  mh_df <- gt_mh$table_body
-  expect_equal(gt_mh$table_body$label[1], "All")
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "All")
   # OR matches
   expect_equal(mh_df$OR_2, formatC(expected_OR$ratio, digits = 2, format = "f"))
   # CIs match
-  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
-              formatC(expected_OR$upper, digits = 2, format = "f"))
+  expect_equal(mh_df$CI_2, ci)
   # for good measure - cases /false matches tab_vars ()
-  expect_equal(mh_df$stat_1_1_1[1], as.character(cases_pos_outcomes$n))
+  expect_equal(mh_df$stat_1_1_1[1], as.character(cases_pos_exp$n))
+  expect_equal(mh_df$stat_2_1_1[1], as.character(cases_neg_exp$n))
+  expect_equal(mh_df$stat_1_2_1[1], as.character(controls_pos_exp$n))
 })
 
