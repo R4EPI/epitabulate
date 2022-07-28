@@ -343,19 +343,6 @@ add_crosstabs <- function(
       summary_type <- "categorical"
     }
 
-
-     # browser()
-
-    # # Set Case and Controls ----------
-    # if(case_ref == "outcome") {
-    #   case_sym <- as.symbol(exposure)
-    #   qcontrol <- rlang::enquo(exposure_sym)
-    #
-    #   case_sym <- as.symbol(outcome)
-    #   qoutcome <- rlang::enquo(outcome_sym)
-    #   case_levels <- levels(data[[outcomes]])
-    #   case_label <- outcome_label
-    # }
     var_sym <- as.symbol(var_name)
     qvar <- rlang::enquo(var_sym)
     exposure_levels <- levels(data[[exposure]])
@@ -891,7 +878,7 @@ add_gt_mortality_rate_level <- function(data,
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-add_mh <- function(gt_object) {
+add_mh <- function(gt_object, strata = "age_group") {
   exposure <- gt_object$meta_data$exposure
   outcome <- gt_object$meta_data$outcome
 
@@ -906,27 +893,22 @@ add_mh <- function(gt_object) {
   if(!is.logical(df[[exposure]])) {
     df <- df %>% mutate(!!qexposure := as.logical(!!qexposure))
   }
-
-  mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
-
+browser()
+  # mh_results <- tab_univariate(df, outcome = outcome, exposure = exposure, measure = "OR")
   gto <-
     gtsummary::tbl_summary(
       df,
-      include = c("All"),
-      statistic = everything() ~ "") %>%
+      include = c(gtsummary::all_of(strata)),
+      statistic = gtsummary::all_categorical() ~ "") %>%
     gt_remove_stat()
 
-  ratio <- formatC(mh_results$ratio, digits = 2, format = "f")
-  ci <- paste(formatC(mh_results$lower, digits = 2, format = "f"),
-              "--",
-              formatC(mh_results$upper, digits = 2, format = "f"))
+
 
   gt_mh <- gto %>%
     gtsummary::add_stat(
       # Add population and multiplier in purrr::partial
-      fns = gtsummary::everything() ~ purrr::partial(
-        add_stat_mh_label,
-        mh_odds_ratio = ratio, ci = ci))
+      fns = gtsummary::all_categorical(dichotomous = TRUE) ~ purrr::partial(
+        add_stat_mh_label, exposure = exposure, outcome = outcome))
 
   gt_combined <-
     gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
@@ -935,14 +917,48 @@ add_mh <- function(gt_object) {
   return(gt_combined)
 }
 
-add_stat_mh_label <- function(data, variable, by=NULL, mh_odds_ratio, ci, ...) {
-  data.frame(OR = mh_odds_ratio, CI = ci)
+add_stat_mh_label <- function(data, variable, by=NULL, exposure, outcome, ...) {
+browser()
+
+  df <- data %>% dplyr::select(variable, exposure, outcome)
+
+  mh_results <- mh_odds(df, exposure = exposure, outcome = outcome, variable = variable)
+  ratio <- formatC(mh_results$estimate, digits = 2, format = "f")
+  ci <- paste(formatC(mh_results$conf.int[[1]], digits = 2, format = "f"),
+              "--",
+              formatC(mh_results$conf.int[[2]], digits = 2, format = "f"))
+
+   data.frame(MH_OR = ratio, CI = ci)
+}
+
+mh_odds <- function(df, exposure, outcome, variable) {
+  # example https://stackoverflow.com/questions/44953507/arranging-a-3-dimensional-contingency-table-in-r-in-order-to-run-a-cochran-mante
+  # df must be in order of stratifying variable, exposure, outome, to prepare 3D matrix
+  df <- df %>% dplyr::select(variable, exposure, outcome)
+browser()
+  if (!is.factor(df[[variable]])) {
+    stop("for mh_odds, stratifying variables must be factors")
+  }
+  # need number of strata levs to create matrix
+  strata_levs <- levels(df[[variable]])
+
+  # stats::ftable creates a "flat", contigency table with exposure, outcome, variable
+  df_ftable <- stats::ftable(df)
+  df_ftable
+  # aperm is a base function that permutates the dimensions of an array,
+  # using the lenght of the variable by using the levels function, and
+  # resizing to create a 3d array (requred for stats::mantelhaen.test)
+  matrix3d <- aperm(
+    array(t(as.matrix(df_ftable)), c(2,2,length(strata_levs))),
+    c(2,1,3))
+
+  mantelhaen.test(matrix3d, exact=FALSE)
 }
 
 #' @rdname gtsummary_wrappers
 #'add
 #' @export
-gt_mh <- function(data, exposure, outcome, exposure_label = NULL,
+gt_mh <- function(data, exposure, outcome, strata,  exposure_label = NULL,
     outcome_label = NULL, how_overall = FALSE) {
       gt_obj <- data %>%
         add_crosstabs(
@@ -951,7 +967,7 @@ gt_mh <- function(data, exposure, outcome, exposure_label = NULL,
           exposure_label = "Water source - tank",
           outcome_label = "Typhoid fever",
           show_overall = FALSE) %>%
-        add_mh()
+        add_mh(strata = "age_group")
 
     return(gt_obj)
   }
