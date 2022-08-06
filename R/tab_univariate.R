@@ -38,7 +38,7 @@
 #' @references Inspired by Daniel Gardiner,
 #' see [github repo](https://github.com/DanielGardiner/UsefulFunctions/tree/master/single.variable.analysis.v0.3.R)
 #' Real data set for example from <http://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704-ep713_confounding-em/BS704-EP713_Confounding-EM7.html>
-#' 
+#'
 #' @export
 #' @seealso [data_frame_from_2x2()]
 #' @examples
@@ -54,15 +54,15 @@
 #'   )
 #' )
 #' arr
-#' 
+#'
 #' # Create data frame from 2x2x2 table
 #' library("tidyr")
-#' a <- arr %>% 
-#'   as.data.frame.table() %>% 
-#'   tidyr::uncount(weights = Freq) %>% 
-#'   dplyr::mutate_all(as.logical) %>% 
+#' a <- arr %>%
+#'   as.data.frame.table() %>%
+#'   tidyr::uncount(weights = Freq) %>%
+#'   dplyr::mutate_all(as.logical) %>%
 #'   tibble::as_tibble()
-#' 
+#'
 #' # get the results from tab_univariate function
 #' tab_univariate(a, outcome, risk, strata = old, digits = 6, measure = "OR")
 #' tab_univariate(a, outcome, risk, strata = old, digits = 6, measure = "RR")
@@ -197,9 +197,9 @@ backend_tab_univariate <- function(exposure, outcome, x, perstime = NULL, strata
   # for "IRR" return counts and person time by exposure
   if (measure == "IRR") {
 
-    x <- dplyr::filter(x, 
-      !is.na(.data[[exposure_var]]), 
-      !is.na(.data[[outcome_var]]), 
+    x <- dplyr::filter(x,
+      !is.na(.data[[exposure_var]]),
+      !is.na(.data[[outcome_var]]),
       !is.na(.data[[perstime_var]])
     )
     # if stratifier specified then do by each group

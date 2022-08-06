@@ -504,30 +504,29 @@ test_that("add_crosstabs adds stat columns showing outcome by exposure in two by
   expect_equal(unique(gt_cs$table_styling$header$spanning_header), c(NA, "Diarrhoea"))
 })
 
-# duplicate?
-# test_that("add_crosstabs adds stat columns showing outcome by exposure in single row", {
-#   count_table <- linelist_cleaned %>%
-#     dplyr::select(recent_travel, diarrhoea) %>%
-#     group_by(recent_travel, diarrhoea) %>%
-#     count()
-#
-#   gt_cs <- add_crosstabs(
-#     data = linelist_cleaned,
-#     exposure = "recent_travel",
-#     outcome = "diarrhoea",
-#     show_overall = TRUE,
-#     exposure_label = "Recent travel",
-#     outcome_label = "Diarrhoea",
-#     two_by_two = FALSE)
-#
-#   gt_df <- gt_cs$table_body
-#
-#   expect_s3_class(gt_cs, "gtsummary")
-#   expect_true(grepl(paste0("^", count_table[1,3]), gt_df$stat_1_1[1]))
-#   expect_true(grepl(paste0("^", count_table[4,3]), gt_df$stat_2_2[1]))
-#   expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
-# })
-#
+test_that("add_crosstabs adds stat columns showing outcome by exposure in single row", {
+  count_table <- linelist_cleaned %>%
+    dplyr::select(recent_travel, diarrhoea) %>%
+    group_by(recent_travel, diarrhoea) %>%
+    count()
+
+  gt_cs <- add_crosstabs(
+    data = linelist_cleaned,
+    exposure = "recent_travel",
+    outcome = "diarrhoea",
+    show_overall = TRUE,
+    exposure_label = "Recent travel",
+    outcome_label = "Diarrhoea",
+    two_by_two = FALSE)
+
+  gt_df <- gt_cs$table_body
+
+  expect_s3_class(gt_cs, "gtsummary")
+  expect_true(grepl(paste0("^", count_table[1,3]), gt_df$stat_1_1[1]))
+  expect_true(grepl(paste0("^", count_table[4,3]), gt_df$stat_2_2[1]))
+  expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
+})
+
 test_that("add_crosstabs adds stat columns showing outcome by exposure", {
 
   gt_cs <- add_crosstabs(
@@ -755,7 +754,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
 })
 
-test_that("gt_mh adds tabulated data, odds, and mh odds to gtsummary object", {
+test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object", {
 
   cases <- linelist_cleaned %>%
     mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
@@ -771,13 +770,15 @@ test_that("gt_mh adds tabulated data, odds, and mh odds to gtsummary object", {
 
   ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
               formatC(expected_OR$upper, digits = 2, format = "f"))
-  tab_vars <-c<- cases %>%
-    gt_mh(
+  tab_vars <- cases %>%
+    gt_mh_odds(
       exposure = "water_source_tank",
       outcome = "typhoid_logical",
       exposure_label = "Water source - tank",
       outcome_label = "Typhoid fever",
-      strata = "age_group")
+      # strata = "age_group"
+      strata = "residential_status_brief"
+    )
 
 
   mh_df <- gt_obj$table_body
