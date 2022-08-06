@@ -946,7 +946,7 @@ mh_odds <- function(df, exposure, outcome, variable) {
   df_ftable <- stats::ftable(df)
   df_ftable
   # aperm is a base function that permutates the dimensions of an array,
-  # using the lenght of the variable by using the levels function, and
+  # using the length of the variable by using the levels function, and
   # resizing to create a 3d array (requred for stats::mantelhaen.test)
   matrix3d <- aperm(
     array(t(as.matrix(df_ftable)), c(2,2,length(strata_levs))),
@@ -959,23 +959,70 @@ mh_odds <- function(df, exposure, outcome, variable) {
 #'add
 #' @export
 
-# gt_mh_odds <- function(data, exposure, outcome, strata,  exposure_label = NULL,
-#     outcome_label = NULL, how_overall = FALSE) {
-#       gt_obj <- data %>%
-#         add_crosstabs(
-#           exposure = exposure,
-#           outcome = outcome,
-#           exposure_label = exposure_label,
-#           outcome_label = outcome_label,
-#           var_name = strata,
-#           show_overall = FALSE) %>%
-#         add_risk(strata = strata)
-#
-#       gt_obj <- gt_obj %>%
-#         add_mh_odds(exposure = exposure, outcome = outcome, strata = strata)
-#
-#     return(gt_obj)
-#   }
+gt_mh_odds <- function(data, exposure, outcome, strata,  exposure_label = NULL,
+                        outcome_label = NULL, how_overall = FALSE) {
+
+  data <- data %>% mutate(Overall = factor("All"))
+  gt_obj_overall <- data %>%
+    add_crosstabs(
+      exposure = exposure,
+      outcome = outcome,
+      exposure_label = exposure_label,
+      outcome_label = outcome_label,
+      var_name = "Overall",
+      show_overall = FALSE) %>%
+    add_risk(strata = "Overall")
+
+  gt_obj_var <- gt_mh_odds_single_var(
+    data = data,
+    exposure = "water_source_tank",
+    outcome = "typhoid_logical",
+    exposure_label = "Water source - tank",
+    outcome_label = "Typhoid fever",
+    # strata = "age_group"
+    strata = strata
+  )
+
+  gtstack <- gtsummary::tbl_stack(list(gt_obj_overall, gt_obj_var))
+  # Align stacked columns
+  gtstack <- gtstack %>%
+    gtsummary::modify_table_body(
+      ~.x %>% dplyr::mutate(
+        stat_1_1_1 = ifelse(is.na(stat_1_1_1), stat_1_1_1_1, stat_1_1_1),
+        stat_2_1_1 = ifelse(is.na(stat_2_1_1), stat_2_1_1_1, stat_2_1_1),
+        stat_1_2_1 = ifelse(is.na(stat_1_2_1), stat_1_2_1_1, stat_1_2_1),
+        stat_2_2_1 = ifelse(is.na(stat_2_2_1), stat_2_2_1_1, stat_2_2_1),
+        risk_estimate_2 = ifelse(is.na(risk_estimate_2), risk_estimate_2_1, risk_estimate_2),
+        risk_CI_2 = ifelse(is.na(risk_CI_2), risk_CI_2_1, risk_CI_2),
+        risk_pvalue_2 = ifelse(is.na(risk_pvalue_2), risk_pvalue_2_1, risk_pvalue_2)
+
+
+      ) %>%
+        dplyr::select(
+          -c("stat_1_1_1_1", "stat_2_1_1_1", "stat_1_2_1_1", "stat_2_2_1_1",
+             "risk_estimate_2_1", "risk_CI_2_1", "risk_pvalue_2_1")
+        ))
+}
+
+gt_mh_odds_single_var <- function(data, exposure, outcome, strata,  exposure_label = NULL,
+    outcome_label = NULL, how_overall = FALSE) {
+
+      gt_obj <- data %>%
+        add_crosstabs(
+          exposure = exposure,
+          outcome = outcome,
+          exposure_label = exposure_label,
+          outcome_label = outcome_label,
+          var_name = strata,
+          show_overall = FALSE) %>%
+        add_risk(strata = strata)
+
+      gt_obj <- gt_obj %>%
+        add_mh_odds(exposure = exposure, outcome = outcome, strata = strata)
+
+
+    return(gt_obj)
+  }
 
 
 
@@ -1004,12 +1051,14 @@ gt_stat_risk <-
       sub_df <- df %>% filter(.data[[variable]] == var_levels[i])
       or_results <- tab_univariate(sub_df, outcome = outcome, risk = exposure)
 
-      ratio <- formatC(or_results$ratio, digits = 2, format = "f")
-      ci <- paste(formatC(or_results$lower, digits = 2, format = "f"),
+      ratio <- gtsummary::style_number(or_results$ratio, digits = 2)
+      ci <- paste(gtsummary::style_number(or_results$lower, digits = 2),
                   "--",
-                  formatC(or_results$upper, digits = 2, format = "f"))
+                  gtsummary::style_number(or_results$upper, digits = 2))
 
-      result_dfs[[i]] <- data.frame(risk_estimate = ratio, risk_CI = ci)
+      pvalue <- gtsummary::style_pvalue(or_results$p.value, digits = 2)
+
+      result_dfs[[i]] <- data.frame(risk_estimate = ratio, risk_CI = ci, risk_pvalue = pvalue)
     }
 
     do.call("rbind", result_dfs)
@@ -1054,7 +1103,7 @@ add_risk <- function(gt_object, strata) {
     gtsummary::tbl_merge(list(gt_object, gt_risk), tab_spanner = FALSE)
 
   gt_combined[["data"]] <- gt_object$data
-  return(gt_combined)
 
+  return(gt_combined)
 }
 
