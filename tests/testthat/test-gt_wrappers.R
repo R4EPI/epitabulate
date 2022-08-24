@@ -770,7 +770,7 @@ test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object
 
   ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
               formatC(expected_OR$upper, digits = 2, format = "f"))
-  tab_vars <- cases %>%
+  gt_obj <- cases %>%
     gt_mh_odds(
       exposure = "water_source_tank",
       outcome = "typhoid_logical",
@@ -783,14 +783,89 @@ test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object
 
 
   mh_df <- gt_obj$table_body
-  expect_equal(gt_obj$table_body$label[1], "All")
+  expect_equal(gt_obj$table_body$label[1], "Overall")
   # OR matches
-  expect_equal(mh_df$OR_2, formatC(expected_OR$ratio, digits = 2, format = "f"))
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
   # CIs match
-  expect_equal(mh_df$CI_2, ci)
-  # for good measure - cases /false matches tab_vars ()
-  expect_equal(mh_df$stat_1_1_1[1], as.character(cases_pos_exp$n))
-  expect_equal(mh_df$stat_2_1_1[1], as.character(cases_neg_exp$n))
-  expect_equal(mh_df$stat_1_2_1[1], as.character(controls_pos_exp$n))
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+
+})
+
+test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object", {
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
+
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  gt_obj <- cases %>%
+    gt_mh_odds(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      strata = "residential_status_brief",
+      strata_label = "Residential status"
+    )
+
+
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "Overall")
+  # crude overall OR matches
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # crude overall CIs match
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+
+})
+
+
+test_that("gt_mh_odds does not calculate mh odds if any cells contain 0", {
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE)) %>%
+    filter(age_group != "0-2")
+
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  gt_obj <- cases %>%
+    gt_mh_odds(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      strata = "age_group",
+      strata_label = "Age group"
+    )
+
+
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "Overall")
+  # crude overall OR matches
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # crude overall CIs match
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+  expect_equal(mh_df$MHOR_2[3], "--")
+
 })
 

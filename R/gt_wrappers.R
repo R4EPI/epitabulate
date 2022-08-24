@@ -352,7 +352,9 @@ add_crosstabs <- function(
     footnote <- paste0(
       paste0("Case defined as ", paste(outcome_label, "value of", outcome_levels[1])),
       "; ",
-      paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])))
+      paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])),
+      "; ",
+      paste0("Exposure variable is ", exposure_label))
     if (is.null(var_label)) var_label <- var_name
 
     df_strata <-
@@ -441,8 +443,6 @@ add_crosstabs <- function(
 
 
 
-
-
 #' A function that adds mh odds ratio to an existing gtsummary object with same
 #' dimensions (will add to this later.)
 #'
@@ -499,10 +499,12 @@ gt_mh_odds <- function(
   )
 
   gtstack <- gtsummary::tbl_stack(list(gt_obj_overall, gt_obj_var))
-  # Align stacked columns from gtsummary-generated column names
+
+  # Align stacked columns by standardizing gtsummary-generated column names
   gtstack <- gtstack %>%
     gtsummary::modify_table_body(
-      ~.x %>% dplyr::mutate(
+      ~.x %>%
+        dplyr::mutate(
         stat_1_1_1 = ifelse(is.na(stat_1_1_1), stat_1_1_1_1, stat_1_1_1),
         stat_2_1_1 = ifelse(is.na(stat_2_1_1), stat_2_1_1_1, stat_2_1_1),
         stat_1_2_1 = ifelse(is.na(stat_1_2_1), stat_1_2_1_1, stat_1_2_1),
@@ -518,6 +520,33 @@ gt_mh_odds <- function(
              "risk_estimate_2_1", "risk_CI_2_1", "risk_pvalue_2_1")
         ))
 
+  if (is.null(exposure_label)) exposure_label <- exposure
+  if (is.null(outcome_label)) outcome_label <- outcome
+  if (is.null(strata_label)) strata_label <- strata
+
+  gtstack <- gtstack %>%
+    gtsummary::modify_table_body(
+      ~.x %>%
+        dplyr::mutate(label = ifelse(label == strata, strata_label, label)
+        )
+    ) %>% gtsummary::modify_spanning_header(list(
+      c("risk_estimate_2", "risk_CI_2", "risk_pvalue_2") ~ "**Crude Odds Ratio**",
+      c("MHOR_2", "MHORCI_2", "MHORpvalue_2") ~ "**MH Odds Ratio**"
+    )) %>%
+    gtsummary::modify_header(
+      "risk_estimate_2" ~ "**OR**",
+      "risk_CI_2" ~ "**95% CI**",
+      "risk_pvalue_2" ~ "**p-value**",
+      "MHOR_2" ~ "**MH OR**",
+      "MHORCI_2" ~ "**95% CI**",
+      "MHORpvalue_2" ~ "**p-value**"
+
+    ) %>%
+      gtsummary::modify_footnote(
+        "risk_estimate_2" ~ "Odds ratio",
+        c("risk_CI_2", "MHORCI_2") ~ "95% confidence interval",
+        "MHOR_2" ~ "Cochran-Mantel-Haenszel odds ratio"
+      )
 
   return(gtstack)
 }
