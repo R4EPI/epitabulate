@@ -878,10 +878,7 @@ add_gt_mortality_rate_level <- function(data,
 #' @rdname gtsummary_wrappers
 #'
 #' @export
-add_mh_odds <- function(gt_object, strata) {
-  exposure <- gt_object$meta_data$exposure
-  outcome <- gt_object$meta_data$outcome
-
+add_mh_odds <- function(gt_object, exposure, outcome, strata) {
   exposure_sym <- as.symbol(exposure)
   qexposure <- rlang::enquo(exposure_sym)
 
@@ -889,6 +886,8 @@ add_mh_odds <- function(gt_object, strata) {
   qoutcome <- rlang::enquo(outcome_sym)
 
   df <- gt_object$data
+
+  df <- df %>% select(outcome, exposure, strata)
 
   if(!is.logical(df[[exposure]])) {
     df <- df %>% mutate(!!qexposure := as.logical(!!qexposure))
@@ -907,11 +906,13 @@ add_mh_odds <- function(gt_object, strata) {
     gtsummary::add_stat(
       # Add population and multiplier in purrr::partial
       fns = gtsummary::all_categorical(dichotomous = TRUE) ~ purrr::partial(
-        add_stat_mh_label, exposure = exposure, outcome = outcome, strata = strata))
+        add_stat_mh_label, exposure = exposure, outcome = outcome, strata = strata),
+      location = gtsummary::everything() ~ "label")
 
   gt_combined <-
     gtsummary::tbl_merge(list(gt_object, gt_mh), tab_spanner = FALSE)
 
+  gt_combined[["data"]] <- gt_object$data
 
   return(gt_combined)
 }
@@ -921,12 +922,13 @@ add_stat_mh_label <- function(data, variable, strata, by=NULL, exposure, outcome
   df <- data %>% dplyr::select(variable, exposure, outcome)
 
   mh_results <- mh_odds(df, exposure = exposure, outcome = outcome, variable = variable)
-  ratio <- formatC(mh_results$estimate, digits = 2, format = "f")
-  ci <- paste(formatC(mh_results$conf.int[[1]], digits = 2, format = "f"),
+  ratio <- gtsummary::style_number(mh_results$estimate, digits = 2)
+  ci <- paste(gtsummary::style_number(mh_results$conf.int[[1]], digits = 2),
               "--",
-              formatC(mh_results$conf.int[[2]], digits = 2, format = "f"))
+              gtsummary::style_number(mh_results$conf.int[[2]], digits = 2))
+  p_value <- gtsummary::style_pvalue(mh_results$p.value, digits = 2)
 
-   data.frame(MHOR = ratio, MHORCI = ci)
+   data.frame(MHOR = ratio, MHORCI = ci, MHORpvalue = p_value)
 }
 
 mh_odds <- function(df, exposure, outcome, variable) {
@@ -944,7 +946,7 @@ mh_odds <- function(df, exposure, outcome, variable) {
   df_ftable <- stats::ftable(df)
   df_ftable
   # aperm is a base function that permutates the dimensions of an array,
-  # using the lenght of the variable by using the levels function, and
+  # using the length of the variable by using the levels function, and
   # resizing to create a 3d array (requred for stats::mantelhaen.test)
   matrix3d <- aperm(
     array(t(as.matrix(df_ftable)), c(2,2,length(strata_levs))),
@@ -956,9 +958,54 @@ mh_odds <- function(df, exposure, outcome, variable) {
 #' @rdname gtsummary_wrappers
 #'add
 #' @export
+
 gt_mh_odds <- function(data, exposure, outcome, strata,  exposure_label = NULL,
-    outcome_label = NULL, how_overall = FALSE) {
+                        outcome_label = NULL, how_overall = FALSE) {
+
+  data <- data %>% mutate(Overall = factor("All"))
+  gt_obj_overall <- data %>%
+    add_crosstabs(
+      exposure = exposure,
+      outcome = outcome,
+      exposure_label = exposure_label,
+      outcome_label = outcome_label,
+      var_name = "Overall",
+      show_overall = FALSE) %>%
+    add_risk(strata = "Overall")
+
+  gt_obj_var <- gt_mh_odds_single_var(
+    data = data,
+    exposure = exposure,
+    outcome = outcome,
+    exposure_label = exposure_label,
+    outcome_label = outcome_label,
+    strata = strata
+  )
   browser()
+  gtstack <- gtsummary::tbl_stack(list(gt_obj_overall, gt_obj_var))
+  # Align stacked columns from gtsummary-generated column names
+  gtstack <- gtstack %>%
+    gtsummary::modify_table_body(
+      ~.x %>% dplyr::mutate(
+        stat_1_1_1 = ifelse(is.na(stat_1_1_1), stat_1_1_1_1, stat_1_1_1),
+        stat_2_1_1 = ifelse(is.na(stat_2_1_1), stat_2_1_1_1, stat_2_1_1),
+        stat_1_2_1 = ifelse(is.na(stat_1_2_1), stat_1_2_1_1, stat_1_2_1),
+        stat_2_2_1 = ifelse(is.na(stat_2_2_1), stat_2_2_1_1, stat_2_2_1),
+        risk_estimate_2 = ifelse(is.na(risk_estimate_2), risk_estimate_2_1, risk_estimate_2),
+        risk_CI_2 = ifelse(is.na(risk_CI_2), risk_CI_2_1, risk_CI_2),
+        risk_pvalue_2 = ifelse(is.na(risk_pvalue_2), risk_pvalue_2_1, risk_pvalue_2)
+
+
+      ) %>%
+        dplyr::select(
+          -c("stat_1_1_1_1", "stat_2_1_1_1", "stat_1_2_1_1", "stat_2_2_1_1",
+             "risk_estimate_2_1", "risk_CI_2_1", "risk_pvalue_2_1")
+        ))
+}
+
+gt_mh_odds_single_var <- function(data, exposure, outcome, strata,  exposure_label = NULL,
+    outcome_label = NULL, how_overall = FALSE) {
+
       gt_obj <- data %>%
         add_crosstabs(
           exposure = exposure,
@@ -967,8 +1014,11 @@ gt_mh_odds <- function(data, exposure, outcome, strata,  exposure_label = NULL,
           outcome_label = outcome_label,
           var_name = strata,
           show_overall = FALSE) %>%
-        add_risk(strata = strata) %>%
-        add_mh_odds(strata = strata)
+        add_risk(strata = strata)
+
+      gt_obj <- gt_obj %>%
+        add_mh_odds(exposure = exposure, outcome = outcome, strata = strata)
+
 
     return(gt_obj)
   }
@@ -977,10 +1027,21 @@ gt_mh_odds <- function(data, exposure, outcome, strata,  exposure_label = NULL,
 
 gt_stat_risk <-
   function(data, variable, by=NULL, exposure, outcome, cs, measure = "OR", ...) {
+
     df <- data %>% dplyr::select(
       dplyr::all_of(variable),
       dplyr::all_of(exposure),
       dplyr::all_of(outcome))
+
+    # if(variable is dichotomous) {
+    # var_levels <- c(TRUE, FALSE)
+
+      # or_results <- tab_univariate(df,
+      #                              outcome = outcome,
+      #                              risk = exposure,
+      #                              measure = measure
+      # )
+      # ratio <- formatC(or_results$ratio, digits = 2, format = "f")
 
     var_levels <- levels(df[[variable]])
 
@@ -989,12 +1050,14 @@ gt_stat_risk <-
       sub_df <- df %>% filter(.data[[variable]] == var_levels[i])
       or_results <- tab_univariate(sub_df, outcome = outcome, risk = exposure)
 
-      ratio <- formatC(or_results$ratio, digits = 2, format = "f")
-      ci <- paste(formatC(or_results$lower, digits = 2, format = "f"),
+      ratio <- gtsummary::style_number(or_results$ratio, digits = 2)
+      ci <- paste(gtsummary::style_number(or_results$lower, digits = 2),
                   "--",
-                  formatC(or_results$upper, digits = 2, format = "f"))
+                  gtsummary::style_number(or_results$upper, digits = 2))
 
-      result_dfs[[i]] <- data.frame(risk_estimate = ratio, risk_CI = ci)
+      pvalue <- gtsummary::style_pvalue(or_results$p.value, digits = 2)
+
+      result_dfs[[i]] <- data.frame(risk_estimate = ratio, risk_CI = ci, risk_pvalue = pvalue)
     }
 
     do.call("rbind", result_dfs)
@@ -1025,7 +1088,6 @@ add_risk <- function(gt_object, strata) {
       statistic = gtsummary::all_categorical() ~ "") %>%
     gt_remove_stat()
 
-  cs_table <- gt_object$table_body
   gt_risk <- gto %>%
     gtsummary::add_stat(
       # Add population and multiplier in purrr::partial
@@ -1033,46 +1095,14 @@ add_risk <- function(gt_object, strata) {
         gt_stat_risk,
         exposure = exposure,
         outcome = outcome,
-        strata = strata,
-        cs = cs_table))
+        strata = strata),
+      location = everything() ~ "level")
 
   gt_combined <-
     gtsummary::tbl_merge(list(gt_object, gt_risk), tab_spanner = FALSE)
 
+  gt_combined[["data"]] <- gt_object$data
 
   return(gt_combined)
-
-}
-
-row_odds <- function(gt_cs, strata_label) {
-  gt_tb <- gt_cs$table_body
-  gt_tb <- gt_tb %>% dplyr::filter(label == strata_label)
-  # gt_tb <- cs
-
-  a <- gt_tb[["stat_1_1"]]
-  b <- "stat_2_1"
-  c <- "stat_1_2"
-  d <- "stat_2_2"
-  A_exp_cases      <- a
-  C_unexp_cases    <- b
-  B_exp_controls   <- c
-  D_unexp_controls <- d
-
-  data.frame(
-    A_exp_cases      = A_exp_cases,
-    B_exp_controls   = B_exp_controls,
-    C_unexp_cases    = C_unexp_cases,
-    D_unexp_controls = D_unexp_controls,
-
-    total_cases      = A_exp_cases    + C_unexp_cases,
-    total_controls   = B_exp_controls + D_unexp_controls,
-
-    total_exposed    = A_exp_cases    + B_exp_controls,
-    total_unexposed  = C_unexp_cases  + D_unexp_controls,
-
-    total            = A_exp_cases    + C_unexp_cases +
-      B_exp_controls + D_unexp_controls
-  )
-
 }
 

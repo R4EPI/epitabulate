@@ -1,4 +1,4 @@
-# generate a real data set from 
+# generate a real data set from
 # http://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704-ep713_confounding-em/BS704-EP713_Confounding-EM7.html
 context("univariate tests")
 
@@ -45,7 +45,7 @@ MH_IRR <- irr_expect[4, , drop = FALSE]
 
 RR_woolf <- data.frame(
   test.statistic = 0.000364164132934994,
-  df = 1, 
+  df = 1,
   p.value = 0.984774825192526
 )
 OR_woolf <- data.frame(
@@ -109,7 +109,7 @@ expect_missing_equal <- function(misslist, IRR = FALSE) {
   expect_identical(misslist$riskna, misslist$oldna)
   expect_identical(misslist$riskna, misslist$outna)
   if (IRR) expect_identical(misslist$riskna, misslist$persna)
-  expect_identical(misslist$riskna$est_type, 
+  expect_identical(misslist$riskna$est_type,
     c("crude", "old: TRUE", "old: FALSE", "MH", if (IRR) NULL else "woolf")
   )
 }
@@ -128,7 +128,7 @@ test_that("Exposure variables must be logical", {
       pl = Petal.Length > 4,
       ve = Species == "versicolor"
    )
-    
+
   expect_error(tab_univariate(itest, Species, sl, strata = pl),
                "outcome must be a TRUE/FALSE variable")
 
@@ -212,7 +212,7 @@ test_that("tab_univariate OR works with strata", {
   expect_equal(OR_strat_woolf$p.value, c(this_pval     , NA         , OR_woolf$p.value))
 
 
-}) 
+})
 
 
 test_that("tab_univariate RR works with strata", {
@@ -239,7 +239,7 @@ test_that("tab_univariate RR works with strata", {
   expect_equal(RR_strat_woolf$p.value, c(this_pval     , NA         , RR_woolf$p.value))
 
 
-}) 
+})
 
 
 test_that("tab_univariate works with IRR strata", {
@@ -325,7 +325,7 @@ test_that("tab_univariate OR works with strata with missing data", {
 
   expect_true(all(riskna$ratio  <= c(expected$ratio, MH_OR$est  , NA), na.rm = TRUE))
 
-}) 
+})
 
 test_that("tab_univariate RR works with strata with missing data", {
 
@@ -369,7 +369,7 @@ test_that("tab_univariate RR works with strata with missing data", {
   expect_equal(riskna$unexp_risk , c(60 / 699           , 25 / 199, 35 / 500, NA, NA) * 100)
 
   expect_true(all(riskna$ratio <= c(expected$ratio, MH_RR$est  , NA), na.rm = TRUE))
-}) 
+})
 
 test_that("tab_univariate works with IRR strata with missing data", {
 
