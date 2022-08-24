@@ -777,7 +777,8 @@ test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object
       exposure_label = "Water source - tank",
       outcome_label = "Typhoid fever",
       # strata = "age_group"
-      strata = "residential_status_brief"
+      strata = "residential_status_brief",
+      strata_label = "Residential status"
     )
 
 
