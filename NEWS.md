@@ -1,3 +1,7 @@
+# epitabulate 0.0.0.9006
+
+* update with with wrapper functions for {gtsummary}. Some work in progress.
+
 # epitabulate 0.0.0.9005
 
 * update for compatibility with dplyr 1.0.2
