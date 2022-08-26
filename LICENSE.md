@@ -553,7 +553,7 @@ and each file should have at least the “copyright” line and a pointer to
 where the full notice is found.
 
     <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2020 Zhian N. Kamvar
+    Copyright (C) 2020 Applied Epi Incorporated
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
