@@ -480,20 +480,21 @@ test_that("gt_remove_stat removes stat by column name", {
 })
 
 
-test_that("add_cs adds stat columns showing outcome by exposure in two by two table", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure in two by two table", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
     count()
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
     show_overall = TRUE,
     exposure_label = "Recent travel",
     outcome_label = "Diarrhoea",
-    two_by_two = TRUE)
+    two_by_two = TRUE,
+    show_N_header = TRUE)
 
   gt_df <- gt_cs$table_body
 
@@ -503,14 +504,13 @@ test_that("add_cs adds stat columns showing outcome by exposure in two by two ta
   expect_equal(unique(gt_cs$table_styling$header$spanning_header), c(NA, "Diarrhoea"))
 })
 
-
-test_that("gt_cross_tab adds stat columns showing outcome by exposure in single row", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure in single row", {
   count_table <- linelist_cleaned %>%
     dplyr::select(recent_travel, diarrhoea) %>%
     group_by(recent_travel, diarrhoea) %>%
     count()
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -527,9 +527,9 @@ test_that("gt_cross_tab adds stat columns showing outcome by exposure in single 
   expect_equal("**Overall**", unique(gt_cs$table_styling$header$spanning_header)[7])
 })
 
-test_that("add_cs adds stat columns showing outcome by exposure", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure", {
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -555,9 +555,9 @@ test_that("add_cs adds stat columns showing outcome by exposure", {
   expect_equal(unique(gt_cs$table_styling$header$spanning_header), span_heads)
 })
 
-test_that("add_cs adds stat columns showing outcome by exposure", {
+test_that("add_crosstabs adds stat columns showing outcome by exposure", {
 
-  gt_cs <- add_cs(
+  gt_cs <- add_crosstabs(
     data = linelist_cleaned,
     exposure = "recent_travel",
     outcome = "diarrhoea",
@@ -616,9 +616,11 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
     add_mr(deaths_var = "DIED", multiplier = 10000)
 
   gt_mr
-  mr_df <- gt_mr$table_body
+  # Remove 0 from comparison df, because they won't be in expected df
+  mr_df <- gt_mr$table_body %>% filter(Deaths != 0)
 
   expect_s3_class(gt_mr, "gtsummary")
+  # Check all participants deaths
   expect_equal(as.numeric(mr_df$Deaths[1]), expected_mr$deaths)
   expect_equal(
     mr_df$`MR (per 10,000)`[1],
@@ -626,9 +628,9 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   expect_equal(mr_df$`95%CI`[1], expected_mr$ci)
 
   # Tests for categorical
-  expect_equal(mr_df$Deaths[-c(1,2)], expected_mr_lev$deaths)
-  expect_equal(mr_df$`MR (per 10,000)`[-c(1,2)], expected_mr_lev$mr)
-  expect_equal(mr_df$`95%CI`[-c(1,2)], expected_mr_lev$ci)
+  expect_equal(mr_df$Deaths[-c(1)], expected_mr_lev$deaths)
+  expect_equal(mr_df$`MR (per 10,000)`[-c(1)], expected_mr_lev$mr)
+  expect_equal(mr_df$`95%CI`[-c(1)], expected_mr_lev$ci)
 
 })
 
@@ -636,11 +638,15 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
 test_that("mortality rate calculation returns gtsummary object and correct results with dichotomous variables with population provided", {
   # Deaths variable but be a logical (T/F or 1,0) with no missing data (NAs)
 
+  age_groups <- levels(linelist_cleaned$age_group)
   deaths <- linelist_cleaned %>%
-    dplyr::group_by(age_group, DIED) %>%
+    dplyr::group_by(age_group, DIED, .drop = FALSE) %>%
     dplyr::count(name = "deaths") %>%
-    group_by(age_group) %>%
+    dplyr::group_by(age_group, .drop = FALSE) %>%
     dplyr::mutate(total = sum(deaths)) %>%
+    # dplyr::group_by(age_group, DIED)  %>%
+    ungroup() %>%
+    tidyr::complete(age_group, DIED, fill = list(deaths = 0, total = 0)) %>%
     dplyr::filter(DIED == TRUE)
 
   population_arg <- deaths$total * 15
@@ -746,5 +752,120 @@ test_that("attack rate calculation returns gtsummary object and correct results 
   expect_equal(ar_df$Cases[-c(1,2)], expected_ar_lev$cases)
   expect_equal(ar_df$`AR (per 10,000)`[-c(1,2)], expected_ar_lev$ar)
   expect_equal(ar_df$`95%CI`[-c(1,2)], expected_ar_lev$ci)
+})
+
+test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object", {
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
+
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  gt_obj <- cases %>%
+    gt_mh_odds(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      # strata = "age_group"
+      strata = "residential_status_brief",
+      strata_label = "Residential status"
+    )
+
+
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "Overall")
+  # OR matches
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # CIs match
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+
+})
+
+test_that("gt_mh_odds adds tabulated data, odds, and mh odds to gtsummary object", {
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE))
+
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  gt_obj <- cases %>%
+    gt_mh_odds(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      strata = "residential_status_brief",
+      strata_label = "Residential status"
+    )
+
+
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "Overall")
+  # crude overall OR matches
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # crude overall CIs match
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+
+})
+
+
+test_that("gt_mh_odds does not calculate mh odds if any cells contain 0", {
+
+  cases <- linelist_cleaned %>%
+    mutate(water_source_tank = ifelse(water_source == "Tank", TRUE, FALSE)) %>%
+    filter(typhoid %in% c("Positive", "Negative")) %>%
+    mutate(typhoid_logical = ifelse(typhoid == "Positive", TRUE, FALSE)) %>%
+    filter(age_group != "0-2")
+
+  expected_OR <-
+    tab_univariate(
+      cases,
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      measure = "OR")
+
+  ci <- paste(formatC(expected_OR$lower, digits = 2, format = "f"), "--",
+              formatC(expected_OR$upper, digits = 2, format = "f"))
+  gt_obj <- cases %>%
+    gt_mh_odds(
+      exposure = "water_source_tank",
+      outcome = "typhoid_logical",
+      exposure_label = "Water source - tank",
+      outcome_label = "Typhoid fever",
+      strata = "age_group",
+      strata_label = "Age group"
+    )
+
+
+  mh_df <- gt_obj$table_body
+  expect_equal(gt_obj$table_body$label[1], "Overall")
+  # crude overall OR matches
+  expect_equal(mh_df$risk_estimate_2[2], formatC(expected_OR$ratio, digits = 2, format = "f"))
+  # crude overall CIs match
+  expect_equal(mh_df$risk_CI_2[2],
+               paste(round(expected_OR$lower, 2), "--", round(expected_OR$upper,2)))
+  expect_equal(mh_df$MHOR_2[3], "--")
+
 })
 

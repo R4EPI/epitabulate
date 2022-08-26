@@ -70,10 +70,10 @@ arr
 
 # Create data frame from 2x2x2 table
 library("tidyr")
-a <- arr \%>\% 
-  as.data.frame.table() \%>\% 
-  tidyr::uncount(weights = Freq) \%>\% 
-  dplyr::mutate_all(as.logical) \%>\% 
+a <- arr \%>\%
+  as.data.frame.table() \%>\%
+  tidyr::uncount(weights = Freq) \%>\%
+  dplyr::mutate_all(as.logical) \%>\%
   tibble::as_tibble()
 
 # get the results from tab_univariate function
