@@ -47,8 +47,6 @@ transpose_pretty <- function(x, columns, rows, suffix, clev = NULL) {
 #' @return a flipped data frame where the stratifying variables are flipped
 #' @noRd
 #'
-#' @examples
-#'
 flipper <- function(x, res, transpose = c("variable", "value", "both"), pretty = TRUE, stra, is_survey = TRUE) {
   if (transpose == "both") {
     # if the user wants to keep both columns, then we unite them and then
@@ -185,7 +183,7 @@ widen_tabulation <- function(y, cod, st, pretty = TRUE, digits = 1) {
   if (pretty) {
     # map through all the levels of l and pull out the matching columns
     tmp <- purrr::map(l, ~ dplyr::select(y, dplyr::starts_with(paste0(., " "))))
-    # pretty up those columns 
+    # pretty up those columns
     tmp <- purrr::map2(tmp, l, ~ prettify_tabulation(.x, digits = digits, ci_prefix = .y))
     # glue the results to the first column of the data
     y <- dplyr::bind_cols(y[1], tmp, .name_repair = "minimal")
