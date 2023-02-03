@@ -2,7 +2,7 @@
 
 #' A case fatality rate wrapper function to be passed to the gtsummary::add_stat
 #' function, which returns a data frame with a single row to be used with
-#' dichotomous data or overall data.Calls epikit::case_fatality_rate_df.
+#' dichotomous data or overall data.Calls epitabulate::case_fatality_rate_df.
 #'
 #' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
@@ -13,7 +13,7 @@
 #'   (eov.g. illness).
 #'
 #' @param deaths_var the name of a logical column in the data that indicates that the case died,
-#' is passed as the first argument to `epikit::case_fatality_rate_df`
+#' is passed as the first argument to `epitabulate::case_fatality_rate_df`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -22,6 +22,9 @@
 #'
 #' @rdname gtsummary_wrappers
 #' @import dplyr
+#' @importFrom epikit merge_ci_df
+#'
+#'
 #'
 add_gt_cfr_stat_label  <- function(data, variable, by, deaths_var, ...) {
 
@@ -32,7 +35,7 @@ add_gt_cfr_stat_label  <- function(data, variable, by, deaths_var, ...) {
   }
 
   stat_new <- data %>%
-    epikit::case_fatality_rate_df(
+    epitabulate::case_fatality_rate_df(
       deaths = data[[deaths_var]],
       mergeCI = TRUE) %>%
     dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
@@ -47,7 +50,7 @@ add_gt_cfr_stat_label  <- function(data, variable, by, deaths_var, ...) {
 
 #' A case fatality rate wrapper function to be passed to the gtsummary::add_stat function,
 #' which returns a data frame with multiple rows to be used when location is set
-#' to "level" for multi-level categorical data. Calls epikit::case_fatality_rate_df.
+#' to "level" for multi-level categorical data. Calls epitabulate::case_fatality_rate_df.
 #'
 #' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
@@ -81,14 +84,14 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
       dplyr::filter(variable %in% variable & !is.na(stat_0))
     var_levels <- unique(var_dt$label)
 
-    # create rlang::enquo objects to use in epikit::case_fatality_rate_df
+    # create rlang::enquo objects to use in epitabulate::case_fatality_rate_df
     deaths_sym <- as.symbol(deaths_var)
     qdeaths <- rlang::enquo(deaths_sym)
     var_sym <- as.symbol(variable)
     qvariable <- rlang::enquo(var_sym)
 
     stat_new <- data %>%
-      epikit::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
+      epitabulate::case_fatality_rate_df(deaths = !!qdeaths, group =  !!qvariable , mergeCI = TRUE) %>%
       dplyr::filter(!!qvariable %in% var_levels) %>%
       dplyr::mutate(deaths = formatC(deaths, digits = 0, format = "f")) %>%
       dplyr::mutate(cfr =  formatC(cfr, digits = 2, format = "f")) %>%
@@ -102,7 +105,7 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat
 #' function, which returns a data frame with a single row to be used with
-#' dichotomous data or overall data. Calls epikit::attack_rate.
+#' dichotomous data or overall data. Calls epitabulate::attack_rate.
 #'
 #' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
@@ -115,7 +118,7 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 #'@param multiplier The base by which to multiply the output:
 # '1: multiplier = 1: ratio between 0 and 1;
 # '2: multiplier = 100:proportion;
-# '3: multiplier = 10^4: x per 10,000 people; passed to `epikit::attack_rate`
+# '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #'@param drop_total whether or not to include the population column; default TRUE
 #'
@@ -152,7 +155,7 @@ add_gt_attack_rate_stat_label <-
 
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
-  ar <- epikit::attack_rate(cases = cases,
+  ar <- epitabulate::attack_rate(cases = cases,
                             population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>%
@@ -180,7 +183,7 @@ add_gt_attack_rate_stat_label <-
 
 #' An attack rate wrapper function to be passed to the gtsummary::add_stat function,
 #' which returns a data frame with multiple rows to be used when location is set
-#' to "level" for multi-level categorical data. Calls epikit::attack_rate.
+#' to "level" for multi-level categorical data. Calls epitabulate::attack_rate.
 #'
 #' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
@@ -193,7 +196,7 @@ add_gt_attack_rate_stat_label <-
 #'@param multiplier The base by which to multiply the output:
 # '1: multiplier = 1: ratio between 0 and 1;
 # '2: multiplier = 100:proportion;
-# '3: multiplier = 10^4: x per 10,000 people; passed to `epikit::attack_rate`
+# '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -245,7 +248,7 @@ add_gt_attack_rate_level <-
 
   ar_label <- paste0("AR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("ar", ar_label)
-  ar <- epikit::attack_rate(cases = counts$case_n,
+  ar <- epitabulate::attack_rate(cases = counts$case_n,
                             population = population,
                             multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column
@@ -295,7 +298,7 @@ add_gt_mortality_rate_stat_label <-
     deaths <- sum(data[[deaths_var]])
     mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
     cols_rename <- setNames("mortality per 10 000", mr_label)
-    mr <- epikit::mortality_rate(deaths = deaths,
+    mr <- epitabulate::mortality_rate(deaths = deaths,
                                  population = population,
                                  multiplier = multiplier) %>%
       epikit::merge_ci_df(e = 3) %>%
@@ -325,7 +328,7 @@ add_gt_mortality_rate_stat_label <-
 
 #' A mortality rate wrapper function to be passed to the gtsummary::add_stat function,
 #' which returns a data frame with multiple rows to be used when location is set
-#' to "level" for multi-level categorical data. Calls epikit::attack_rate.
+#' to "level" for multi-level categorical data. Calls epitabulate::attack_rate.
 #'
 #' @param data A data frame, passed by the gtsummary::add_stat function.
 #'
@@ -338,7 +341,7 @@ add_gt_mortality_rate_stat_label <-
 #'@param multiplier The base by which to multiply the output:
 # '1: multiplier = 1: ratio between 0 and 1;
 # '2: multiplier = 100:proportion;
-# '3: multiplier = 10^4: x per 10,000 people; passed to `epikit::attack_rate`
+# '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -397,7 +400,7 @@ add_gt_mortality_rate_level <- function(data,
 
   mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
   cols_rename <- setNames("mortality per 10 000", mr_label)
-  mr <- epikit::mortality_rate(deaths = counts$deaths_n,
+  mr <- epitabulate::mortality_rate(deaths = counts$deaths_n,
                                population = population,
                                multiplier = multiplier) %>%
     epikit::merge_ci_df(e = 3) %>% # merge the lower and upper CI into one column

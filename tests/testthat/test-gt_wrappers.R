@@ -237,7 +237,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
   # function: add_gt_case_fatality_rate
   expected_cfr <-  linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
-    epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
+    epitabulate::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
     mutate(cfr = formatC(cfr, 2, format = "f"))
 
   gt_cfr <- linelist_cleaned %>%
@@ -280,7 +280,7 @@ test_that("cfr calculation returns gtsummary object and correct results with cat
     mutate(cfr = formatC(cfr, digits = 2, format = "f"))
   expected_cfr <-  linelist_cleaned %>%
     filter(patient_facility_type == "Inpatient") %>%
-    epikit::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
+    epitabulate::case_fatality_rate_df(deaths = DIED, group = gender, mergeCI = TRUE) %>%
     mutate(cfr = formatC(cfr, 2, format = "f"))
 
   gt_cfr <- linelist_cleaned %>%
@@ -436,7 +436,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     mutate(ar = formatC(ar, 2, format = "f"))
 
   # attack rate for each group
-  expected_ar_lev <- epikit::attack_rate(cases$cases, cases$total, multiplier = 10000) %>%
+  expected_ar_lev <- epitabulate::attack_rate(cases$cases, cases$total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(cases = as.character(cases)) %>%
     mutate(ar = formatC(ar, 2, format = "f"))
@@ -594,7 +594,7 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
     dplyr::filter(DIED == TRUE)
 
   # attack rate for each group
-  expected_mr_lev <- epikit::mortality_rate(deaths$deaths, deaths$total, multiplier = 10000) %>%
+  expected_mr_lev <- epitabulate::mortality_rate(deaths$deaths, deaths$total, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(deaths = as.character(deaths)) %>%
     dplyr::mutate(mr = `mortality per 10 000`) %>%
@@ -603,7 +603,7 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   deaths_count <- sum(linelist_cleaned$DIED)
   total_pop <- nrow(linelist_cleaned)
 
-  expected_mr <- epikit::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
+  expected_mr <- epitabulate::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
 
@@ -652,7 +652,7 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   population_arg <- deaths$total * 15
 
   # attack rate for each group
-  expected_mr_lev <- epikit::mortality_rate(deaths$deaths, population_arg, multiplier = 10000) %>%
+  expected_mr_lev <- epitabulate::mortality_rate(deaths$deaths, population_arg, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3) %>%
     dplyr::mutate(deaths = as.character(deaths)) %>%
     dplyr::mutate(mr = `mortality per 10 000`) %>%
@@ -661,7 +661,7 @@ test_that("mortality rate calculation returns gtsummary object and correct resul
   deaths_count <- sum(linelist_cleaned$DIED)
   total_pop <- sum(population_arg)
 
-  expected_mr <- epikit::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
+  expected_mr <- epitabulate::mortality_rate( deaths_count,  total_pop, multiplier = 10000) %>%
     epikit::merge_ci_df(e = 3)
 
 
@@ -718,7 +718,7 @@ test_that("attack rate calculation returns gtsummary object and correct results 
     mutate(ar = formatC(ar, 2, format = "f"))
 
   # attack rate for each group
-  expected_ar_lev <- epikit::attack_rate(
+  expected_ar_lev <- epitabulate::attack_rate(
     cases$cases,
     population_arg,
     multiplier = 10000) %>%
