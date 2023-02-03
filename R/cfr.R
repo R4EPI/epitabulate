@@ -27,13 +27,15 @@
 #'   the total value across all groups.
 #'
 #' @param digits if `mergeCI = TRUE`, this determines how many digits are printed
-#' 
+#'
 #' @return a data frame with five columns that represent the numerator,
 #'   denominator, rate, lower bound, and upper bound.
 #'
 #'  - `attack_rate()`: cases, population, ar, lower, upper
 #'  - `case_fatality_rate()`: deaths, population, cfr, lower, upper
-#'  
+#'
+#' @importFrom epikit merge_ci_df
+#'
 #' @export
 #'
 #' @rdname attack_rate
@@ -43,13 +45,13 @@
 #' print(ar <- attack_rate(10, 50), digits = 4) # 20% attack rate
 #'
 #' # print them inline using `fmt_ci_df()`
-#' fmt_ci_df(ar)
+#' epikit::fmt_ci_df(ar)
 #'
 #' # Alternatively, if you want one column for the CI, use `mergeCI = TRUE`
 #' attack_rate(10, 50, mergeCI = TRUE, digits = 2) # 20% attack rate
 #'
 #' print(cfr <- case_fatality_rate(1, 100), digits = 2) # CFR of 1%
-#' fmt_ci_df(cfr)
+#' epikit::fmt_ci_df(cfr)
 #'
 #' # using a data frame
 #' if (require("outbreaks")) {
@@ -68,7 +70,7 @@ attack_rate <- function(cases, population, conf_level = 0.95,
   res <- proportion(cases, population, multiplier = multiplier, conf_level = conf_level)
   colnames(res) <- c("cases", "population", "ar", "lower", "upper")
   if (mergeCI == TRUE) {
-    res <- merge_ci_df(res, digits = digits)
+    res <- epikit::merge_ci_df(res, digits = digits)
   }
   res
 }
@@ -80,7 +82,7 @@ case_fatality_rate <- function(deaths, population, conf_level = 0.95,
   res <- proportion(deaths, population, multiplier = multiplier, conf_level = conf_level)
   colnames(res) <- c("deaths", "population", "cfr", "lower", "upper")
   if (mergeCI == TRUE) {
-    res <- merge_ci_df(res, digits = digits)
+    res <- epikit::merge_ci_df(res, digits = digits)
   }
   res
 }
@@ -106,11 +108,11 @@ case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
   # This creates a list column for the case fatality rate based on the
   # calculated deaths and population before... so this means that
   # THE ORDER OF THE STATEMENTS MATTER
-  # 
+  #
   # Wed Feb 19 09:25:26 2020 ---------------------------------------------
-  # This was modified to count the population for the non-missing cases, 
-  # assuming the deaths columns would either be TRUE, FALSE, or NA for 
-  # a death, recovery, or undetermined. 
+  # This was modified to count the population for the non-missing cases,
+  # assuming the deaths columns would either be TRUE, FALSE, or NA for
+  # a death, recovery, or undetermined.
   res <- dplyr::summarise(
     x,
     !!quote(deaths) := sum(!!qdeath, na.rm = TRUE),
@@ -142,7 +144,7 @@ case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
       !!qgroup := factor("Total"),
       deaths = tot$deaths,
       population = tot$population,
-      cfr = tot$cfr, 
+      cfr = tot$cfr,
       .name_repair = "minimal"
     )
     # merge CI gives different numbers of columns, this accounts for that.
@@ -166,7 +168,7 @@ mortality_rate <- function(deaths, population, conf_level = 0.95,
   est_label <- paste0("mortality per ", scales::number(multiplier))
   colnames(res) <- c("deaths", "population", est_label, "lower", "upper")
   if (mergeCI == TRUE) {
-    res <- merge_ci_df(res, digits = digits)
+    res <- epikit::merge_ci_df(res, digits = digits)
   }
   res
 }
