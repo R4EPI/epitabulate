@@ -12,7 +12,7 @@
 \alias{add_gt_attack_rate_stat_label}
 \alias{add_gt_attack_rate_level}
 \alias{add_gt_mortality_rate_level}
-\title{An attack rate wrapper function (using gtsummary and epikit packages)that takes
+\title{An attack rate wrapper function (using the gtsummary package)that takes
 a gtsummary object and returns a gtsummary object with attack rate (per given
 multiple) with 95\% confidence interval}
 \usage{
@@ -105,7 +105,7 @@ add_gt_mortality_rate_level(
 \item{gts_object}{A data frame, passed by the gtsummary::add_stat function}
 
 \item{deaths_var}{the name of a logical column in the data that indicates that the case died,
-is passed as the first argument to \code{epikit::case_fatality_rate_df}}
+is passed as the first argument to \code{epitabulate::case_fatality_rate_df}}
 
 \item{multiplier}{The base by which to multiply the output:}
 
@@ -167,15 +167,15 @@ a single-row gtsummary object with attack rate results cases,
 population, attack rate, and 95\% confidence interval.
 }
 \description{
-An attack rate wrapper function (using gtsummary and epikit packages)that takes
+An attack rate wrapper function (using the gtsummary package)that takes
 a gtsummary object and returns a gtsummary object with attack rate (per given
 multiple) with 95\% confidence interval
 
-An attack rate wrapper function (using gtsummary and epikit packages)that takes
+An attack rate wrapper function (using the gtsummary package)that takes
 a gtsummary object and returns a gtsummary object withattack rate (per given
 multiple) with 95\% confidence interval
 
-An case fatality rate wrapper function (using gtsummary and epikit packages)
+An case fatality rate wrapper function (using the gtsummary package)
 that takes a gtsummary object and returns a gtsummary object with number
 of deaths, case fatality rate, and 95\% confidence interval.
 
@@ -190,21 +190,21 @@ dimensions (will add to this later.)
 
 A case fatality rate wrapper function to be passed to the gtsummary::add_stat
 function, which returns a data frame with a single row to be used with
-dichotomous data or overall data.Calls epikit::case_fatality_rate_df.
+dichotomous data or overall data.Calls epitabulate::case_fatality_rate_df.
 
 A case fatality rate wrapper function to be passed to the gtsummary::add_stat function,
 which returns a data frame with multiple rows to be used when location is set
-to "level" for multi-level categorical data. Calls epikit::case_fatality_rate_df.
+to "level" for multi-level categorical data. Calls epitabulate::case_fatality_rate_df.
 
 An attack rate wrapper function to be passed to the gtsummary::add_stat
 function, which returns a data frame with a single row to be used with
-dichotomous data or overall data. Calls epikit::attack_rate.
+dichotomous data or overall data. Calls epitabulate::attack_rate.
 
 An attack rate wrapper function to be passed to the gtsummary::add_stat function,
 which returns a data frame with multiple rows to be used when location is set
-to "level" for multi-level categorical data. Calls epikit::attack_rate.
+to "level" for multi-level categorical data. Calls epitabulate::attack_rate.
 
 A mortality rate wrapper function to be passed to the gtsummary::add_stat function,
 which returns a data frame with multiple rows to be used when location is set
-to "level" for multi-level categorical data. Calls epikit::attack_rate.
+to "level" for multi-level categorical data. Calls epitabulate::attack_rate.
 }

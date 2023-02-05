@@ -1,7 +1,7 @@
-# gtsummary and epikit wrapper functions
+# gtsummary wrapper functions
 
 
-#' An attack rate wrapper function (using gtsummary and epikit packages)that takes
+#' An attack rate wrapper function (using the gtsummary package)that takes
 #' a gtsummary object and returns a gtsummary object with attack rate (per given
 #'  multiple) with 95% confidence interval
 #'
@@ -16,7 +16,7 @@
 #' function (e.g. illness).
 #'
 #'#'@param population the number of individuals in the population, passed to
-#'`epikit::mortality_rate`
+#'`epitabulate::mortality_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -91,7 +91,7 @@ add_mr <- function(gts_object,
   return(gts_object)
 }
 
-#' An attack rate wrapper function (using gtsummary and epikit packages)that takes
+#' An attack rate wrapper function (using the gtsummary package)that takes
 #' a gtsummary object and returns a gtsummary object withattack rate (per given
 #'  multiple) with 95% confidence interval
 #'
@@ -104,12 +104,12 @@ add_mr <- function(gts_object,
 #' function (e.g. illness).
 #'
 #'#'@param population the number of individuals in the population, passed to
-#'`epikit::attack_rate`
+#'`epitabulate::attack_rate`
 #'
 #'@param multiplier The base by which to multiply the output:
 # '1: multiplier = 1: ratio between 0 and 1;
 # '2: multiplier = 100:proportion;
-# '3: multiplier = 10^4: x per 10,000 people; passed to `epikit::attack_rate`
+# '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -185,7 +185,7 @@ add_ar <- function(gts_object,
 
 
 
-#' An case fatality rate wrapper function (using gtsummary and epikit packages)
+#' An case fatality rate wrapper function (using the gtsummary package)
 #' that takes a gtsummary object and returns a gtsummary object with number
 #' of deaths, case fatality rate, and 95% confidence interval.
 #'
@@ -198,7 +198,7 @@ add_ar <- function(gts_object,
 #'   (e.g. illness).
 #'
 #' @param deaths_var the name of a logical column in the data that indicates that the case died,
-#' is passed as the first argument to `epikit::case_fatality_rate_df`
+#' is passed as the first argument to `epitabulate::case_fatality_rate_df`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
@@ -463,7 +463,7 @@ add_crosstabs <- function(
 #' function (e.g. illness).
 #'
 #'#'@param population the number of individuals in the population, passed to
-#'`epikit::mortality_rate`
+#'`epitabulate::mortality_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
