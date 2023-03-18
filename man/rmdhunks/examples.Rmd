@@ -44,14 +44,13 @@ mortality_rate(40, 50000)
 In addition, it's possible to rapidly calculate Case fatality rate from a
 linelist, stratified by different groups (e.g. gender):
 
-```{r cfr, eval = requireNamespace("outbreaks")}
-library("outbreaks")
-case_fatality_rate_df(ebola_sim_clean$linelist, 
-  outcome == "Death", 
-  group = gender,
-  add_total = TRUE,
-  mergeCI = TRUE
-)
+```{r cfr}
+
+case_fatality_rate_df(linelist_clean, 
+                      exit_status %in% c("Dead in facility", "Dead on arrival"), 
+                      group = sex, 
+                      add_total = TRUE, 
+                      mergeCI = TRUE)
 ```
 
 

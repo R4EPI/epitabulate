@@ -90,13 +90,13 @@ Calculate attack rate, case fatality rate, and mortality rate
 print(ar <- attack_rate(10, 50), digits = 4) # 20\% attack rate
 
 # print them inline using `fmt_ci_df()`
-fmt_ci_df(ar)
+epikit::fmt_ci_df(ar)
 
 # Alternatively, if you want one column for the CI, use `mergeCI = TRUE`
 attack_rate(10, 50, mergeCI = TRUE, digits = 2) # 20\% attack rate
 
 print(cfr <- case_fatality_rate(1, 100), digits = 2) # CFR of 1\%
-fmt_ci_df(cfr)
+epikit::fmt_ci_df(cfr)
 
 # using a data frame
 if (require("outbreaks")) {
