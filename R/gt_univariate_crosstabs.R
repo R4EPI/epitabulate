@@ -5,13 +5,18 @@
 #'@param x Object with class `tbl_uvregression` from the gtsummary
 #'tbl_uvregression function.
 #'
+#'@param wide TRUE/FALSE to specify whether would like to have the output in
+#'wide format. Results in four columns rather than two, but in a single row.
+#'This is only works for dichotomous variables (yes/no, TRUE/FALSE,
+#'male/female), others will be dropped with a warning message. (Default is FALSE)
+#'
 #'@importFrom gtsummary modify_table_styling modify_table_body modify_header modify_fmt_fun style_number modify_footnote
 #'@importFrom dplyr mutate relocate
 #'
 #'@references Inspired by Daniel Sjoberg,
 #' see [gtsummary github repo](https://github.com/ddsjoberg/gtsummary)
 
-add_crosstabs <- function(x) {
+add_crosstabs <- function(x, wide = FALSE) {
 
   # checking that input is class tbl_summary
   if (!(inherits(x, "tbl_uvregression"))) {
@@ -25,7 +30,7 @@ add_crosstabs <- function(x) {
   regression_type <- x$table_body$coefficients_type[1L]
 
   if (!regression_type %in% c("logistic", "poisson")) {
-    stop("The regression must type 'logistic' or 'poisson' (negative binomials appear as 'poisson')")
+    stop("The regression must be type 'logistic' or 'poisson' (negative binomials appear as 'poisson')")
   }
 
   # hide the original N variable
@@ -64,6 +69,8 @@ add_crosstabs <- function(x) {
     the_table <- gtsummary::modify_fmt_fun(
       the_table,
       c(n_event, n_nonevent) ~ gtsummary::style_number)
+
+
   }
 
   # RISK Ratios ----------------------------------------------------------------
@@ -123,9 +130,126 @@ add_crosstabs <- function(x) {
 
   }
 
-  # return table
-  the_table
+  # WIDE FORMAT DICHOTOMOUS ----------------------------------------------------
+  if (wide) {
 
+    # drop non dichotomous variables and chuck a warning
+    # find if there are any non dichotomous
+    check_categoricals <- filter(the_table$table_body, var_type != "dichotomous")
+
+    if (nrow(check_categoricals) >= 1 ) {
+      # get the variable names which are not dichotomous
+      check_categoricals <- distinct(check_categoricals, variable)
+      check_categoricals <- pull(check_categoricals)
+
+      # chuck a warning listing the names
+      warning(paste0("The following non-dichotomous variables were dropped:",
+                     check_categoricals), call. = FALSE)
+
+      # edit the table body (contents of table)
+      the_table <- gtsummary::modify_table_body(
+        the_table,
+        # define a function to avoid piping
+        fun = function(.x){
+          # only keep the row with the estimates
+          .x <- filter(.x, var_type == "dichotomous")
+        }
+      )
+
+    }
+
+    # chuck an error if they have used show_single_row
+    if (!is.null(the_table$inputs$show_single_row)) {
+      stop("Wide format is not possible when specifying 'show_single_row' in your tbl_uvregression. Please change this")
+    }
+
+    # define moving variables and labels based on regression type
+    if (regression_type == "logistic") {
+      # define vars of interest
+      the_vars <- c("n_event", "n_nonevent")
+      # define column headers for new vars
+      new_names <- c("**Cases exposed (n)**",
+                     "**Controls exposed (n)**",
+                     "**Cases unexposed (n)**",
+                     "**Controls unexposed (n)**")
+    }
+    if (regression_type == "poisson" &
+        is.null(the_table$inputs$method.args$offset)) {
+      # define vars of interest
+      the_vars <- c("n_obs", "n_event")
+      # define column headers for new vars
+      new_names <- c("**Total exposed (N)**",
+                     "**Cases exposed (n)**",
+                     "**Total unexposed (N)**",
+                     "**Cases unexposed (n)**")
+    }
+    if (regression_type == "poisson" &
+        !is.null(the_table$inputs$method.args$offset)) {
+      # define vars of interest
+      the_vars <- c("exposure", "n_event")
+      # define column headers for new vars
+      new_names <- c("**Total exposed (person-time)**",
+                     "**Cases exposed (n)**",
+                     "**Total unexposed (person-time)**",
+                     "**Cases unexposed (n)**")
+    }
+
+    # store the reference_row for later use in filtering
+    # (gets dropped by pivot_wider)
+    identifier <- dplyr::select(the_table$table_body, reference_row)
+
+    # combine the vars of interest with TRUE/FALSE
+    new_vars <- expand.grid(the_vars, c("_FALSE", "_TRUE"))
+    new_vars <- paste0(new_vars$Var1, new_vars$Var2)
+
+    # put vars and labels into a list for renaming
+    relabel_vars <- as.list(new_names)
+    names(relabel_vars) <- new_vars
+
+
+    # edit the table body (contents of table)
+    the_table <- gtsummary::modify_table_body(
+      the_table,
+      # define a function to avoid piping
+      fun = function(.x){
+
+        # spread to wide format
+        .x <- tidyr::pivot_wider(.x,
+                                 names_from = reference_row,
+                                 values_from = all_of(the_vars))
+
+        # pull values down to have all in the right row
+        .x <- tidyr::fill(.x,
+                          all_of(new_vars),
+                          .direction = "down")
+
+        # add the reference_row back in for filtering
+        .x <- cbind(.x, identifier)
+
+        # edit row names
+        .x <- mutate(.x,
+                     # make them show up as variables
+                     row_type = "label",
+                     # change to show variable label
+                     label = var_label
+                     )
+
+        # only keep the row with the estimates
+        .x <- filter(.x, !reference_row)
+
+        # move case and control counts before estimate
+        .x <- dplyr::relocate(.x, all_of(new_vars), .before = estimate)
+
+      }
+    )
+
+    # change column names
+    the_table <- gtsummary::modify_header(the_table, update = relabel_vars)
+
+  }
+
+  # return outputs
+  the_table
 }
 
 
@@ -184,10 +308,6 @@ blabla %>%
   gtsummary::modify_fmt_fun(c(n_event, n_obs) ~ gtsummary::style_number)
 
 
-
-## TODO: add a catch that if blabla$inputs$method.args$offset is Null then change colname to RR
-
-
 ## INCIDENCE RATE ratios
 blabla <- linelist_cleaned %>%
   mutate(obstime = sample.int(30, nrow(linelist_cleaned), replace = TRUE)) %>%
@@ -241,193 +361,24 @@ blabla$inputs$data %>%
 
 
 
-## This is complete horseshit
-add_crosstabs(
-  data = blabla$inputs$data,
-  outcome = blabla$inputs$y,
-  exposure = blabla$inputs$include[2],
-)
+## WIDE FORMAT
+### use reference_row to filter for relevant row
+blabla <- linelist_cleaned %>%
+  select(DIED, gender_bin, gender, fever) %>%
+  gtsummary::tbl_uvregression(method = glm,
+                              y = DIED,
+                              method.args = list(family = binomial),
+                              exponentiate = TRUE,
+                              hide_n = TRUE)
+
+blabla2 <- linelist_cleaned %>%
+  select(DIED, gender_bin, gender, fever) %>%
+  gtsummary::tbl_uvregression(method = glm,
+                              y = DIED,
+                              method.args = list(family = binomial),
+                              exponentiate = TRUE,
+                              hide_n = TRUE,
+                              show_single_row = everything())
 
 
 
-
-#' A gtsummary wrapper function that takes a data frame and adds cross tabs
-#' by exposure and outcome
-#'
-#' @param data A data frame with an exposure and outcome variable
-#'
-#' @param exposure Name of the exposure variable, which should be a factor ordered
-#' by case and control - in that order (eg if case = 1, control = 0, factor levels
-#' should be ordered as 1,0. The code labels the Cases as the first pair of
-#' gstummary stat columns and the second pair as Controls.
-#'
-#' @param outcome Name of the outcome variable
-#'
-#' @param show_overall Logical argument to include overall column in gtsummary output;
-#' defaults to TRUE
-#'
-#' @param exposure_label exposure label for the gtsummary output, if none passed,
-#' exposure variable name is used instead
-#'
-#' @param outcome_label outcome label for the gtsummary output, if none passed,
-#' outcome variable name is used instead
-#'
-#' @rdname gtsummary_wrappers
-#'
-#' @export
-
-add_crosstabs <- function(
-    data, exposure, outcome, case_reference = "outcome", var_name = NULL, show_overall = TRUE,
-    exposure_label = NULL, outcome_label = NULL, var_label = NULL,
-    two_by_two = FALSE, gt_statistic = "{n}", show_N_header = FALSE) {
-
-  # Create exposure and outcome variables and labels ----
-  exposure_sym <- as.symbol(exposure)
-  qexposure <- rlang::enquo(exposure_sym)
-
-  outcome_sym <- as.symbol(outcome)
-  qoutcome <- rlang::enquo(outcome_sym)
-
-  if (is.null(exposure_label)) exposure_label <- exposure
-  if (is.null(outcome_label)) outcome_label <- outcome
-
-  if (is.logical(data[[exposure]])) {
-    # message("add_crosstabs: Ordering exposure to logical factor TRUE FALSE")
-    data <- data %>%
-      mutate(!!qexposure := factor(!!qexposure, levels = c(TRUE, FALSE)))
-  }
-
-  if (is.logical(data[[outcome]])) {
-    # message("add_crosstabs: Ordering outcome to logical factor TRUE FALSE")
-    data <- data %>%
-      mutate(!!qoutcome := factor(!!qoutcome, levels = c(TRUE, FALSE)))
-  }
-
-
-  if (two_by_two) {
-    gts <- data %>%
-      dplyr::select(!!qexposure, !!qoutcome) %>%
-      gtsummary::tbl_summary(
-        include = !!qexposure,
-        statistic = everything() ~ gt_statistic,
-        by = !!qoutcome,
-        type = exposure ~ "categorical",
-        label = exposure ~ exposure_label
-      ) %>%
-      gtsummary::modify_header(label ~ "") %>%
-      gtsummary::modify_spanning_header(c("stat_1", "stat_2") ~ outcome_label)
-
-    if (show_overall) {
-      gts <- gts %>% gtsummary::add_overall(last = TRUE)
-
-      if(!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(c("stat_1", "stat_2") ~ "**{level}**")
-      }
-    }
-  } else {
-    if(is.null(var_name)) {
-      var_name <- "All"
-      data <- data %>% mutate(All = TRUE)
-      summary_type <- "dichotomous"
-    } else {
-      summary_type <- "categorical"
-    }
-
-    var_sym <- as.symbol(var_name)
-    qvar <- rlang::enquo(var_sym)
-    exposure_levels <- levels(data[[exposure]])
-    outcome_levels <- levels(data[[outcome]])
-
-
-    footnote <- paste0(
-      paste0("Case defined as ", paste(outcome_label, "value of", outcome_levels[1])),
-      "; ",
-      paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])),
-      "; ",
-      paste0("Exposure variable is ", exposure_label))
-    if (is.null(var_label)) var_label <- var_name
-
-    df_strata <-
-      data %>%
-      dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
-      tidyr::nest(data = -dplyr::all_of(outcome)) %>%
-      dplyr::mutate(
-        tbl = purrr::map(
-          data, ~ gtsummary::tbl_summary(
-            .x,
-            include = !!qvar,
-            statistic = everything() ~ gt_statistic,
-            by = !!qexposure,
-            type = var_name ~ summary_type,
-            label = var_name ~ var_label,
-            missing = "ifany"
-          ))
-      ) %>%
-      mutate_at(vars(outcome), as.factor) %>%
-      mutate(!!qoutcome := fct_relevel(!! rlang::sym(outcome), outcome_levels)) %>%
-      arrange(!!qoutcome)
-
-    # gts <- gtsummary::tbl_merge(df_strata$tbl)
-    if (show_overall) {
-      gt_overall <- data %>%
-        dplyr::select(dplyr::all_of(c(var_name, exposure))) %>%
-        gtsummary::tbl_summary(
-          include = var_name,
-          statistic = everything() ~ gt_statistic,
-          label = var_name ~ var_label)
-
-      if(!show_N_header) {
-        gt_overall <- gt_overall %>%
-          gtsummary::modify_header(gtsummary::all_stat_cols() ~ "**N**", )
-      }
-
-      tbls <- df_strata$tbl
-      tbls[[3]] <- gt_overall
-      gts <- gtsummary::tbl_merge(tbls) %>%
-        gtsummary::modify_header(label ~ exposure_label) %>%
-        gtsummary::modify_spanning_header(list(
-          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
-          c("stat_1_2", "stat_2_2") ~ "**Controls**",
-          "stat_0_3" ~ "**Overall**") %>%
-        gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
-
-      if (!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(
-            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
-      }
-    } else {
-      gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
-        gtsummary::modify_header(label ~ exposure_label) %>%
-        gtsummary::modify_spanning_header(list(
-          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
-          c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
-        gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
-      if (!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(
-            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
-      }
-    }
-  }
-
-
-  data <- data %>%
-    mutate(!!qoutcome := as.logical(!!qoutcome))
-  gts[["data"]] <- data
-  gts[["meta_data"]] <- list(
-    exposure = exposure,
-    outcome = outcome,
-    var_name = var_name,
-    show_overall = show_overall,
-    exposure_label = exposure_label,
-    outcome_label = outcome_label,
-    var_name = ifelse(!is.null(var_name), var_name, NA),
-    var_label = ifelse(!is.null(var_label), var_label, NA),
-    two_by_two = two_by_two,
-    gt_statistic = gt_statistic
-  )
-
-  return(gts)
-}
