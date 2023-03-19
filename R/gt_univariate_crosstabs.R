@@ -1,4 +1,140 @@
 
+#' A {gtsummary} wrapper function that takes a gtsummary univariate regression
+#' table and adds appropriate cross tabs by exposure and outcome
+#'
+#'@param x Object with class `tbl_uvregression` from the gtsummary
+#'tbl_uvregression function.
+#'
+#'@importFrom gtsummary modify_table_styling modify_table_body modify_header modify_fmt_fun style_number modify_footnote
+#'@importFrom dplyr mutate relocate
+#'
+#'@references Inspired by Daniel Sjoberg,
+#' see [gtsummary github repo](https://github.com/ddsjoberg/gtsummary)
+
+add_crosstabs <- function(x) {
+
+  # checking that input is class tbl_summary
+  if (!(inherits(x, "tbl_uvregression"))) {
+    stop("`x` must be class 'tbl_uvregression'")
+  }
+
+  # grab the table
+  the_table <- x
+
+  # grab the type of regression
+  regression_type <- x$table_body$coefficients_type[1L]
+
+  if (!regression_type %in% c("logistic", "poisson")) {
+    stop("The regression must type 'logistic' or 'poisson' (negative binomials appear as 'poisson')")
+  }
+
+  # hide the original N variable
+  # (shows up if the original tbl_uvregression didn't specify hide_n = TRUE)
+  if (!the_table$inputs$hide_n) {
+    the_table <-
+      gtsummary::modify_table_styling(
+        the_table,
+        columns = "stat_n",
+        hide = TRUE
+      )
+  }
+
+  # ODDS Ratios ----------------------------------------------------------------
+  if (regression_type == "logistic") {
+
+    # edit the table body (contents of table)
+    the_table <- gtsummary::modify_table_body(
+      the_table,
+      # define a function to make two steps and avoid piping
+      fun = function(.x){
+        # remove cases from total obs to get control counts
+        .x <- dplyr::mutate(.x, n_nonevent = n_obs - n_event)
+        # move case and control counts before estimate
+        .x <- dplyr::relocate(.x, c(n_event, n_nonevent), .before = estimate)
+      }
+    )
+
+    # rename columns appropriately
+    the_table <- gtsummary::modify_header(
+      the_table,
+      n_nonevent = "**Control (n)**",
+      n_event = "**Case (n)**")
+
+    # set the columns to numeric
+    the_table <- gtsummary::modify_fmt_fun(
+      the_table,
+      c(n_event, n_nonevent) ~ gtsummary::style_number)
+  }
+
+  # RISK Ratios ----------------------------------------------------------------
+  # note both poisson (glm) and negbin (MASS) are "poisson" in gtsummary
+  if (regression_type == "poisson" &
+      is.null(the_table$inputs$method.args$offset)){
+
+    # edit the table body
+    the_table <- gtsummary::modify_table_body(
+      the_table,
+      # define a function to make two steps and avoid piping
+      fun = function(.x){
+        # move case and control counts before estimate
+        .x <- dplyr::relocate(.x, c(n_event, n_obs), .before = estimate)
+        # change the estimate label from IRR to RR (doesn't change col header, could remove)
+        .x <- dplyr::mutate(.x, coefficients_label = "RR")
+      }
+    )
+
+    # rename columns appropriately
+    the_table <- gtsummary::modify_header(
+      the_table,
+      n_obs = "**Total exposed (N)**",
+      n_event = "**Cases exposed (n)**",
+      estimate = "**RR**"
+      )
+
+    # set the columns to numeric
+    the_table <- gtsummary::modify_fmt_fun(
+      the_table,
+      c(n_event, n_obs) ~ gtsummary::style_number)
+
+
+    # update the footnote to say risk ratio
+    the_table <- gtsummary::modify_footnote(
+      the_table,
+      estimate = "RR = Risk Ratio",
+      abbreviation = TRUE
+    )
+  }
+
+  # INCIDENCE RATE Ratios ------------------------------------------------------
+  # note both poisson (glm) and negbin (MASS) are "poisson" in gtsummary
+  if (regression_type == "poisson" &
+      !is.null(the_table$inputs$method.args$offset)){
+
+    # rename columns appropriately
+    the_table <- gtsummary::modify_header(
+      the_table,
+      exposure = "**Total exposed (person-time)**",
+      n_event = "**Cases exposed (n)**")
+
+    # set the columns to numeric
+    the_table <- gtsummary::modify_fmt_fun(
+      the_table,
+      c(n_event, exposure) ~ gtsummary::style_number)
+
+  }
+
+  # return table
+  the_table
+
+}
+
+
+
+
+#### NOTES
+
+
+
 ## ODDS Ratios
 blabla <- linelist_cleaned %>%
   select(DIED, gender_bin, age_group) %>%
