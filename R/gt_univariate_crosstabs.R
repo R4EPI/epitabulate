@@ -3,7 +3,7 @@
 #' table and adds appropriate cross tabs by exposure and outcome
 #'
 #'@param x Object with class `tbl_uvregression` from the gtsummary
-#'tbl_uvregression function.
+#'tbl_uvregression function or `tbl_cmh` from the epitabulate tbl_cmh function.
 #'
 #'@param wide TRUE/FALSE to specify whether would like to have the output in
 #'wide format. Results in four columns rather than two, but in a single row.
@@ -19,8 +19,8 @@
 add_crosstabs <- function(x, wide = FALSE) {
 
   # checking that input is class tbl_summary
-  if (!(inherits(x, "tbl_uvregression"))) {
-    stop("`x` must be class 'tbl_uvregression'")
+  if (!(inherits(x, c("tbl_uvregression", "tbl_cmh")))) {
+    stop("`x` must be class 'tbl_uvregression' or 'tbl_cmh'")
   }
 
   # grab the table
@@ -35,14 +35,18 @@ add_crosstabs <- function(x, wide = FALSE) {
 
   # hide the original N variable
   # (shows up if the original tbl_uvregression didn't specify hide_n = TRUE)
-  if (!the_table$inputs$hide_n) {
-    the_table <-
-      gtsummary::modify_table_styling(
-        the_table,
-        columns = "stat_n",
-        hide = TRUE
-      )
+  ## TODO: this is an ugly quick fix to allow this to work for tbl_cmh()
+  if(inherits(x, c("tbl_uvregression"))){
+    if (!the_table$inputs$hide_n) {
+      the_table <-
+        gtsummary::modify_table_styling(
+          the_table,
+          columns = "stat_n",
+          hide = TRUE
+        )
+    }
   }
+
 
   # ODDS Ratios ----------------------------------------------------------------
   if (regression_type == "logistic") {
@@ -163,6 +167,23 @@ add_crosstabs <- function(x, wide = FALSE) {
       stop("Wide format is not possible when specifying 'show_single_row' in your tbl_uvregression. Please change this")
     }
 
+    ## TODO: do some fiddling to make tbl_cmh work in wide too
+    if (inherits(x, c("tbl_cmh"))) {
+
+      the_table <- gtsummary::modify_table_body(
+        the_table,
+        # define a function to avoid piping
+        fun = function(.x){
+
+          # pull values down to have all in the right row
+          .x <- tidyr::fill(.x,
+                            stratifier,
+                            .direction = "down")
+        }
+      )
+    }
+
+
     # define moving variables and labels based on regression type
     if (regression_type == "logistic") {
       # define vars of interest
@@ -255,130 +276,130 @@ add_crosstabs <- function(x, wide = FALSE) {
 
 
 
-#### NOTES
-
-
-
-## ODDS Ratios
-blabla <- linelist_cleaned %>%
-  select(DIED, gender_bin, age_group) %>%
-  gtsummary::tbl_uvregression(method = glm,
-                              y = DIED,
-                              method.args = list(family = binomial),
-                              exponentiate = TRUE,
-                              hide_n = TRUE)
-
-## adding number of non-events to table
-## from https://www.danieldsjoberg.com/gtsummary/reference/modify_table_body.html
-blabla %>%  gtsummary::modify_table_body(
-  ~ .x %>%
-    dplyr::mutate(n_nonevent = n_obs - n_event) %>%
-    dplyr::relocate(c(n_event, n_nonevent), .before = estimate)) %>%
-  ## assigning header labels
-  gtsummary::modify_header(n_nonevent = "**Control n**", n_event = "**Case n**") %>%
-  gtsummary::modify_fmt_fun(c(n_event, n_nonevent) ~ gtsummary::style_number)
-
-
-## RISK ratios (poisson)
-blabla <- linelist_cleaned %>%
-  select(DIED, gender_bin, age_group) %>%
-  gtsummary::tbl_uvregression(method = glm,
-                              y = DIED,
-                              method.args = list(family = poisson),
-                              exponentiate = TRUE,
-                              hide_n = TRUE)
-
-blabla %>%
-  ## assigning header labels
-  gtsummary::modify_header(n_obs = "**Total exposed N**", n_event = "**Cases exposed n**") %>%
-  gtsummary::modify_fmt_fun(c(n_event, n_obs) ~ gtsummary::style_number)
-
-
-## RISK ratios (negbin)
-blabla <- linelist_cleaned %>%
-  select(DIED, gender_bin, age_group) %>%
-  gtsummary::tbl_uvregression(method = MASS::glm.nb,
-                              y = DIED,
-                              exponentiate = TRUE,
-                              hide_n = TRUE)
-
-blabla %>%
-  ## assigning header labels
-  gtsummary::modify_header(n_obs = "**Total exposed N**", n_event = "**Cases exposed n**") %>%
-  gtsummary::modify_fmt_fun(c(n_event, n_obs) ~ gtsummary::style_number)
-
-
-## INCIDENCE RATE ratios
-blabla <- linelist_cleaned %>%
-  mutate(obstime = sample.int(30, nrow(linelist_cleaned), replace = TRUE)) %>%
-  filter(!is.na(obstime)) %>%
-  select(DIED, gender_bin, age_group, obstime) %>%
-  gtsummary::tbl_uvregression(method = glm,
-                              y = DIED,
-                              method.args = list(family = poisson,
-                                                 offset = log(obstime)),
-                              exponentiate = TRUE,
-                              hide_n = TRUE)
-
-blabla %>%
-  ## assigning header labels
-  gtsummary::modify_header(exposure = "**Total exposed (person-time)**", n_event = "**Cases exposed n**") %>%
-  gtsummary::modify_fmt_fun(c(n_event, exposure) ~ gtsummary::style_number)
-
-
-
-
-## extract the obstime variable
-if (!is.null(blabla$inputs$method.args$offset)) {
-  obstimevar <- as.character(blabla$inputs$method.args$offset)[2]
-}
-
-## select exposure vars
-exposurevars <- c(blabla$inputs$include[!blabla$inputs$include %in% c(blabla$inputs$y, obstimevar)])
-
-cross_tab <- purrr::map(
-  exposurevars,
-  function(i) {
-    blabla$inputs$data %>%
-      group_by(.data[[i]]) %>%
-      summarise(outcome = sum(.data[[blabla$inputs$y]]),
-                perstime = sum(.data[[obstimevar]])) %>%
-      rename(group = all_of(i)) %>%
-      mutate(group = as.character(group),
-             var = i)
-    }) %>%
-  bind_rows()
-
-heh <- blabla$inputs$data %>%
-  select(DIED, age_group) %>%
-  gtsummary::tbl_summary(by = DIED)
-
-
-blabla$inputs$data %>%
-  select(obstime, age_group) %>%
-  gtsummary::tbl_summary(by = age_group,
-                        statistic = list(everything() ~ "{sum}"))
-
-
-
-## WIDE FORMAT
-### use reference_row to filter for relevant row
-blabla <- linelist_cleaned %>%
-  select(DIED, gender_bin, gender, fever) %>%
-  gtsummary::tbl_uvregression(method = glm,
-                              y = DIED,
-                              method.args = list(family = binomial),
-                              exponentiate = TRUE,
-                              hide_n = TRUE)
-
-blabla2 <- linelist_cleaned %>%
-  select(DIED, gender_bin, gender, fever) %>%
-  gtsummary::tbl_uvregression(method = glm,
-                              y = DIED,
-                              method.args = list(family = binomial),
-                              exponentiate = TRUE,
-                              hide_n = TRUE,
-                              show_single_row = everything())
-
-
-
+# #### NOTES
+#
+#
+#
+# ## ODDS Ratios
+# blabla <- linelist_cleaned %>%
+#   select(DIED, gender_bin, age_group) %>%
+#   gtsummary::tbl_uvregression(method = glm,
+#                               y = DIED,
+#                               method.args = list(family = binomial),
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE)
+#
+# ## adding number of non-events to table
+# ## from https://www.danieldsjoberg.com/gtsummary/reference/modify_table_body.html
+# blabla %>%  gtsummary::modify_table_body(
+#   ~ .x %>%
+#     dplyr::mutate(n_nonevent = n_obs - n_event) %>%
+#     dplyr::relocate(c(n_event, n_nonevent), .before = estimate)) %>%
+#   ## assigning header labels
+#   gtsummary::modify_header(n_nonevent = "**Control n**", n_event = "**Case n**") %>%
+#   gtsummary::modify_fmt_fun(c(n_event, n_nonevent) ~ gtsummary::style_number)
+#
+#
+# ## RISK ratios (poisson)
+# blabla <- linelist_cleaned %>%
+#   select(DIED, gender_bin, age_group) %>%
+#   gtsummary::tbl_uvregression(method = glm,
+#                               y = DIED,
+#                               method.args = list(family = poisson),
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE)
+#
+# blabla %>%
+#   ## assigning header labels
+#   gtsummary::modify_header(n_obs = "**Total exposed N**", n_event = "**Cases exposed n**") %>%
+#   gtsummary::modify_fmt_fun(c(n_event, n_obs) ~ gtsummary::style_number)
+#
+#
+# ## RISK ratios (negbin)
+# blabla <- linelist_cleaned %>%
+#   select(DIED, gender_bin, age_group) %>%
+#   gtsummary::tbl_uvregression(method = MASS::glm.nb,
+#                               y = DIED,
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE)
+#
+# blabla %>%
+#   ## assigning header labels
+#   gtsummary::modify_header(n_obs = "**Total exposed N**", n_event = "**Cases exposed n**") %>%
+#   gtsummary::modify_fmt_fun(c(n_event, n_obs) ~ gtsummary::style_number)
+#
+#
+# ## INCIDENCE RATE ratios
+# blabla <- linelist_cleaned %>%
+#   mutate(obstime = sample.int(30, nrow(linelist_cleaned), replace = TRUE)) %>%
+#   filter(!is.na(obstime)) %>%
+#   select(DIED, gender_bin, age_group, obstime) %>%
+#   gtsummary::tbl_uvregression(method = glm,
+#                               y = DIED,
+#                               method.args = list(family = poisson,
+#                                                  offset = log(obstime)),
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE)
+#
+# blabla %>%
+#   ## assigning header labels
+#   gtsummary::modify_header(exposure = "**Total exposed (person-time)**", n_event = "**Cases exposed n**") %>%
+#   gtsummary::modify_fmt_fun(c(n_event, exposure) ~ gtsummary::style_number)
+#
+#
+#
+#
+# ## extract the obstime variable
+# if (!is.null(blabla$inputs$method.args$offset)) {
+#   obstimevar <- as.character(blabla$inputs$method.args$offset)[2]
+# }
+#
+# ## select exposure vars
+# exposurevars <- c(blabla$inputs$include[!blabla$inputs$include %in% c(blabla$inputs$y, obstimevar)])
+#
+# cross_tab <- purrr::map(
+#   exposurevars,
+#   function(i) {
+#     blabla$inputs$data %>%
+#       group_by(.data[[i]]) %>%
+#       summarise(outcome = sum(.data[[blabla$inputs$y]]),
+#                 perstime = sum(.data[[obstimevar]])) %>%
+#       rename(group = all_of(i)) %>%
+#       mutate(group = as.character(group),
+#              var = i)
+#     }) %>%
+#   bind_rows()
+#
+# heh <- blabla$inputs$data %>%
+#   select(DIED, age_group) %>%
+#   gtsummary::tbl_summary(by = DIED)
+#
+#
+# blabla$inputs$data %>%
+#   select(obstime, age_group) %>%
+#   gtsummary::tbl_summary(by = age_group,
+#                         statistic = list(everything() ~ "{sum}"))
+#
+#
+#
+# ## WIDE FORMAT
+# ### use reference_row to filter for relevant row
+# blabla <- linelist_cleaned %>%
+#   select(DIED, gender_bin, gender, fever) %>%
+#   gtsummary::tbl_uvregression(method = glm,
+#                               y = DIED,
+#                               method.args = list(family = binomial),
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE)
+#
+# blabla2 <- linelist_cleaned %>%
+#   select(DIED, gender_bin, gender, fever) %>%
+#   gtsummary::tbl_uvregression(method = glm,
+#                               y = DIED,
+#                               method.args = list(family = binomial),
+#                               exponentiate = TRUE,
+#                               hide_n = TRUE,
+#                               show_single_row = everything())
+#
+#
+#
