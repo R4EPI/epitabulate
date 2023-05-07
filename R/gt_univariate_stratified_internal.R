@@ -11,16 +11,20 @@
 tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
 
   ## make variables available for use
-  case_var <- tidyselect::vars_select(colnames(data), {{ case }})
+  case_var     <- tidyselect::vars_select(colnames(data), {{ case }})
   exposure_var <- tidyselect::vars_select(colnames(data), {{ exposure }})
-  strata_var <- tidyselect::vars_select(colnames(data), {{ strata }})
-  obstime_var <- if (length(obstime) > 0) {
-    tidyselect::vars_select(colnames(data), {{ obstime }})} else NULL
+  strata_var   <- tidyselect::vars_select(colnames(data), {{ strata }})
+  obstime_var  <- tidyselect::vars_select(colnames(data), {{ obstime }})
 
 
   ## if stratifying variable is not already a factor then make it one
   if(!is.factor(data[[strata_var]])) {
     data <- dplyr::mutate(data, {{strata}} := as.factor({{strata}}))
+  }
+
+  ## add a temporary variable with the log of obstime
+  if (length(obstime_var) != 0) {
+    data[["log_obs"]] <- log(data[[obstime_var]])
   }
 
 
@@ -33,7 +37,9 @@ tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NU
 
   ##### CRUDE ESTIMATES --------------------------------------------------------
 
-  ### TODO: simplify these by defining the args with switch() to pass to tbl_uvreg
+
+
+  ## TODO: simplify these by defining the args with switch() to pass to tbl_uvreg
   if (measure == "OR") {
     crude <- gtsummary::tbl_uvregression(data = data,
                                   method = glm,
@@ -60,7 +66,7 @@ tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NU
                                   y = {{case}},
                                   include = {{exposure}},
                                   method.args = list(family = poisson,
-                                                     offset = log({{obstime}})),
+                                                     offset = log_obs),
                                   exponentiate = TRUE,
                                   hide_n = TRUE)
   }
@@ -115,7 +121,7 @@ tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NU
                                                                 y = {{case}},
                                                                 include = {{exposure}},
                                                                 method.args = list(family = poisson,
-                                                                                   offset = log({{obstime}})),
+                                                                                   offset = log_obs),
                                                                 exponentiate = TRUE,
                                                                 hide_n = TRUE)
                          }
@@ -162,12 +168,13 @@ tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NU
   exposurelength <- mh_data$var_nlevels[1L]
 
   ##### p-value for the mental haenszel estimate
-  woolf <- get_woolf_pval(mh_data, measure = measure)
+  woolf <- get_woolf_pval(mh_data, measure = measure,
+                          stratalength = stratalength)
 
 
   ##### mantel haenszel estimates
 
-  mh <- get_mh(mh_data, measure, conf.level)
+  mh <- get_mh(mh_data, measure, conf.level, exposurelength, stratalength)
 
   ####### CLEAN UP OUTPUT TABLE ------------------------------------------------
 
@@ -233,15 +240,12 @@ tbl_cmh_internal <- function(data, case, exposure, strata, measure, obstime = NU
 
 
 
-
-## TODO add arguments for exposure length and strata length to these functions
-
-
 # Mantel-Haenszel tests (no p-values)
 
-get_mh <- function(arr, measure = "OR", conf = 0.95) {
+get_mh <- function(arr, measure = "OR", conf = 0.95,
+                   exposurelength = NULL, stratalength = NULL) {
   switch(measure,
-         OR  = mh_or(arr, conf),
+         OR  = mh_or(arr, conf, exposurelength, stratalength),
          RR  = mh_rr(arr, conf),
          IRR = mh_irr(arr, conf)
   )
@@ -250,7 +254,8 @@ get_mh <- function(arr, measure = "OR", conf = 0.95) {
 
 # The M-H statistic for odds ratios already exist in R, so it's just a matter of
 # formatting data input and then pulling out the correct values
-mh_or <- function(arr, conf = 0.95) {
+mh_or <- function(arr, conf = 0.95,
+                  exposurelength = exposurelength, stratalength = stratalength) {
 
   ## need to flip because need non-reference row on top
   arr <- arrange(arr, tbl_id2, reference_row)
@@ -263,7 +268,7 @@ mh_or <- function(arr, conf = 0.95) {
       c(2,exposurelength, stratalength)),
     c(2,1,3))
 
-  MH <- stats::mantelhaen.test(wtf,  conf.level = conf.level, exact = TRUE)
+  MH <- stats::mantelhaen.test(wtf,  conf.level = conf, exact = TRUE)
 
   data.frame(ratio = MH$estimate, lower = MH$conf.int[1], upper = MH$conf.int[2])
 
@@ -346,7 +351,7 @@ get_ci_from_var <- function(log_ratio, log_ratio_var, z) {
 #### wolf pval
 
 ## this needs to be fed littler the dataframe
-get_woolf_pval <- function(arr, measure = "OR") {
+get_woolf_pval <- function(arr, measure = "OR", stratalength = stratalength) {
 
   nstrata <- stratalength
 
