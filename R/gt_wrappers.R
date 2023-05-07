@@ -3,26 +3,6 @@
 
 
 
-
-
-#' A gtsummary wrapper function that takes a gtsummary object and removes a
-#' column from the table body by column name
-#'
-#' @param gts_object A data frame, passed by the gtsummary::add_stat function
-#'
-#' @param col_name the column name from the gtsummary object's table_body to remove
-
-#' @return a gtsummary object without the named column
-#'
-#' @rdname gtsummary_wrappers
-#' @export
-#'
-gt_remove_stat <- function(gts_object, col_name = "stat_0") {
-  gts_object %>% gtsummary::modify_table_body(
-    ~ .x %>%
-      dplyr::select(-dplyr::all_of(col_name)))
-}
-
 #' A gtsummary wrapper function that takes a data frame and adds cross tabs
 #' by exposure and outcome
 #'
@@ -48,160 +28,180 @@ gt_remove_stat <- function(gts_object, col_name = "stat_0") {
 #'
 #' @export
 
-add_crosstabs <- function(
-    data, exposure, outcome, case_reference = "outcome", var_name = NULL, show_overall = TRUE,
-    exposure_label = NULL, outcome_label = NULL, var_label = NULL,
-    two_by_two = FALSE, gt_statistic = "{n}", show_N_header = FALSE) {
+# add_crosstabs <- function(
+#     data, exposure, outcome, case_reference = "outcome", var_name = NULL, show_overall = TRUE,
+#     exposure_label = NULL, outcome_label = NULL, var_label = NULL,
+#     two_by_two = FALSE, gt_statistic = "{n}", show_N_header = FALSE) {
+#
+#   # Create exposure and outcome variables and labels ----
+#   exposure_sym <- as.symbol(exposure)
+#   qexposure <- rlang::enquo(exposure_sym)
+#
+#   outcome_sym <- as.symbol(outcome)
+#   qoutcome <- rlang::enquo(outcome_sym)
+#
+#   if (is.null(exposure_label)) exposure_label <- exposure
+#   if (is.null(outcome_label)) outcome_label <- outcome
+#
+#   if (is.logical(data[[exposure]])) {
+#     # message("add_crosstabs: Ordering exposure to logical factor TRUE FALSE")
+#     data <- data %>%
+#       mutate(!!qexposure := factor(!!qexposure, levels = c(TRUE, FALSE)))
+#   }
+#
+#   if (is.logical(data[[outcome]])) {
+#     # message("add_crosstabs: Ordering outcome to logical factor TRUE FALSE")
+#     data <- data %>%
+#       mutate(!!qoutcome := factor(!!qoutcome, levels = c(TRUE, FALSE)))
+#   }
+#
+#
+#   if (two_by_two) {
+#     gts <- data %>%
+#       dplyr::select(!!qexposure, !!qoutcome) %>%
+#       gtsummary::tbl_summary(
+#         include = !!qexposure,
+#         statistic = everything() ~ gt_statistic,
+#         by = !!qoutcome,
+#         type = exposure ~ "categorical",
+#         label = exposure ~ exposure_label
+#       ) %>%
+#       gtsummary::modify_header(label ~ "") %>%
+#       gtsummary::modify_spanning_header(c("stat_1", "stat_2") ~ outcome_label)
+#
+#     if (show_overall) {
+#       gts <- gts %>% gtsummary::add_overall(last = TRUE)
+#
+#       if(!show_N_header) {
+#         gts <- gts %>%
+#           gtsummary::modify_header(c("stat_1", "stat_2") ~ "**{level}**")
+#       }
+#     }
+#   } else {
+#     if(is.null(var_name)) {
+#       var_name <- "All"
+#       data <- data %>% mutate(All = TRUE)
+#       summary_type <- "dichotomous"
+#     } else {
+#       summary_type <- "categorical"
+#     }
+#
+#     var_sym <- as.symbol(var_name)
+#     qvar <- rlang::enquo(var_sym)
+#     exposure_levels <- levels(data[[exposure]])
+#     outcome_levels <- levels(data[[outcome]])
+#
+#
+#     footnote <- paste0(
+#       paste0("Case defined as ", paste(outcome_label, "value of", outcome_levels[1])),
+#       "; ",
+#       paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])),
+#       "; ",
+#       paste0("Exposure variable is ", exposure_label))
+#     if (is.null(var_label)) var_label <- var_name
+#
+#     df_strata <-
+#       data %>%
+#       dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
+#       tidyr::nest(data = -dplyr::all_of(outcome)) %>%
+#       dplyr::mutate(
+#         tbl = purrr::map(
+#           data, ~ gtsummary::tbl_summary(
+#             .x,
+#             include = !!qvar,
+#             statistic = everything() ~ gt_statistic,
+#             by = !!qexposure,
+#             type = var_name ~ summary_type,
+#             label = var_name ~ var_label,
+#             missing = "ifany"
+#           ))
+#       ) %>%
+#       mutate_at(vars(outcome), as.factor) %>%
+#       mutate(!!qoutcome := fct_relevel(!! rlang::sym(outcome), outcome_levels)) %>%
+#       arrange(!!qoutcome)
+#
+#     # gts <- gtsummary::tbl_merge(df_strata$tbl)
+#     if (show_overall) {
+#       gt_overall <- data %>%
+#         dplyr::select(dplyr::all_of(c(var_name, exposure))) %>%
+#         gtsummary::tbl_summary(
+#           include = var_name,
+#           statistic = everything() ~ gt_statistic,
+#           label = var_name ~ var_label)
+#
+#       if(!show_N_header) {
+#         gt_overall <- gt_overall %>%
+#           gtsummary::modify_header(gtsummary::all_stat_cols() ~ "**N**", )
+#       }
+#
+#       tbls <- df_strata$tbl
+#       tbls[[3]] <- gt_overall
+#       gts <- gtsummary::tbl_merge(tbls) %>%
+#         gtsummary::modify_header(label ~ exposure_label) %>%
+#         gtsummary::modify_spanning_header(list(
+#           c("stat_1_1", "stat_2_1") ~ "**Cases**"),
+#           c("stat_1_2", "stat_2_2") ~ "**Controls**",
+#           "stat_0_3" ~ "**Overall**") %>%
+#         gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
+#
+#       if (!show_N_header) {
+#         gts <- gts %>%
+#           gtsummary::modify_header(
+#             c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
+#       }
+#     } else {
+#       gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
+#         gtsummary::modify_header(label ~ exposure_label) %>%
+#         gtsummary::modify_spanning_header(list(
+#           c("stat_1_1", "stat_2_1") ~ "**Cases**"),
+#           c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
+#         gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
+#       if (!show_N_header) {
+#         gts <- gts %>%
+#           gtsummary::modify_header(
+#             c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
+#       }
+#     }
+#   }
+#
+#
+#   data <- data %>%
+#     mutate(!!qoutcome := as.logical(!!qoutcome))
+#   gts[["data"]] <- data
+#   gts[["meta_data"]] <- list(
+#     exposure = exposure,
+#     outcome = outcome,
+#     var_name = var_name,
+#     show_overall = show_overall,
+#     exposure_label = exposure_label,
+#     outcome_label = outcome_label,
+#     var_name = ifelse(!is.null(var_name), var_name, NA),
+#     var_label = ifelse(!is.null(var_label), var_label, NA),
+#     two_by_two = two_by_two,
+#     gt_statistic = gt_statistic
+#   )
+#
+#   return(gts)
+# }
 
-  # Create exposure and outcome variables and labels ----
-  exposure_sym <- as.symbol(exposure)
-  qexposure <- rlang::enquo(exposure_sym)
-
-  outcome_sym <- as.symbol(outcome)
-  qoutcome <- rlang::enquo(outcome_sym)
-
-  if (is.null(exposure_label)) exposure_label <- exposure
-  if (is.null(outcome_label)) outcome_label <- outcome
-
-  if (is.logical(data[[exposure]])) {
-    # message("add_crosstabs: Ordering exposure to logical factor TRUE FALSE")
-    data <- data %>%
-      mutate(!!qexposure := factor(!!qexposure, levels = c(TRUE, FALSE)))
-  }
-
-  if (is.logical(data[[outcome]])) {
-    # message("add_crosstabs: Ordering outcome to logical factor TRUE FALSE")
-    data <- data %>%
-      mutate(!!qoutcome := factor(!!qoutcome, levels = c(TRUE, FALSE)))
-  }
 
 
-  if (two_by_two) {
-    gts <- data %>%
-      dplyr::select(!!qexposure, !!qoutcome) %>%
-      gtsummary::tbl_summary(
-        include = !!qexposure,
-        statistic = everything() ~ gt_statistic,
-        by = !!qoutcome,
-        type = exposure ~ "categorical",
-        label = exposure ~ exposure_label
-      ) %>%
-      gtsummary::modify_header(label ~ "") %>%
-      gtsummary::modify_spanning_header(c("stat_1", "stat_2") ~ outcome_label)
+#' A gtsummary wrapper function that takes a gtsummary object and removes a
+#' column from the table body by column name
+#'
+#' @param gts_object A data frame, passed by the gtsummary::add_stat function
+#'
+#' @param col_name the column name from the gtsummary object's table_body to remove
 
-    if (show_overall) {
-      gts <- gts %>% gtsummary::add_overall(last = TRUE)
-
-      if(!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(c("stat_1", "stat_2") ~ "**{level}**")
-      }
-    }
-  } else {
-    if(is.null(var_name)) {
-      var_name <- "All"
-      data <- data %>% mutate(All = TRUE)
-      summary_type <- "dichotomous"
-    } else {
-      summary_type <- "categorical"
-    }
-
-    var_sym <- as.symbol(var_name)
-    qvar <- rlang::enquo(var_sym)
-    exposure_levels <- levels(data[[exposure]])
-    outcome_levels <- levels(data[[outcome]])
-
-
-    footnote <- paste0(
-      paste0("Case defined as ", paste(outcome_label, "value of", outcome_levels[1])),
-      "; ",
-      paste0("Control defined as ", paste(outcome_label, "value of", outcome_levels[2])),
-      "; ",
-      paste0("Exposure variable is ", exposure_label))
-    if (is.null(var_label)) var_label <- var_name
-
-    df_strata <-
-      data %>%
-      dplyr::select(dplyr::all_of(c(var_name, outcome, exposure))) %>%
-      tidyr::nest(data = -dplyr::all_of(outcome)) %>%
-      dplyr::mutate(
-        tbl = purrr::map(
-          data, ~ gtsummary::tbl_summary(
-            .x,
-            include = !!qvar,
-            statistic = everything() ~ gt_statistic,
-            by = !!qexposure,
-            type = var_name ~ summary_type,
-            label = var_name ~ var_label,
-            missing = "ifany"
-          ))
-      ) %>%
-      mutate_at(vars(outcome), as.factor) %>%
-      mutate(!!qoutcome := fct_relevel(!! rlang::sym(outcome), outcome_levels)) %>%
-      arrange(!!qoutcome)
-
-    # gts <- gtsummary::tbl_merge(df_strata$tbl)
-    if (show_overall) {
-      gt_overall <- data %>%
-        dplyr::select(dplyr::all_of(c(var_name, exposure))) %>%
-        gtsummary::tbl_summary(
-          include = var_name,
-          statistic = everything() ~ gt_statistic,
-          label = var_name ~ var_label)
-
-      if(!show_N_header) {
-        gt_overall <- gt_overall %>%
-          gtsummary::modify_header(gtsummary::all_stat_cols() ~ "**N**", )
-      }
-
-      tbls <- df_strata$tbl
-      tbls[[3]] <- gt_overall
-      gts <- gtsummary::tbl_merge(tbls) %>%
-        gtsummary::modify_header(label ~ exposure_label) %>%
-        gtsummary::modify_spanning_header(list(
-          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
-          c("stat_1_2", "stat_2_2") ~ "**Controls**",
-          "stat_0_3" ~ "**Overall**") %>%
-        gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
-
-      if (!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(
-            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
-      }
-    } else {
-      gts <- gtsummary::tbl_merge(df_strata$tbl) %>%
-        gtsummary::modify_header(label ~ exposure_label) %>%
-        gtsummary::modify_spanning_header(list(
-          c("stat_1_1", "stat_2_1") ~ "**Cases**"),
-          c("stat_1_2", "stat_2_2") ~ "**Controls**") %>%
-        gtsummary::modify_footnote(gtsummary::all_stat_cols() ~ footnote)
-      if (!show_N_header) {
-        gts <- gts %>%
-          gtsummary::modify_header(
-            c("stat_1_1", "stat_2_1", "stat_1_2", "stat_2_2") ~ "**{level}**")
-      }
-    }
-  }
-
-
-  data <- data %>%
-    mutate(!!qoutcome := as.logical(!!qoutcome))
-  gts[["data"]] <- data
-  gts[["meta_data"]] <- list(
-    exposure = exposure,
-    outcome = outcome,
-    var_name = var_name,
-    show_overall = show_overall,
-    exposure_label = exposure_label,
-    outcome_label = outcome_label,
-    var_name = ifelse(!is.null(var_name), var_name, NA),
-    var_label = ifelse(!is.null(var_label), var_label, NA),
-    two_by_two = two_by_two,
-    gt_statistic = gt_statistic
-  )
-
-  return(gts)
+#' @return a gtsummary object without the named column
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
+gt_remove_stat <- function(gts_object, col_name = "stat_0") {
+  gts_object %>% gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::select(-dplyr::all_of(col_name)))
 }
 
 
