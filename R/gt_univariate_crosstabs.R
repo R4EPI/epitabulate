@@ -16,6 +16,7 @@
 #'@references Inspired by Daniel Sjoberg,
 #' see [gtsummary github repo](https://github.com/ddsjoberg/gtsummary)
 
+
 add_crosstabs <- function(x, wide = FALSE) {
 
   # checking that input is class tbl_summary
@@ -28,6 +29,9 @@ add_crosstabs <- function(x, wide = FALSE) {
 
   # grab the type of regression
   regression_type <- x$table_body$coefficients_type[1L]
+
+  # grab the offset
+  offset_type <- rlang::quo_get_expr(blabla$inputs$method.args)$offset
 
   if (!regression_type %in% c("logistic", "poisson")) {
     stop("The regression must be type 'logistic' or 'poisson' (negative binomials appear as 'poisson')")
@@ -80,7 +84,7 @@ add_crosstabs <- function(x, wide = FALSE) {
   # RISK Ratios ----------------------------------------------------------------
   # note both poisson (glm) and negbin (MASS) are "poisson" in gtsummary
   if (regression_type == "poisson" &
-      is.null(the_table$inputs$method.args$offset)){
+      is.null(offset_type)){
 
     # edit the table body
     the_table <- gtsummary::modify_table_body(
@@ -119,7 +123,7 @@ add_crosstabs <- function(x, wide = FALSE) {
   # INCIDENCE RATE Ratios ------------------------------------------------------
   # note both poisson (glm) and negbin (MASS) are "poisson" in gtsummary
   if (regression_type == "poisson" &
-      !is.null(the_table$inputs$method.args$offset)){
+      !is.null(offset_type)){
 
     # rename columns appropriately
     the_table <- gtsummary::modify_header(
@@ -163,7 +167,7 @@ add_crosstabs <- function(x, wide = FALSE) {
     }
 
     # chuck an error if they have used show_single_row
-    if (!is.null(the_table$inputs$show_single_row)) {
+    if (length(the_table$inputs$show_single_row) > 0) {
       stop("Wide format is not possible when specifying 'show_single_row' in your tbl_uvregression. Please change this")
     }
 
@@ -195,7 +199,7 @@ add_crosstabs <- function(x, wide = FALSE) {
                      "**Controls unexposed (n)**")
     }
     if (regression_type == "poisson" &
-        is.null(the_table$inputs$method.args$offset)) {
+        is.null(offset_type)) {
       # define vars of interest
       the_vars <- c("n_obs", "n_event")
       # define column headers for new vars
@@ -205,7 +209,7 @@ add_crosstabs <- function(x, wide = FALSE) {
                      "**Cases unexposed (n)**")
     }
     if (regression_type == "poisson" &
-        !is.null(the_table$inputs$method.args$offset)) {
+        !is.null(offset_type)) {
       # define vars of interest
       the_vars <- c("exposure", "n_event")
       # define column headers for new vars
@@ -265,7 +269,7 @@ add_crosstabs <- function(x, wide = FALSE) {
     )
 
     # change column names
-    the_table <- gtsummary::modify_header(the_table, update = relabel_vars)
+    the_table <- gtsummary::modify_header(the_table, !!!relabel_vars)
 
   }
 
