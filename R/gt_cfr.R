@@ -238,7 +238,23 @@ add_cfr <- function(gts_object, deaths_var) {
 }
 
 
+#' A gtsummary wrapper function that takes a gtsummary object and removes a
+#' column from the table body by column name
+#'
+#' @param gts_object A data frame, passed by the gtsummary::add_stat function
+#'
+#' @param col_name the column name from the gtsummary object's table_body to remove
 
+#' @return a gtsummary object without the named column
+#'
+#' @rdname gtsummary_wrappers
+#' @export
+#'
+gt_remove_stat <- function(gts_object, col_name = "stat_0") {
+  gts_object %>% gtsummary::modify_table_body(
+    ~ .x %>%
+      dplyr::select(-dplyr::all_of(col_name)))
+}
 
 
 #' Internal functions (not exported)
