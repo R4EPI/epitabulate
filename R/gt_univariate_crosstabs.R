@@ -31,7 +31,7 @@ add_crosstabs <- function(x, wide = FALSE) {
   regression_type <- x$table_body$coefficients_type[1L]
 
   # grab the offset
-  offset_type <- rlang::quo_get_expr(blabla$inputs$method.args)$offset
+  offset_type <- rlang::quo_get_expr(x$inputs$method.args)$offset
 
   if (!regression_type %in% c("logistic", "poisson")) {
     stop("The regression must be type 'logistic' or 'poisson' (negative binomials appear as 'poisson')")

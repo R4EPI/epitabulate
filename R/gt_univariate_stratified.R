@@ -82,6 +82,9 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
     }
   )
 
+  ## store input.args for later (this is removed when stacking)
+  og_method_args <- crude$inputs$method.args
+
 
   ######## STRATIFIED ESTIMATES ------------------------------------------------
 
@@ -223,6 +226,9 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
 
   ## add tbl_cmh to the class (so can use as catch in other functions)
   class(combine_tab) <- c("tbl_stack", "gtsummary", "tbl_cmh")
+
+  ## reinstate method args
+  combine_tab$inputs$method.args <- og_method_args
 
   ## return table
   combine_tab
