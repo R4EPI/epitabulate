@@ -33,18 +33,18 @@ URL: https://R4EPI.github.io/epitabulate/, https://github.com/R4EPI/epitabulate/
 BugReports: https://github.com/R4EPI/epitabulate/issues
 Imports: 
     dplyr (>= 1.0.2),
-    rlang (>= 0.4.0),
-    tidyr (>= 1.0.0),
-    stats,
+    epikit (>= 0.1.2),
+    forcats,
     glue,
+    gtsummary, 
     purrr,
-    tidyselect (>= 1.0.0),
-    tibble (>= 3.0.0),
+    rlang (>= 0.4.0),
+    stats,
     survey,
     srvyr,
-    forcats,
-    epikit (>= 0.1.2),
-    gtsummary
+    tibble (>= 3.0.0),
+    tidyr (>= 1.0.0),
+    tidyselect (>= 1.0.0)
 Suggests: 
     testthat,
     matchmaker (>= 0.1.0),

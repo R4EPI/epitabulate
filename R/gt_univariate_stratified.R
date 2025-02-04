@@ -1,11 +1,37 @@
-
-
-## linelist_cleaned from test-gt_wrappers.R up to line 201 (dont worry this will be deleted later)
-# linelist_cleaned$gender_bin <- linelist_cleaned$gender == "Female"
-# linelist_cleaned$fever_bin  <- linelist_cleaned$fever == "Yes"
-# linelist_cleaned <- linelist_cleaned %>%
-#   mutate(obstime = sample.int(30, nrow(linelist_cleaned), replace = TRUE))
-
+#' A {gtsummary} wrapper function that takes a dataframe and produces crude,
+#' stratified and Cochran-Mantel-Haenszel estimates.
+#'
+#' @param data A data frame
+#'
+#' @param case Name of a variable as your outcome of interest (e.g. illness)
+#'
+#' @param exposure Names of variable as exposures of interest (e.g. risk
+#'   factors)
+#'
+#' @param strata Name of a variable to be used for stratifying
+#'   results. This gives you a table of crude measure, measures for each
+#'   strata and the mantel-haeszel adjusted measure for each exposure variable
+#'
+#' @param measure Specify what you would like to calculated, options are "OR",
+#'   "RR" or "IRR". Default is "OR". If "OR or "RR" are specified then a
+#'   woolf test for homogeneity p-value is produced. This tests whether there
+#'   is a significant difference in the estimates between strata.
+#'
+#' @param obstime A numeric variable containing the observation time for each
+#'   individual
+#'
+#' @importFrom tidyselect vars_select
+#' @importFrom dplyr mutate relocate filter
+#' @importFrom rlang enquo as_label
+#' @importFrom tidyr drop_na
+#' @importFrom gtsummary tbl_uvregression modify_table_body tbl_stack modify_header style_ratio style_pvalue
+#' @importFrom stats glm
+#' @importFrom MASS glm.nb
+#'
+#' @references Inspired by Daniel Sjoberg,
+#' see [gtsummary github repo](https://github.com/ddsjoberg/gtsummary)
+#'
+#' @export
 
 
 tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
@@ -94,7 +120,7 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
                        .f = function(i){
 
                          ## filter dataset to only keep strata of interest
-                         strat_data <- filter(data, {{strata}} == i)
+                         strat_data <- dplyr::filter(data, {{strata}} == i)
 
                          ### TODO: simplify these by defining the args with switch() to pass to tbl_uvreg
                          if (measure == "OR") {
@@ -240,10 +266,12 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
 
 
 
-
-
-
-
+#' These are internal functions written by Zhian Kamvar.
+#' This was adapted from the code in the epiR::epi.2by2 version 1.0-2
+#         between 20 August 2019 and 22 August 2019.
+#' Many of the changes involve abstracting repetative routines into functions,
+#' splitting nested calculations into separate variables, and modifying
+#' variable names.
 
 # Mantel-Haenszel tests (no p-values)
 

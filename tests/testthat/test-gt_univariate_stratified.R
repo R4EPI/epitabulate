@@ -1,6 +1,6 @@
 # generate a real data set from
 # http://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704-ep713_confounding-em/BS704-EP713_Confounding-EM7.html
-# https://statsvenu.com/cochran-mantel-haenszel-statistics/?utm_source=chatgpt.com
+# https://statsvenu.com/cochran-mantel-haenszel-statistics/
 
 ## TODO consider swapping to this
 # https://online.stat.psu.edu/stat504/lesson/5/5.3/5.3.5
@@ -20,6 +20,7 @@ iarr <- arr
 # testing incidence rate
 iarr[, 2, ] <- c(2, 10, 4, 4) * 100 # equivalent of a person time column of 2
 
+# crude, strata 1, strata 2
 or_expect <- data.frame(
   ratio = c(1.93175853018373, 1.47619047619048, 1.53658536585366),
   lower = c(1.28113688091955, 0.705624518294847, 0.883931958442549),
@@ -73,39 +74,76 @@ arrt$pt <- 2 # person time
 
 
 # ODDS ratios
-or_outcome <- tbl_cmh(arrt, outcome, risk, old, measure = "OR")
+# crude
+or_outcome <- gtsummary::tbl_uvregression(arrt,
+                                           method = glm,
+                                           y = outcome,
+                                           include = risk,
+                                           method.args = list(family = binomial),
+                                           exponentiate = TRUE,
+                                           hide_n = TRUE) |>
+  add_crosstabs()
+
+# stratified
+or_cmh_outcome <- tbl_cmh(arrt, outcome, risk, old, measure = "OR") |>
+  add_crosstabs()
 
 
-# RISK ratios (poisson)
-rr_outcome <- tbl_cmh(arrt, outcome, risk, old, measure = "RR")
+# RISK ratios
+# crude
+rr_outcome <- gtsummary::tbl_uvregression(arrt,
+                                          method = MASS::glm.nb,
+                                          y = outcome,
+                                          include = risk,
+                                          exponentiate = TRUE,
+                                          hide_n = TRUE) |>
+  add_crosstabs()
+
+
+# stratified
+rr_cmh_outcome <- tbl_cmh(arrt, outcome, risk, old, measure = "RR") |>
+  add_crosstabs()
 
 
 # INCIDENCE RATE ratios
-irr_outcome <- tbl_cmh(arrt, outcome, risk, old, obstime = pt, measure = "IRR")
+# crude
+irr_outcome <- gtsummary::tbl_uvregression(arrt,
+                                      method = glm,
+                                      y = outcome,
+                                      include = risk,
+                                      method.args = list(family = poisson,
+                                                         offset = log(pt)),
+                                      exponentiate = TRUE,
+                                      hide_n = TRUE) |>
+  add_crosstabs()
+
+# stratified
+irr_cmh_outcome <- tbl_cmh(arrt, outcome, risk, old, obstime = pt, measure = "IRR")
 
 
 
-test_that("OR estimates and CIs are correct", {
+test_that("OR estimates correct", {
   ## estimates
   ## crude
-  expect_equal(or_expect$ratio[1], or_outcome$table_body$estimate[3])
+  expect_equal(or_expect$ratio[1], or_cmh_outcome$table_body$estimate[3])
   ## strata
-  expect_equal(or_expect$ratio[2], or_outcome$table_body$estimate[6])
-  expect_equal(or_expect$ratio[3], or_outcome$table_body$estimate[9])
+  expect_equal(or_expect$ratio[2], or_cmh_outcome$table_body$estimate[6])
+  expect_equal(or_expect$ratio[3], or_cmh_outcome$table_body$estimate[9])
   ## mh
-  expect_equal(MH_OR$est, as.numeric(or_outcome$table_body$mh_estimate[3]))
+  expect_equal(MH_OR$est, as.numeric(or_cmh_outcome$table_body$mh_estimate[3]))
+})
 
+test_that("OR CIs are correct", {
   ## CI
   ## crude
-  expect_equal(or_expect$lower[1], or_outcome$table_body$conf.low[3])
-  expect_equal(or_expect$upper[1], or_outcome$table_body$conf.high[3])
+  expect_equal(or_expect$lower[1], or_cmh_outcome$table_body$conf.low[3])
+  expect_equal(or_expect$upper[1], or_cmh_outcome$table_body$conf.high[3])
   ## strata
-  expect_equal(or_expect$lower[2], or_outcome$table_body$conf.low[6])
-  expect_equal(or_expect$upper[2], or_outcome$table_body$conf.high[6])
-  expect_equal(or_expect$lower[3], or_outcome$table_body$conf.low[9])
-  expect_equal(or_expect$upper[3], or_outcome$table_body$conf.high[9])
+  expect_equal(or_expect$lower[2], or_cmh_outcome$table_body$conf.low[6])
+  expect_equal(or_expect$upper[2], or_cmh_outcome$table_body$conf.high[6])
+  expect_equal(or_expect$lower[3], or_cmh_outcome$table_body$conf.low[9])
+  expect_equal(or_expect$upper[3], or_cmh_outcome$table_body$conf.high[9])
   ## mh
-  expect_equal(MH_OR$lower, as.numeric(or_outcome$table_body$mh_conf.low[3]))
-  expect_equal(MH_OR$upper, as.numeric(or_outcome$table_body$mh_conf.high[3]))
-
+  expect_equal(MH_OR$lower, as.numeric(or_cmh_outcome$table_body$mh_conf.low[3]))
+  expect_equal(MH_OR$upper, as.numeric(or_cmh_outcome$table_body$mh_conf.high[3]))
 })
