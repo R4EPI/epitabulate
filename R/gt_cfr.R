@@ -29,7 +29,7 @@ add_mr <- function(gts_object,
                    population = NULL,
                    multiplier = 10^4,
                    drop_tblsummary_stat = FALSE) {
-  summary_types <- unique(gts_object$meta_data$summary_type)
+  summary_types <- unique(gts_object$inputs$type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object <- gts_object %>%
@@ -123,7 +123,7 @@ add_ar <- function(gts_object,
                    population = NULL,
                    multiplier = 10^4,
                    drop_tblsummary_stat = FALSE) {
-  summary_types <- unique(gts_object$meta_data$summary_type)
+  summary_types <- unique(gts_object$inputs$type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
 
@@ -209,7 +209,7 @@ add_ar <- function(gts_object,
 #'
 add_cfr <- function(gts_object, deaths_var) {
 
-  summary_types <- unique(gts_object$meta_data$summary_type)
+  summary_types <- unique(gts_object$inputs$type)
 
   if(!"categorical" %in% summary_types & "dichotomous" %in% summary_types) {
     gts_object %>%  gtsummary::add_stat(
@@ -502,6 +502,30 @@ add_gt_attack_rate_level <-
     if(is.null(population)) {
       population <- counts$total
     } else {
+      # Handle character variables by ensuring consistent ordering
+      if(is.character(data[[variable]])) {
+        # For character variables, we need to establish a consistent order
+        # Option 1: Use the order as it appears in the original data
+        original_order <- unique(data[[variable]])
+        counts_order <- as.character(counts[[variable]])
+
+        if(length(population) == length(original_order)) {
+          # Reorder population to match counts order
+          population <- population[match(counts_order, original_order)]
+        } else {
+          stop("Population vector length doesn't match number of levels in variable")
+        }
+      } else if(is.factor(data[[variable]])) {
+        # For factors, use factor levels to align
+        factor_levels <- levels(data[[variable]])
+        counts_levels <- as.character(counts[[variable]])
+
+        if(length(population) == length(factor_levels)) {
+          population <- population[match(counts_levels, factor_levels)]
+        } else {
+          stop("Population vector length doesn't match number of factor levels")
+        }
+      }
       drop_total <- FALSE
     }
 
@@ -654,8 +678,32 @@ add_gt_mortality_rate_level <- function(data,
   if(is.null(population)) {
     # if no population argument is passed, population will be the number of rows in each level
     population <- counts$total
-  } else {
-    drop_total = FALSE
+  }  else {
+    # Handle character variables by ensuring consistent ordering
+    if(is.character(data[[variable]])) {
+      # For character variables, we need to establish a consistent order
+      # Option 1: Use the order as it appears in the original data
+      original_order <- unique(data[[variable]])
+      counts_order <- as.character(counts[[variable]])
+
+      if(length(population) == length(original_order)) {
+        # Reorder population to match counts order
+        population <- population[match(counts_order, original_order)]
+      } else {
+        stop("Population vector length doesn't match number of levels in variable")
+      }
+    } else if(is.factor(data[[variable]])) {
+      # For factors, use factor levels to align
+      factor_levels <- levels(data[[variable]])
+      counts_levels <- as.character(counts[[variable]])
+
+      if(length(population) == length(factor_levels)) {
+        population <- population[match(counts_levels, factor_levels)]
+      } else {
+        stop("Population vector length doesn't match number of factor levels")
+      }
+    }
+    drop_total <- FALSE
   }
 
   mr_label <- paste0("MR (per ", format(multiplier, big.mark=","), ")")
