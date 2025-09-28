@@ -19,32 +19,30 @@ Authors@R: c(
            family = "Doyle",
            role = "ctb"))
 Description: Produces tables for descriptive epidemiological analysis. These
-    tables describe counts of variables in either line-list or survey data
+    tables include attack rates, case fatality ratios and mortality rates
     (with appropriate confidence intervals), with additional functionality to
-    calculate odds, risk, and incidence rate ratios directly from a linelist
-    across several variables. This package is part of the 'R4EPIs' project
-    <https://R4epis.netlify.com>.
+    calculate mantel-haenszel odds, risk, and incidence rate ratios. 
+    This package is part of the 'R4EPIs' project <https://R4EPI.github.io/sitrep/>.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 URL: https://R4EPI.github.io/epitabulate/, https://github.com/R4EPI/epitabulate/
 BugReports: https://github.com/R4EPI/epitabulate/issues
 Imports: 
     dplyr (>= 1.0.2),
-    rlang (>= 0.4.0),
-    tidyr (>= 1.0.0),
-    stats,
-    glue,
-    purrr,
-    tidyselect (>= 1.0.0),
-    tibble (>= 3.0.0),
-    survey,
-    srvyr,
-    forcats,
     epikit (>= 0.1.2),
-    gtsummary
+    forcats,
+    glue,
+    gtsummary, 
+    MASS,
+    purrr,
+    rlang (>= 0.4.0),
+    stats,
+    tibble (>= 3.0.0),
+    tidyr (>= 1.0.0),
+    tidyselect (>= 1.0.0)
 Suggests: 
     testthat,
     matchmaker (>= 0.1.0),
