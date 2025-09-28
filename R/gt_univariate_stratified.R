@@ -3,10 +3,10 @@
 #'
 #' @param data A data frame
 #'
-#' @param case Name of a variable as your outcome of interest (e.g. illness)
+#' @param case Name of a variable as your outcome of interest
 #'
-#' @param exposure Names of variable as exposures of interest (e.g. risk
-#'   factors)
+#' @param exposure Names of variables as exposures of interest.
+#'   Can be multiple variables using tidyselect syntax.
 #'
 #' @param strata Name of a variable to be used for stratifying
 #'   results. This gives you a table of crude measure, measures for each
@@ -36,14 +36,73 @@
 
 tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
 
+
+  # Get all exposure variables
+  exposure_vars <- tidyselect::vars_select(colnames(data), {{ exposure }})
+
+  # If only one exposure, just call the original function
+  if (length(exposure_vars) == 1) {
+    return(tbl_cmh_single(data = data,
+                   case = {{ case }},
+                   exposure = !!rlang::sym(exposure_vars),
+                   strata = {{ strata }},
+                   measure = measure,
+                   obstime = {{ obstime }},
+                   conf.level = conf.level))
+  }
+
+  # For multiple exposures, loop through each one
+  tables <- purrr::map(exposure_vars, function(exp_var) {
+    tbl_cmh_single(data = data,
+            case = {{ case }},
+            exposure = !!rlang::sym(exp_var),
+            strata = {{ strata }},
+            measure = measure,
+            obstime = {{ obstime }},
+            conf.level = conf.level)
+  })
+
+  # Store the method.args from the first table before stacking
+  # (all tables should have the same method.args since they use the same measure)
+  original_method_args <- tables[[1]]$inputs$method.args
+
+  # Stack all the tables together
+  combined <- gtsummary::tbl_stack(tables)
+
+  # Add class to indicate this is a multiple exposure table
+  class(combined) <- c(class(combined), "tbl_cmh")
+
+  # Restore the method.args that got lost during stacking
+  combined$inputs$method.args <- original_method_args
+
+  return(combined)
+}
+
+
+
+
+#' internal version of the above function for a single exposure variable
+tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
+
   ## make variables available for use
   case_var     <- tidyselect::vars_select(colnames(data), {{ case }})
   exposure_var <- tidyselect::vars_select(colnames(data), {{ exposure }})
   strata_var   <- tidyselect::vars_select(colnames(data), {{ strata }})
   obstime_var  <- tidyselect::vars_select(colnames(data), {{ obstime }})
 
+  ## TODO
+  # add check if variables are binary (1/0 or yes/no) - then need to either factorise or
+  # make sure gtsummary doesnt just show the exposed level
 
-  ## if stratifying variable is not already a factor then make it one
+  ## if variables of interest are not factors then make them
+  if(!is.factor(data[[case_var]])) {
+    data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))
+  }
+
+  if(!is.factor(data[[exposure_var]])) {
+    data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+  }
+
   if(!is.factor(data[[strata_var]])) {
     data <- dplyr::mutate(data, {{strata}} := as.factor({{strata}}))
   }
@@ -189,7 +248,7 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
   ##### prep data for mh estimates
   mh_data <- combine_tab$table_body
 
-  mh_data <- filter(mh_data, stratifier != "Crude", !header_row)
+  mh_data <- dplyr::filter(mh_data, stratifier != "Crude", !header_row)
 
   stratalength <- length(strata_levels)
 
@@ -291,9 +350,9 @@ mh_or <- function(arr, conf = 0.95,
                   exposurelength = exposurelength, stratalength = stratalength) {
 
   ## need to flip because need non-reference row on top
-  arr <- arrange(arr, tbl_id2, reference_row)
-  arr <- mutate(arr, n_nonevent = n_obs - n_event)
-  arr <- select(arr, n_event, n_nonevent)
+  arr <- dplyr::arrange(arr, tbl_id2, reference_row)
+  arr <- dplyr::mutate(arr, n_nonevent = n_obs - n_event)
+  arr <- dplyr::select(arr, n_event, n_nonevent)
 
   wtf <- aperm(
     array(
