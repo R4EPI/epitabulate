@@ -12,7 +12,7 @@
 #'
 #'@importFrom gtsummary modify_table_styling modify_table_body modify_header modify_fmt_fun style_number modify_footnote
 #'@importFrom dplyr mutate relocate
-#'@importFrom rlang enquo as_label
+#'@importFrom rlang enquo as_label quo_get_expr
 #'
 #'@references Inspired by Daniel Sjoberg,
 #' see [gtsummary github repo](https://github.com/ddsjoberg/gtsummary)

@@ -90,10 +90,6 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
   strata_var   <- tidyselect::vars_select(colnames(data), {{ strata }})
   obstime_var  <- tidyselect::vars_select(colnames(data), {{ obstime }})
 
-  ## TODO
-  # add check if variables are binary (1/0 or yes/no) - then need to either factorise or
-  # make sure gtsummary doesnt just show the exposed level
-
   ## if variables of interest are not factors then make them
   if(!is.factor(data[[case_var]])) {
     data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))

@@ -88,6 +88,7 @@ case_fatality_rate <- function(deaths, population, conf_level = 0.95,
 }
 
 #' @rdname attack_rate
+#' @importFrom forcats fct_explicit_na
 #' @export
 case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
                                   multiplier = 100, mergeCI = FALSE, digits = 2,
