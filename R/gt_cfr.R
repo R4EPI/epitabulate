@@ -1,27 +1,37 @@
+# Suppress CMD check notes for NSE variables and base functions used across gtsummary wrapper functions
+utils::globalVariables(c(
+  "case_n",           # column name created in dplyr operations
+  "deaths_n",         # column name created in dplyr operations
+  "Cases",            # column name in gtsummary table_body
+  "Deaths",           # column name in gtsummary table_body
+  "mortality per 10 000"  # column name created by mortality_rate function
+))
 
-#' A mortality rate wrapper function (using the gtsummary package)that takes
-#' a gtsummary object and returns a gtsummary object with attack rate (per given
-#'  multiple) with 95% confidence interval
+
+
+#' Add mortality rate statistics to a gtsummary table
 #'
-#' @param gts_object A data frame, passed by the gtsummary::add_stat function.
+#' This function wraps `gtsummary::add_stat()` to calculate and display
+#' **mortality rates** (deaths per given population multiplier) with 95%
+#' confidence intervals, using the `epitabulate::mortality_rate()` function
+#' internally.
 #'
-#' @param deaths_var logical variable name that indicates deaths
+#' @param gts_object A gtsummary object created with functions such as
+#'   `gtsummary::tbl_summary()` or `gtsummary::tbl_cross()`.
+#' @param deaths_var A logical variable name in the data indicating death
+#'   status (e.g. `TRUE` for death).
+#' @param population Optional numeric vector giving the population size for
+#'   the denominator. If `NULL`, the population is inferred from the data.
+#' @param multiplier Numeric multiplier used to scale the mortality rate
+#'   (e.g. `1` = proportion, `100` = percent, `10^4` = per 10,000).
+#' @param drop_tblsummary_stat Logical; if `TRUE`, removes the original
+#'   `tbl_summary` statistic column (default = `FALSE`).
 #'
-#' @param variable Name of a variable as the outcome of interest, passed by the
-#' gtsummary::add_stat function (e.g. illness)
+#' @return A modified gtsummary object with additional columns showing
+#'   the number of deaths, population, mortality rate, and 95% confidence
+#'   interval.
 #'
-#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat
-#' function (e.g. illness).
-#'
-#'#'@param population the number of individuals in the population, passed to
-#'`epitabulate::mortality_rate`
-#'
-#' @param ... additional params that may be passed from gtsummary functions.
-#'
-#' @return a single-row gtsummary object with attack rate results cases,
-#' population, attack rate, and 95% confidence interval.
-#'
-#' @rdname gt_attackrate
+#' @rdname add_mr
 #'
 #' @export
 add_mr <- function(gts_object,
@@ -89,32 +99,32 @@ add_mr <- function(gts_object,
   return(gts_object)
 }
 
-#' An attack rate wrapper function (using the gtsummary package)that takes
-#' a gtsummary object and returns a gtsummary object withattack rate (per given
-#'  multiple) with 95% confidence interval
+#' Add attack rate statistics to a gtsummary table
 #'
-#' @param gts_object A data frame, passed by the gtsummary::add_stat function.
+#' This function wraps `gtsummary::add_stat()` to calculate and display
+#' **attack rates** (cases per given population multiplier) with 95% confidence
+#' intervals, using the `epitabulate::attack_rate()` function internally.
 #'
-#' @param variable Name of a variable as the outcome of interest, passed by the
-#' gtsummary::add_stat function (e.g. illness)
+#' @param gts_object A gtsummary object created with functions such as
+#'   `gtsummary::tbl_summary()`
 #'
-#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat
-#' function (e.g. illness).
+#' @param case_var A logical variable name in the data indicating case status
+#'   (e.g. `TRUE` for cases).
 #'
-#'#'@param population the number of individuals in the population, passed to
-#'`epitabulate::attack_rate`
 #'
-#'@param multiplier The base by which to multiply the output:
-# '1: multiplier = 1: ratio between 0 and 1;
-# '2: multiplier = 100:proportion;
-# '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
+#' @param population Optional numeric vector giving the population size for
+#'   the denominator. If `NULL`, the population is inferred from the data.
 #'
-#' @param ... additional params that may be passed from gtsummary functions.
+#' @param multiplier Numeric multiplier used to scale the attack rate
+#'   (e.g. `1` = proportion, `100` = percent, `10^4` = per 10,000).
 #'
-#' @return a single-row gtsummary object with attack rate results cases,
-#' population, attack rate, and 95% confidence interval.
+#' @param drop_tblsummary_stat Logical; if `TRUE`, removes the original
+#'   `tbl_summary` statistic column (default = `FALSE`).
 #'
-#' @rdname gt_attackrate
+#' @return A modified gtsummary object with additional columns showing
+#'   the number of cases, population, attack rate, and 95% confidence interval.
+#'
+#' @rdname add_ar
 #'
 #' @export
 #'
@@ -183,27 +193,21 @@ add_ar <- function(gts_object,
 
 
 
-#' An case fatality rate wrapper function (using the gtsummary package)
-#' that takes a gtsummary object and returns a gtsummary object with number
-#' of deaths, case fatality rate, and 95% confidence interval.
+#' Add case fatality rate (CFR) statistics to a gtsummary table
 #'
-#' @param data A data frame, passed by the gtsummary::add_stat function.
+#' This function wraps `gtsummary::add_stat()` to calculate and display
+#' **case fatality rates** (deaths among cases) with 95% confidence intervals,
+#' using the `epitabulate::case_fatality_rate_df()` function internally.
 #'
-#' @param variable Name of a variable as the outcome of interest, passed by the
-#' gtsummary::add_stat function (e.g. illness).
+#' @param gts_object A gtsummary object created with functions such as
+#'   `gtsummary::tbl_summary()` or `gtsummary::tbl_cross()`.
+#' @param deaths_var A logical variable name in the data indicating death
+#'   status (e.g. `TRUE` for death).
+#' @return A modified gtsummary object with additional columns showing
+#'   the number of deaths, number of cases, case fatality rate, and 95%
+#'   confidence interval.
 #'
-#' @param by Name of a variable for stratifying, passed by the gtsummary::add_stat function
-#'   (e.g. illness).
-#'
-#' @param deaths_var the name of a logical column in the data that indicates that the case died,
-#' is passed as the first argument to `epitabulate::case_fatality_rate_df`
-#'
-#' @param ... additional params that may be passed from gtsummary functions.
-#'
-#' @return a single row gtsummary object with case fatality rate results for
-#' deaths, cases, cfr, and 95% confidence interval.
-#'
-#' @rdname gt_attackrate
+#' @rdname add_cfr
 #' @import dplyr
 #' @export
 #'
@@ -247,7 +251,7 @@ add_cfr <- function(gts_object, deaths_var) {
 
 #' @return a gtsummary object without the named column
 #'
-#' @rdname gtsummary_wrappers
+#' @rdname gt_remove_stat
 #' @export
 #'
 gt_remove_stat <- function(gts_object, col_name = "stat_0") {
@@ -382,6 +386,8 @@ add_gt_cfr_stat_level <- function(data, variable, by, deaths_var, ...) {
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
 #'
+#' @importFrom stats setNames
+#'
 #' @return a single row gtsummary object with with attack rate results with
 #' cases, attack rate, and 95% confidence interval.
 #'
@@ -458,6 +464,9 @@ add_gt_attack_rate_stat_label <-
 # '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @importFrom rlang :=
+#' @importFrom stats setNames
 #'
 #' @return a single-row gtsummary object with attack rate results cases,
 #' population, attack rate, and 95% confidence interval.
@@ -552,6 +561,9 @@ add_gt_attack_rate_level <-
     return(ar)
   }
 
+
+#' @importFrom stats setNames
+#' @noRd
 add_gt_mortality_rate_stat_label <-
   function(data, variable, by=NULL, deaths_var, population = NULL,
            multiplier = 10^4, drop_total = TRUE, drop_deaths = TRUE, ...) {
@@ -628,6 +640,9 @@ add_gt_mortality_rate_stat_label <-
 # '3: multiplier = 10^4: x per 10,000 people; passed to `epitabulate::attack_rate`
 #'
 #' @param ... additional params that may be passed from gtsummary functions.
+#'
+#' @importFrom rlang :=
+#' @importFrom stats setNames
 #'
 #' @return a single-row gtsummary object with attack rate results cases,
 #' population, attack rate, and 95% confidence interval.

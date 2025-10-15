@@ -2,7 +2,7 @@
 % Please edit documentation in R/gt_univariate_stratified.R
 \name{tbl_cmh}
 \alias{tbl_cmh}
-\title{A {gtsummary} wrapper function that takes a dataframe and produces crude,
+\title{A \{gtsummary\} wrapper function that takes a dataframe and produces crude,
 stratified and Cochran-Mantel-Haenszel estimates.}
 \usage{
 tbl_cmh(
@@ -34,9 +34,11 @@ is a significant difference in the estimates between strata.}
 
 \item{obstime}{A numeric variable containing the observation time for each
 individual}
+
+\item{conf.level}{Confidence level for confidence intervals (default 0.95)}
 }
 \description{
-A {gtsummary} wrapper function that takes a dataframe and produces crude,
+A \{gtsummary\} wrapper function that takes a dataframe and produces crude,
 stratified and Cochran-Mantel-Haenszel estimates.
 }
 \references{

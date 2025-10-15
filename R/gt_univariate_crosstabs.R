@@ -1,5 +1,10 @@
+# Suppress CMD check notes for variables used in NSE (column names from gtsummary)
+utils::globalVariables(c("n_obs", "n_event", "n_nonevent", "estimate",
+                         "var_type", "variable", "stratifier",
+                         "reference_row", "var_label"))
 
-#' A {gtsummary} wrapper function that takes a gtsummary univariate regression
+
+#' A \{gtsummary\} wrapper function that takes a gtsummary univariate regression
 #' table and adds appropriate cross tabs by exposure and outcome
 #'
 #'@param x Object with class `tbl_uvregression` from the gtsummary

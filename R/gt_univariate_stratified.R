@@ -1,4 +1,12 @@
-#' A {gtsummary} wrapper function that takes a dataframe and produces crude,
+# Suppress CMD check notes for variables used in NSE (column names from gtsummary)
+utils::globalVariables(c("n_obs", "n_event", "n_nonevent", "estimate",
+                         "var_type", "variable", "stratifier",
+                         "reference_row", "var_label", "tbl_id2",
+                         "binomial", "poisson", "log_obs", "header_row",
+                         "mh_estimate", "mh_conf.low", "mh_conf.high",
+                         "woolf_p.value", "row_type", "mh_ci"))
+
+#' A \{gtsummary\} wrapper function that takes a dataframe and produces crude,
 #' stratified and Cochran-Mantel-Haenszel estimates.
 #'
 #' @param data A data frame
@@ -20,12 +28,14 @@
 #' @param obstime A numeric variable containing the observation time for each
 #'   individual
 #'
+#' @param conf.level Confidence level for confidence intervals (default 0.95)
+#'
 #' @importFrom tidyselect vars_select
 #' @importFrom dplyr mutate relocate filter
 #' @importFrom rlang enquo as_label
 #' @importFrom tidyr drop_na
 #' @importFrom gtsummary tbl_uvregression modify_table_body tbl_stack modify_header style_ratio style_pvalue
-#' @importFrom stats glm
+#' @importFrom stats glm binomial poisson
 #' @importFrom MASS glm.nb
 #'
 #' @references Inspired by Daniel Sjoberg,
@@ -82,6 +92,8 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
 
 
 #' internal version of the above function for a single exposure variable
+#' @importFrom rlang :=
+#' @noRd
 tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
 
   ## make variables available for use
@@ -328,7 +340,8 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
 #' splitting nested calculations into separate variables, and modifying
 #' variable names.
 
-# Mantel-Haenszel tests (no p-values)
+#' Mantel-Haenszel tests (no p-values)
+#' @noRd
 
 get_mh <- function(arr, measure = "OR", conf = 0.95,
                    exposurelength = NULL, stratalength = NULL) {
@@ -340,8 +353,9 @@ get_mh <- function(arr, measure = "OR", conf = 0.95,
 }
 
 
-# The M-H statistic for odds ratios already exist in R, so it's just a matter of
-# formatting data input and then pulling out the correct values
+#' The M-H statistic for odds ratios already exist in R, so it's just a matter of
+#' formatting data input and then pulling out the correct values
+#' @noRd
 mh_or <- function(arr, conf = 0.95,
                   exposurelength = exposurelength, stratalength = stratalength) {
 
@@ -363,11 +377,12 @@ mh_or <- function(arr, conf = 0.95,
 }
 
 
-# These functions are adapted from epiR::epi.2by2 lines 1185--1204
-#
-# Many of the changes involve abstracting repetative routines into functions,
-# splitting nested calculations into separate variables, and modifying
-# variable names.
+#' These functions are adapted from epiR::epi.2by2 lines 1185--1204
+#'
+#' Many of the changes involve abstracting repetative routines into functions,
+#' splitting nested calculations into separate variables, and modifying
+#' variable names.
+#' @noRd
 mh_rr <- function(arr, conf.level = 0.95) {
   z <- get_z(conf.level)
 
@@ -394,7 +409,7 @@ mh_rr <- function(arr, conf.level = 0.95) {
   data.frame(ratio = MH_risk_ratio, lower = se_limits[["ll"]], upper = se_limits[["ul"]])
 }
 
-
+#' @noRd
 mh_irr <- function(arr, conf.level = 0.95) {
 
   ## Summary incidence rate ratio (Rothman 2002 p 153, equation 8-5):
@@ -417,13 +432,14 @@ mh_irr <- function(arr, conf.level = 0.95) {
   data.frame(ratio = MH_IRR, lower = se_limits[["ll"]], upper = se_limits[["ul"]])
 }
 
-
+#' @noRd
 get_z <- function(conf.level) {
   alpha <- 1 - ((1 - conf.level) / 2)
   z <- stats::qnorm(alpha, mean = 0, sd = 1)
   z
 }
 
+#' @noRd
 get_ci_from_var <- function(log_ratio, log_ratio_var, z) {
   log_ratio_se <- sqrt(log_ratio_var)
   lower_limit <- exp(log_ratio - (z * log_ratio_se))
@@ -436,9 +452,9 @@ get_ci_from_var <- function(log_ratio, log_ratio_var, z) {
 
 
 
-#### wolf pval
-
-## this needs to be fed littler the dataframe
+#' wolf pval
+#' this needs to be fed littler the dataframe
+#' @noRd
 get_woolf_pval <- function(arr, measure = "OR", stratalength = stratalength) {
 
   nstrata <- stratalength
