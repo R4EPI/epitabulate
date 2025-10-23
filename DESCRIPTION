@@ -46,6 +46,8 @@ Imports:
     tidyr (>= 1.0.0),
     tidyselect (>= 1.0.0)
 Suggests: 
+    broom.helpers, 
+    cardx, 
     testthat,
     matchmaker (>= 0.1.0),
     epidict,
