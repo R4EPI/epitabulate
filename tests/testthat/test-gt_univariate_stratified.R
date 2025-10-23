@@ -36,8 +36,14 @@ or_outcome <- gtsummary::tbl_uvregression(arrt,
                                           include = exposure,
                                           method.args = list(family = binomial),
                                           exponentiate = TRUE,
-                                          hide_n = TRUE) |>
+                                          hide_n = TRUE)
+
+or_outcome_wide <- or_outcome |>
+  add_crosstabs(wide = TRUE)
+
+or_outcome <- or_outcome |>
   add_crosstabs()
+
 
 # stratified
 # strata confidence intervals based on profile likelihood from GLMs
@@ -86,7 +92,12 @@ rr_outcome <- gtsummary::tbl_uvregression(arrt_rr,
                                           y = outcome,
                                           include = exposure,
                                           exponentiate = TRUE,
-                                          hide_n = TRUE) |>
+                                          hide_n = TRUE)
+
+rr_outcome_wide <- rr_outcome |>
+  add_crosstabs(wide = TRUE)
+
+rr_outcome <- rr_outcome |>
   add_crosstabs()
 
 # stratified
@@ -150,7 +161,12 @@ irr_outcome <- gtsummary::tbl_uvregression(arrt_irr,
                                       method.args = list(family = poisson,
                                                          offset = log(years)),
                                       exponentiate = TRUE,
-                                      hide_n = TRUE) |>
+                                      hide_n = TRUE)
+
+irr_outcome_wide <- irr_outcome |>
+  add_crosstabs(wide = TRUE)
+
+irr_outcome <- irr_outcome |>
   add_crosstabs()
 
 # stratified
@@ -164,7 +180,7 @@ irr_cmh_outcome <- tbl_cmh(arrt_irr, event, exposure, age,
 
 
 
-
+### Tests for tbl_cmh()
 test_that("OR estimates correct", {
 
   ## estimates
@@ -232,9 +248,6 @@ test_that("IRR CIs are correct", {
 })
 
 
-## add counts check for add_crosstabs()
-
-
 
 ## pvals
 # test_that("woolf p-values work", {
@@ -273,3 +286,303 @@ test_that("IRR CIs are correct", {
 #
 # })
 
+
+
+
+#### Tests for add_crosstabs()
+
+test_that("add_crosstabs throws error for wrong input class", {
+  expect_error(
+    add_crosstabs(data.frame(x = 1:5)),
+    "`x` must be class 'tbl_uvregression' or 'tbl_cmh'"
+  )
+})
+
+test_that("add_crosstabs works with tbl_uvregression for logistic regression", {
+
+  expect_s3_class(or_outcome, "gtsummary")
+  expect_s3_class(or_outcome, "tbl_uvregression")
+
+  tb <- or_outcome$table_body
+
+  # ---- Expected counts directly from arr ----
+  # collapse over age strata
+  expected_cases_exposed <- sum(arr["TRUE", "TRUE", ])
+  expected_controls_exposed <- sum(arr["FALSE", "TRUE", ])
+  expected_cases_unexposed <- sum(arr["TRUE", "FALSE", ])
+  expected_controls_unexposed <- sum(arr["FALSE", "FALSE", ])
+
+  result_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  reference_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(result_row$n_event), expected_cases_exposed)
+  expect_equal(unname(result_row$n_nonevent), expected_controls_exposed)
+  expect_equal(unname(reference_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(reference_row$n_nonevent), expected_controls_unexposed)
+})
+
+test_that("add_crosstabs calculates correct counts for each exposure level", {
+
+  tb <- or_outcome$table_body
+
+  expected_cases_exposed <- sum(arr["TRUE", "TRUE", ])
+  expected_controls_exposed <- sum(arr["FALSE", "TRUE", ])
+  expected_cases_unexposed <- sum(arr["TRUE", "FALSE", ])
+  expected_controls_unexposed <- sum(arr["FALSE", "FALSE", ])
+
+  exposed_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  unexposed_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(exposed_row$n_event), expected_cases_exposed)
+  expect_equal(unname(exposed_row$n_nonevent), expected_controls_exposed)
+  expect_equal(unname(unexposed_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(unexposed_row$n_nonevent), expected_controls_unexposed)
+})
+
+test_that("add_crosstabs works with tbl_cmh for stratified analysis", {
+
+  expect_s3_class(or_cmh_outcome, "gtsummary")
+  expect_s3_class(or_cmh_outcome, "tbl_cmh")
+
+  tb <- or_cmh_outcome$table_body |>
+    tidyr::fill(stratifier)
+
+  # ---- Stratum-specific counts from arr ----
+  # age = FALSE stratum
+  stratum1_cases_exposed <- arr["TRUE", "TRUE", "FALSE"]
+  stratum1_controls_exposed <- arr["FALSE", "TRUE", "FALSE"]
+  # age = TRUE stratum
+  stratum2_cases_exposed <- arr["TRUE", "TRUE", "TRUE"]
+  stratum2_controls_exposed <- arr["FALSE", "TRUE", "TRUE"]
+
+  stratum1 <- tb[tb$stratifier == FALSE &
+                   !tb$reference_row & !is.na(tb$reference_row), ]
+  stratum2 <- tb[tb$stratifier == TRUE &
+                   !tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(stratum1$n_event), stratum1_cases_exposed)
+  expect_equal(unname(stratum1$n_nonevent), stratum1_controls_exposed)
+  expect_equal(unname(stratum2$n_event), stratum2_cases_exposed)
+  expect_equal(unname(stratum2$n_nonevent), stratum2_controls_exposed)
+})
+
+test_that("add_crosstabs header labels are correct for logistic regression", {
+
+  headers <- or_outcome$table_styling$header
+  n_event_header <- headers[headers$column == "n_event", "label"]
+  n_nonevent_header <- headers[headers$column == "n_nonevent", "label"]
+
+  expect_equal(dplyr::pull(n_event_header), "**Case (n)**")
+  expect_equal(dplyr::pull(n_nonevent_header), "**Control (n)**")
+})
+
+test_that("add_crosstabs works in wide format for dichotomous variables", {
+
+  tb <- or_outcome_wide$table_body
+
+  expect_true(all(c("n_event_FALSE", "n_event_TRUE",
+                    "n_nonevent_FALSE", "n_nonevent_TRUE") %in% names(tb)))
+
+  expect_equal(nrow(tb), 1)
+
+  # ---- Expected counts directly from arr ----
+  expected_cases_exposed <- sum(arr["TRUE", "TRUE", ])
+  expected_controls_exposed <- sum(arr["FALSE", "TRUE", ])
+  expected_cases_unexposed <- sum(arr["TRUE", "FALSE", ])
+  expected_controls_unexposed <- sum(arr["FALSE", "FALSE", ])
+
+  expect_equal(unname(tb$n_event_FALSE), expected_cases_exposed)
+  expect_equal(unname(tb$n_nonevent_FALSE), expected_controls_exposed)
+  expect_equal(unname(tb$n_event_TRUE), expected_cases_unexposed)
+  expect_equal(unname(tb$n_nonevent_TRUE), expected_controls_unexposed)
+})
+
+
+test_that("add_crosstabs works with tbl_uvregression for risk ratios", {
+
+  expect_s3_class(rr_outcome, "gtsummary")
+  expect_s3_class(rr_outcome, "tbl_uvregression")
+
+  tb <- rr_outcome$table_body
+
+  # ---- Expected counts directly from arr_rr ----
+  expected_cases_exposed <- sum(arr_rr["TRUE", "TRUE", ])
+  expected_total_exposed <- sum(arr_rr[, "TRUE", ])
+  expected_cases_unexposed <- sum(arr_rr["TRUE", "FALSE", ])
+  expected_total_unexposed <- sum(arr_rr[, "FALSE", ])
+
+  result_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  reference_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(result_row$n_event), expected_cases_exposed)
+  expect_equal(unname(result_row$n_obs), expected_total_exposed)
+  expect_equal(unname(reference_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(reference_row$n_obs), expected_total_unexposed)
+})
+
+test_that("add_crosstabs calculates correct counts for each exposure level", {
+
+  tb <- rr_outcome$table_body
+
+  expected_cases_exposed <- sum(arr_rr["TRUE", "TRUE", ])
+  expected_total_exposed <- sum(arr_rr[, "TRUE", ])
+  expected_cases_unexposed <- sum(arr_rr["TRUE", "FALSE", ])
+  expected_total_unexposed <- sum(arr_rr[, "FALSE", ])
+
+  exposed_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  unexposed_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(exposed_row$n_event), expected_cases_exposed)
+  expect_equal(unname(exposed_row$n_obs), expected_total_exposed)
+  expect_equal(unname(unexposed_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(unexposed_row$n_obs), expected_total_unexposed)
+})
+
+test_that("add_crosstabs works with tbl_cmh for stratified analysis", {
+
+  expect_s3_class(rr_cmh_outcome, "gtsummary")
+  expect_s3_class(rr_cmh_outcome, "tbl_cmh")
+
+  tb <- rr_cmh_outcome$table_body |>
+    tidyr::fill(stratifier)
+
+  # ---- Stratum-specific counts from arr_rr ----
+  # age = FALSE stratum
+  stratum1_cases_exposed <- arr_rr["TRUE", "TRUE", "FALSE"]
+  stratum1_total_exposed <- sum(arr_rr[, "TRUE", "FALSE"])
+  # age = TRUE stratum
+  stratum2_cases_exposed <- arr_rr["TRUE", "TRUE", "TRUE"]
+  stratum2_total_exposed <- sum(arr_rr[, "TRUE", "TRUE"])
+
+  stratum1 <- tb[tb$stratifier == FALSE &
+                   !tb$reference_row & !is.na(tb$reference_row), ]
+  stratum2 <- tb[tb$stratifier == TRUE &
+                   !tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(stratum1$n_event), stratum1_cases_exposed)
+  expect_equal(unname(stratum1$n_obs), stratum1_total_exposed)
+  expect_equal(unname(stratum2$n_event), stratum2_cases_exposed)
+  expect_equal(unname(stratum2$n_obs), stratum2_total_exposed)
+})
+
+test_that("add_crosstabs header labels are correct for risk ratios", {
+
+  headers <- rr_outcome$table_styling$header
+  n_event_header <- headers[headers$column == "n_event", "label"]
+  n_obs_header <- headers[headers$column == "n_obs", "label"]
+
+  expect_equal(dplyr::pull(n_event_header), "**Cases exposed (n)**")
+  expect_equal(dplyr::pull(n_obs_header), "**Total exposed (N)**")
+})
+
+test_that("add_crosstabs works in wide format for dichotomous variables", {
+
+  tb <- rr_outcome_wide$table_body
+
+  expect_true(all(c("n_event_FALSE", "n_event_TRUE",
+                    "n_obs_FALSE", "n_obs_TRUE") %in% names(tb)))
+
+  expect_equal(nrow(tb), 1)
+
+  # ---- Expected counts directly from arr_rr ----
+  expected_cases_exposed <- sum(arr_rr["TRUE", "TRUE", ])
+  expected_total_exposed <- sum(arr_rr[, "TRUE", ])
+  expected_cases_unexposed <- sum(arr_rr["TRUE", "FALSE", ])
+  expected_total_unexposed <- sum(arr_rr[, "FALSE", ])
+
+  expect_equal(unname(tb$n_event_FALSE), expected_cases_exposed)
+  expect_equal(unname(tb$n_obs_FALSE), expected_total_exposed)
+  expect_equal(unname(tb$n_event_TRUE), expected_cases_unexposed)
+  expect_equal(unname(tb$n_obs_TRUE), expected_total_unexposed)
+})
+
+
+test_that("add_crosstabs works with tbl_uvregression for IRR", {
+
+  expect_s3_class(irr_outcome, "gtsummary")
+  expect_s3_class(irr_outcome, "tbl_uvregression")
+
+  tb <- irr_outcome$table_body
+
+  expected_cases_exposed <- sum(arr_irr$deaths[arr_irr$exposure == "smoker"])
+  expected_total_exposed <- sum(arr_irr$years[arr_irr$exposure == "smoker"])
+  expected_cases_unexposed <- sum(arr_irr$deaths[arr_irr$exposure == "nonsmoker"])
+  expected_total_unexposed <- sum(arr_irr$years[arr_irr$exposure == "nonsmoker"])
+
+  result_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  reference_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(result_row$n_event), expected_cases_exposed)
+  expect_equal(unname(result_row$exposure), expected_total_exposed)
+  expect_equal(unname(reference_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(reference_row$exposure), expected_total_unexposed)
+})
+
+test_that("add_crosstabs calculates correct counts for each exposure level", {
+
+  tb <- irr_outcome$table_body
+
+  expected_cases_exposed <- sum(arr_irr$deaths[arr_irr$exposure == "smoker"])
+  expected_total_exposed <- sum(arr_irr$years[arr_irr$exposure == "smoker"])
+  expected_cases_unexposed <- sum(arr_irr$deaths[arr_irr$exposure == "nonsmoker"])
+  expected_total_unexposed <- sum(arr_irr$years[arr_irr$exposure == "nonsmoker"])
+
+  exposed_row <- tb[!tb$reference_row & !is.na(tb$reference_row), ]
+  unexposed_row <- tb[tb$reference_row & !is.na(tb$reference_row), ]
+
+  expect_equal(unname(exposed_row$n_event), expected_cases_exposed)
+  expect_equal(unname(exposed_row$exposure), expected_total_exposed)
+  expect_equal(unname(unexposed_row$n_event), expected_cases_unexposed)
+  expect_equal(unname(unexposed_row$exposure), expected_total_unexposed)
+})
+
+test_that("add_crosstabs works with tbl_cmh for stratified analysis", {
+
+  expect_s3_class(irr_cmh_outcome, "gtsummary")
+  expect_s3_class(irr_cmh_outcome, "tbl_cmh")
+
+  tb <- irr_cmh_outcome$table_body |>
+    tidyr::fill(stratifier)
+
+  # ---- Stratum-specific counts from arr_irr ----
+  ages <- unique(arr_irr$age)
+  for (age_group in ages) {
+    stratum_cases_exposed <- sum(arr_irr$deaths[arr_irr$age == age_group & arr_irr$exposure == "smoker"])
+    stratum_total_exposed <- sum(arr_irr$years[arr_irr$age == age_group & arr_irr$exposure == "smoker"])
+
+    stratum_row <- tb[tb$stratifier == age_group & !tb$reference_row & !is.na(tb$reference_row), ]
+
+    expect_equal(unname(stratum_row$n_event), stratum_cases_exposed)
+    expect_equal(unname(stratum_row$exposure), stratum_total_exposed)
+  }
+})
+
+test_that("add_crosstabs header labels are correct for IRR", {
+
+  headers <- irr_outcome$table_styling$header
+  n_event_header <- headers[headers$column == "n_event", "label"]
+  exposure_header <- headers[headers$column == "exposure", "label"]
+
+  expect_equal(dplyr::pull(n_event_header), "**Cases exposed (n)**")
+  expect_equal(dplyr::pull(exposure_header), "**Total exposed (person-time)**")
+})
+
+test_that("add_crosstabs works in wide format for dichotomous variables", {
+
+  tb <- irr_outcome_wide$table_body
+
+  expect_true(all(c("n_event_FALSE", "n_event_TRUE",
+                    "exposure_FALSE", "exposure_TRUE") %in% names(tb)))
+
+  expect_equal(nrow(tb), 1)
+
+  expected_cases_exposed <- sum(arr_irr$deaths[arr_irr$exposure == "smoker"])
+  expected_total_exposed <- sum(arr_irr$years[arr_irr$exposure == "smoker"])
+  expected_cases_unexposed <- sum(arr_irr$deaths[arr_irr$exposure == "nonsmoker"])
+  expected_total_unexposed <- sum(arr_irr$years[arr_irr$exposure == "nonsmoker"])
+
+  expect_equal(unname(tb$n_event_FALSE), expected_cases_exposed)
+  expect_equal(unname(tb$exposure_FALSE), expected_total_exposed)
+  expect_equal(unname(tb$n_event_TRUE), expected_cases_unexposed)
+  expect_equal(unname(tb$exposure_TRUE), expected_total_unexposed)
+})
