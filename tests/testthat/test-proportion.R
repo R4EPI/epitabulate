@@ -86,7 +86,20 @@ test_that("case_fatality_rate_df will do stratified analysis", {
   iris_n <- with(iris, tapply(Sepal.Width < 3, Species, function(i) case_fatality_rate(sum(i), length(i))))
   iris_n <- tibble::rownames_to_column(do.call('rbind', iris_n), "Species")
   iris_n <- tibble::as_tibble(iris_n)
-  iris_n$Species <- forcats::fct_inorder(iris_n$Species)
+  # Add the "(Missing)" row that .drop = FALSE creates (with 0 deaths, 0 population)
+  missing_row <- tibble::tibble(
+    Species = "(Missing)",
+    deaths = 0L,
+    population = 0L,
+    cfr = NaN,
+    lower = NaN,
+    upper = NaN
+  )
+  iris_n <- dplyr::bind_rows(iris_n, missing_row)
+
+  # Set factor levels to include the missing
+  iris_n$Species <- factor(iris_n$Species, levels = c(levels(iris$Species), "(Missing)"))
+
 
   expect_equal(iris_res, iris_n)
 
@@ -109,7 +122,21 @@ test_that("case_fatality_rate_df will do stratified analysis with missing cases"
 
   iris_n <- tibble::rownames_to_column(do.call('rbind', iris_n), "Species")
   iris_n <- tibble::as_tibble(iris_n)
-  iris_n$Species <- forcats::fct_inorder(iris_n$Species)
+
+  # Add the "(Missing)" row that .drop = FALSE creates (with 0 deaths, 0 population)
+  missing_row <- tibble::tibble(
+    Species = "(Missing)",
+    deaths = 0L,
+    population = 0L,
+    cfr = NaN,
+    lower = NaN,
+    upper = NaN
+  )
+  iris_n <- dplyr::bind_rows(iris_n, missing_row)
+
+  # Set factor levels to include the missing
+  iris_n$Species <- factor(iris_n$Species, levels = c(levels(miss_iris$Species), "(Missing)"))
+
 
   expect_equal(iris_res, iris_n)
 
@@ -128,35 +155,9 @@ test_that("case_fatality_rate_df will do stratified analysis with missing", {
   iris_n <- tibble::rownames_to_column(do.call('rbind', iris_n), "Species")
   iris_n <- tibble::as_tibble(iris_n)[c(2, 3, 1), ]
   iris_n$Species[3] <- "(Missing)"
-  iris_n$Species <- forcats::fct_inorder(iris_n$Species)
+  iris_n$Species <- factor(iris_n$Species, levels = levels(iris_res$Species))
 
   expect_equal(iris_res, iris_n)
-
-})
-
-test_that("case_fatality_rate_df will do stratified analysis with missing cases", {
-
-  miss_iris <- iris
-  # setosa only has two samples with Sepal.Width < 3. If we set the max sepal
-  # width value to missing, then there are only 49 samples to account for in
-  # this example.
-  miss_iris$Sepal.Width[iris$Sepal.Width == max(iris$Sepal.Width)] <- NA
-
-  iris_res <- case_fatality_rate_df(miss_iris, Sepal.Width < 3, group = Species)
-  iris_n <- with(miss_iris[!is.na(miss_iris$Sepal.Width), ],
-    tapply(Sepal.Width < 3, Species,
-      function(i) case_fatality_rate(sum(i), length(i))
-    )
-  )
-
-  iris_n <- tibble::rownames_to_column(do.call('rbind', iris_n), "Species")
-  iris_n <- tibble::as_tibble(iris_n)
-  iris_n$Species <- forcats::fct_inorder(iris_n$Species)
-
-  expect_equal(iris_res, iris_n)
-
-  # Here, we are ensuring that this value is indeed greater than 4.
-  expect_gt(iris_res$cfr[1], 4)
 
 })
 

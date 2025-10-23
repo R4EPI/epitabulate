@@ -75,7 +75,7 @@ case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
 
   # Group the data if needed
   if (wants_grouping) {
-    x <- dplyr::mutate(x, !!qgroup := forcats::fct_explicit_na(!!qgroup, "(Missing)"))
+    x <- dplyr::mutate(x, !!qgroup := forcats::fct_na_value_to_level(!!qgroup, "(Missing)"))
     x <- dplyr::group_by(x, !!qgroup, .drop = FALSE)
   }
 

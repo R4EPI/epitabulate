@@ -102,14 +102,28 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
   strata_var   <- tidyselect::vars_select(colnames(data), {{ strata }})
   obstime_var  <- tidyselect::vars_select(colnames(data), {{ obstime }})
 
-  ## if variables of interest are not factors then make them
-  if(!is.factor(data[[case_var]])) {
-    data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))
+  ## for OR - if variables of interest are not factors then make them
+  if (measure == "OR") {
+    if(!is.factor(data[[case_var]])) {
+      data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))
+    }
+
+    if(!is.factor(data[[exposure_var]])) {
+      data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+    }
   }
 
-  if(!is.factor(data[[exposure_var]])) {
-    data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+  ## for RR and IRR - ensure outcome var is numeric and exposure is factor
+  if (measure != "OR") {
+    if(!is.numeric(data[[case_var]])) {
+      data <- dplyr::mutate(data, {{case}} := as.numeric({{case}}))
+    }
+
+    if(!is.factor(data[[exposure_var]])) {
+      data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+    }
   }
+
 
   if(!is.factor(data[[strata_var]])) {
     data <- dplyr::mutate(data, {{strata}} := as.factor({{strata}}))
@@ -205,7 +219,6 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
                                                                 method = MASS::glm.nb,
                                                                 y = {{case}},
                                                                 include = {{exposure}},
-                                                                method.args = list(family = poisson),
                                                                 exponentiate = TRUE,
                                                                 hide_n = TRUE)
                          }
@@ -353,27 +366,45 @@ get_mh <- function(arr, measure = "OR", conf = 0.95,
 }
 
 
-#' The M-H statistic for odds ratios already exist in R, so it's just a matter of
-#' formatting data input and then pulling out the correct values
+#' There is a stats::mantelhaen.test but this uses a woolf variance rather than
+#' robins-breslow-greenland - Rothman in "epidemiology an introduction" uses RBG
 #' @noRd
 mh_or <- function(arr, conf = 0.95,
                   exposurelength = exposurelength, stratalength = stratalength) {
 
-  ## need to flip because need non-reference row on top
   arr <- dplyr::arrange(arr, tbl_id2, reference_row)
   arr <- dplyr::mutate(arr, n_nonevent = n_obs - n_event)
-  arr <- dplyr::select(arr, n_event, n_nonevent)
 
-  wtf <- aperm(
-    array(
-      t(as.matrix(arr)),
-      c(2,exposurelength, stratalength)),
-    c(2,1,3))
+  A <- arr$n_event[!arr$reference_row]      # exposed cases
+  B <- arr$n_nonevent[!arr$reference_row]   # exposed controls
+  C <- arr$n_event[arr$reference_row]       # unexposed cases
+  D <- arr$n_nonevent[arr$reference_row]    # unexposed controls
+  N <- A + B + C + D
 
-  MH <- stats::mantelhaen.test(wtf,  conf.level = conf, exact = TRUE)
+  numerator <- sum((A * D) / N)
+  denominator <- sum((B * C) / N)
+  MH_OR <- numerator / denominator
 
-  data.frame(ratio = MH$estimate, lower = MH$conf.int[1], upper = MH$conf.int[2])
+  # Robins-Breslow-Greenland core components
+  G1 <- sum(((A + D) * A * D) / (N^2))
+  G2 <- sum(((A + D) * B * C) / (N^2))
+  H1 <- sum(((B + C) * A * D) / (N^2))
+  H2 <- sum(((B + C) * B * C) / (N^2))
 
+  # NOTE: for the Rothman numeric example in table 10.6, the variance is taken from
+  # the core 3-term expression (G1, G2+H1, H2).  Including P and Q as additive
+  # terms (unless you use the exact algebraic variant) inflates the variance.
+  var_log_OR <- (G1 / (2 * numerator^2)) +
+    ((G2 + H1) / (2 * numerator * denominator)) +
+    (H2 / (2 * denominator^2))
+
+  se_log_OR <- sqrt(var_log_OR)
+  z <- get_z(conf)
+
+  lower <- exp(log(MH_OR) - z * se_log_OR)
+  upper <- exp(log(MH_OR) + z * se_log_OR)
+
+  data.frame(ratio = MH_OR, lower = lower, upper = upper)
 }
 
 
