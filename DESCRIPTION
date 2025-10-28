@@ -31,6 +31,7 @@ RoxygenNote: 7.3.2
 URL: https://R4EPI.github.io/epitabulate/, https://github.com/R4EPI/epitabulate/
 BugReports: https://github.com/R4EPI/epitabulate/issues
 Imports: 
+    binom,
     dplyr (>= 1.0.2),
     epikit (>= 0.1.2),
     forcats,
@@ -39,11 +40,14 @@ Imports:
     MASS,
     purrr,
     rlang (>= 0.4.0),
+    scales, 
     stats,
     tibble (>= 3.0.0),
     tidyr (>= 1.0.0),
     tidyselect (>= 1.0.0)
 Suggests: 
+    broom.helpers, 
+    cardx, 
     testthat,
     matchmaker (>= 0.1.0),
     epidict,

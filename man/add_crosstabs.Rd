@@ -2,7 +2,7 @@
 % Please edit documentation in R/gt_univariate_crosstabs.R
 \name{add_crosstabs}
 \alias{add_crosstabs}
-\title{A {gtsummary} wrapper function that takes a gtsummary univariate regression
+\title{A \{gtsummary\} wrapper function that takes a gtsummary univariate regression
 table and adds appropriate cross tabs by exposure and outcome}
 \usage{
 add_crosstabs(x, wide = FALSE)
@@ -17,7 +17,7 @@ This is only works for dichotomous variables (yes/no, TRUE/FALSE,
 male/female), others will be dropped with a warning message. (Default is FALSE)}
 }
 \description{
-A {gtsummary} wrapper function that takes a gtsummary univariate regression
+A \{gtsummary\} wrapper function that takes a gtsummary univariate regression
 table and adds appropriate cross tabs by exposure and outcome
 }
 \references{

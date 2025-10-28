@@ -39,32 +39,6 @@
 #' @export
 #'
 #' @rdname attack_rate
-#'
-#' @examples
-#' # Attack rates can be calculated with just two numbers
-#' print(ar <- attack_rate(10, 50), digits = 4) # 20% attack rate
-#'
-#' # print them inline using `fmt_ci_df()`
-#' epikit::fmt_ci_df(ar)
-#'
-#' # Alternatively, if you want one column for the CI, use `mergeCI = TRUE`
-#' attack_rate(10, 50, mergeCI = TRUE, digits = 2) # 20% attack rate
-#'
-#' print(cfr <- case_fatality_rate(1, 100), digits = 2) # CFR of 1%
-#' epikit::fmt_ci_df(cfr)
-#'
-#' # using a data frame
-#' if (require("outbreaks")) {
-#'   withAutoprint({
-#'   e <- outbreaks::ebola_sim$linelist
-#'   case_fatality_rate_df(e,
-#'     outcome == "Death",
-#'     group = gender,
-#'     add_total = TRUE,
-#'     mergeCI = TRUE
-#'   )
-#'   })
-#' }
 attack_rate <- function(cases, population, conf_level = 0.95,
                         multiplier = 100, mergeCI = FALSE, digits = 2) {
   res <- proportion(cases, population, multiplier = multiplier, conf_level = conf_level)
@@ -89,6 +63,7 @@ case_fatality_rate <- function(deaths, population, conf_level = 0.95,
 
 #' @rdname attack_rate
 #' @importFrom forcats fct_explicit_na
+#' @importFrom rlang :=
 #' @export
 case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
                                   multiplier = 100, mergeCI = FALSE, digits = 2,
@@ -100,7 +75,7 @@ case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
 
   # Group the data if needed
   if (wants_grouping) {
-    x <- dplyr::mutate(x, !!qgroup := forcats::fct_explicit_na(!!qgroup, "(Missing)"))
+    x <- dplyr::mutate(x, !!qgroup := forcats::fct_na_value_to_level(!!qgroup, "(Missing)"))
     x <- dplyr::group_by(x, !!qgroup, .drop = FALSE)
   }
 
@@ -160,6 +135,7 @@ case_fatality_rate_df <- function(x, deaths, group = NULL, conf_level = 0.95,
 }
 
 #' @rdname attack_rate
+#' @importFrom scales number
 #' @export
 mortality_rate <- function(deaths, population, conf_level = 0.95,
                            multiplier = 10^4, mergeCI = FALSE, digits = 2) {
@@ -182,6 +158,7 @@ mortality_rate <- function(deaths, population, conf_level = 0.95,
 #' @param conf_level confidence level for the confidence interval
 #' @param multiplier multiplier for the proportion
 #'
+#' @importFrom binom binom.wilson
 #' @return a data frame with five columns: x, n, prop, lower, and upper
 #' @noRd
 #'

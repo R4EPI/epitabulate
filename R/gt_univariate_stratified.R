@@ -1,4 +1,12 @@
-#' A {gtsummary} wrapper function that takes a dataframe and produces crude,
+# Suppress CMD check notes for variables used in NSE (column names from gtsummary)
+utils::globalVariables(c("n_obs", "n_event", "n_nonevent", "estimate",
+                         "var_type", "variable", "stratifier",
+                         "reference_row", "var_label", "tbl_id2",
+                         "binomial", "poisson", "log_obs", "header_row",
+                         "mh_estimate", "mh_conf.low", "mh_conf.high",
+                         "woolf_p.value", "row_type", "mh_ci"))
+
+#' A \{gtsummary\} wrapper function that takes a dataframe and produces crude,
 #' stratified and Cochran-Mantel-Haenszel estimates.
 #'
 #' @param data A data frame
@@ -20,12 +28,14 @@
 #' @param obstime A numeric variable containing the observation time for each
 #'   individual
 #'
+#' @param conf.level Confidence level for confidence intervals (default 0.95)
+#'
 #' @importFrom tidyselect vars_select
 #' @importFrom dplyr mutate relocate filter
 #' @importFrom rlang enquo as_label
 #' @importFrom tidyr drop_na
 #' @importFrom gtsummary tbl_uvregression modify_table_body tbl_stack modify_header style_ratio style_pvalue
-#' @importFrom stats glm
+#' @importFrom stats glm binomial poisson
 #' @importFrom MASS glm.nb
 #'
 #' @references Inspired by Daniel Sjoberg,
@@ -82,6 +92,8 @@ tbl_cmh <- function(data, case, exposure, strata, measure, obstime = NULL, conf.
 
 
 #' internal version of the above function for a single exposure variable
+#' @importFrom rlang :=
+#' @noRd
 tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL, conf.level = 0.95) {
 
   ## make variables available for use
@@ -90,14 +102,28 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
   strata_var   <- tidyselect::vars_select(colnames(data), {{ strata }})
   obstime_var  <- tidyselect::vars_select(colnames(data), {{ obstime }})
 
-  ## if variables of interest are not factors then make them
-  if(!is.factor(data[[case_var]])) {
-    data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))
+  ## for OR - if variables of interest are not factors then make them
+  if (measure == "OR") {
+    if(!is.factor(data[[case_var]])) {
+      data <- dplyr::mutate(data, {{case}} := as.factor({{case}}))
+    }
+
+    if(!is.factor(data[[exposure_var]])) {
+      data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+    }
   }
 
-  if(!is.factor(data[[exposure_var]])) {
-    data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+  ## for RR and IRR - ensure outcome var is numeric and exposure is factor
+  if (measure != "OR") {
+    if(!is.numeric(data[[case_var]])) {
+      data <- dplyr::mutate(data, {{case}} := as.numeric({{case}}))
+    }
+
+    if(!is.factor(data[[exposure_var]])) {
+      data <- dplyr::mutate(data, {{exposure}} := as.factor({{exposure}}))
+    }
   }
+
 
   if(!is.factor(data[[strata_var]])) {
     data <- dplyr::mutate(data, {{strata}} := as.factor({{strata}}))
@@ -193,7 +219,6 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
                                                                 method = MASS::glm.nb,
                                                                 y = {{case}},
                                                                 include = {{exposure}},
-                                                                method.args = list(family = poisson),
                                                                 exponentiate = TRUE,
                                                                 hide_n = TRUE)
                          }
@@ -328,7 +353,8 @@ tbl_cmh_single <- function(data, case, exposure, strata, measure, obstime = NULL
 #' splitting nested calculations into separate variables, and modifying
 #' variable names.
 
-# Mantel-Haenszel tests (no p-values)
+#' Mantel-Haenszel tests (no p-values)
+#' @noRd
 
 get_mh <- function(arr, measure = "OR", conf = 0.95,
                    exposurelength = NULL, stratalength = NULL) {
@@ -340,34 +366,54 @@ get_mh <- function(arr, measure = "OR", conf = 0.95,
 }
 
 
-# The M-H statistic for odds ratios already exist in R, so it's just a matter of
-# formatting data input and then pulling out the correct values
+#' There is a stats::mantelhaen.test but this uses a woolf variance rather than
+#' robins-breslow-greenland - Rothman in "epidemiology an introduction" uses RBG
+#' @noRd
 mh_or <- function(arr, conf = 0.95,
                   exposurelength = exposurelength, stratalength = stratalength) {
 
-  ## need to flip because need non-reference row on top
   arr <- dplyr::arrange(arr, tbl_id2, reference_row)
   arr <- dplyr::mutate(arr, n_nonevent = n_obs - n_event)
-  arr <- dplyr::select(arr, n_event, n_nonevent)
 
-  wtf <- aperm(
-    array(
-      t(as.matrix(arr)),
-      c(2,exposurelength, stratalength)),
-    c(2,1,3))
+  A <- arr$n_event[!arr$reference_row]      # exposed cases
+  B <- arr$n_nonevent[!arr$reference_row]   # exposed controls
+  C <- arr$n_event[arr$reference_row]       # unexposed cases
+  D <- arr$n_nonevent[arr$reference_row]    # unexposed controls
+  N <- A + B + C + D
 
-  MH <- stats::mantelhaen.test(wtf,  conf.level = conf, exact = TRUE)
+  numerator <- sum((A * D) / N)
+  denominator <- sum((B * C) / N)
+  MH_OR <- numerator / denominator
 
-  data.frame(ratio = MH$estimate, lower = MH$conf.int[1], upper = MH$conf.int[2])
+  # Robins-Breslow-Greenland core components
+  G1 <- sum(((A + D) * A * D) / (N^2))
+  G2 <- sum(((A + D) * B * C) / (N^2))
+  H1 <- sum(((B + C) * A * D) / (N^2))
+  H2 <- sum(((B + C) * B * C) / (N^2))
 
+  # NOTE: for the Rothman numeric example in table 10.6, the variance is taken from
+  # the core 3-term expression (G1, G2+H1, H2).  Including P and Q as additive
+  # terms (unless you use the exact algebraic variant) inflates the variance.
+  var_log_OR <- (G1 / (2 * numerator^2)) +
+    ((G2 + H1) / (2 * numerator * denominator)) +
+    (H2 / (2 * denominator^2))
+
+  se_log_OR <- sqrt(var_log_OR)
+  z <- get_z(conf)
+
+  lower <- exp(log(MH_OR) - z * se_log_OR)
+  upper <- exp(log(MH_OR) + z * se_log_OR)
+
+  data.frame(ratio = MH_OR, lower = lower, upper = upper)
 }
 
 
-# These functions are adapted from epiR::epi.2by2 lines 1185--1204
-#
-# Many of the changes involve abstracting repetative routines into functions,
-# splitting nested calculations into separate variables, and modifying
-# variable names.
+#' These functions are adapted from epiR::epi.2by2 lines 1185--1204
+#'
+#' Many of the changes involve abstracting repetative routines into functions,
+#' splitting nested calculations into separate variables, and modifying
+#' variable names.
+#' @noRd
 mh_rr <- function(arr, conf.level = 0.95) {
   z <- get_z(conf.level)
 
@@ -394,7 +440,7 @@ mh_rr <- function(arr, conf.level = 0.95) {
   data.frame(ratio = MH_risk_ratio, lower = se_limits[["ll"]], upper = se_limits[["ul"]])
 }
 
-
+#' @noRd
 mh_irr <- function(arr, conf.level = 0.95) {
 
   ## Summary incidence rate ratio (Rothman 2002 p 153, equation 8-5):
@@ -417,13 +463,14 @@ mh_irr <- function(arr, conf.level = 0.95) {
   data.frame(ratio = MH_IRR, lower = se_limits[["ll"]], upper = se_limits[["ul"]])
 }
 
-
+#' @noRd
 get_z <- function(conf.level) {
   alpha <- 1 - ((1 - conf.level) / 2)
   z <- stats::qnorm(alpha, mean = 0, sd = 1)
   z
 }
 
+#' @noRd
 get_ci_from_var <- function(log_ratio, log_ratio_var, z) {
   log_ratio_se <- sqrt(log_ratio_var)
   lower_limit <- exp(log_ratio - (z * log_ratio_se))
@@ -436,9 +483,9 @@ get_ci_from_var <- function(log_ratio, log_ratio_var, z) {
 
 
 
-#### wolf pval
-
-## this needs to be fed littler the dataframe
+#' wolf pval
+#' this needs to be fed littler the dataframe
+#' @noRd
 get_woolf_pval <- function(arr, measure = "OR", stratalength = stratalength) {
 
   nstrata <- stratalength

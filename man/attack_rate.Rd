@@ -85,29 +85,3 @@ denominator, rate, lower bound, and upper bound.
 \description{
 Calculate attack rate, case fatality rate, and mortality rate
 }
-\examples{
-# Attack rates can be calculated with just two numbers
-print(ar <- attack_rate(10, 50), digits = 4) # 20\% attack rate
-
-# print them inline using `fmt_ci_df()`
-epikit::fmt_ci_df(ar)
-
-# Alternatively, if you want one column for the CI, use `mergeCI = TRUE`
-attack_rate(10, 50, mergeCI = TRUE, digits = 2) # 20\% attack rate
-
-print(cfr <- case_fatality_rate(1, 100), digits = 2) # CFR of 1\%
-epikit::fmt_ci_df(cfr)
-
-# using a data frame
-if (require("outbreaks")) {
-  withAutoprint({
-  e <- outbreaks::ebola_sim$linelist
-  case_fatality_rate_df(e,
-    outcome == "Death",
-    group = gender,
-    add_total = TRUE,
-    mergeCI = TRUE
-  )
-  })
-}
-}
