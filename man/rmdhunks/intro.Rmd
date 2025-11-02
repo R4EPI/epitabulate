@@ -1,22 +1,21 @@
 
-The {epitabulate} package produces tables for descriptive epidemiological analysis.
-It contains four functions:
-
- - `tab_linelist()` --- Tabulate and describe counts of variables in a linelist
- - `tab_survey()` --- Tabulate and describe counts of variables in a survey (with appropriate CIs)
- - `tab_univariate()` --- Calculate Odds / Risk / Incidence Rate Ratios directly from a linelist
- - `data_frame_from_2x2()` --- Creates a data frame from a 2x2 table for unambiguous interpretation
+The goal of {epitabulate} is to facilitate producing tables for descriptive 
+epidemiological analysis. This is a product of the R4EPIs project; learn more at https://r4epi.github.io/sitrep/
 
 ## Installation
 
-{epitabulate} is currently under development, but you can keep up-to-date by
-installing it from the R4EPIs drat repository:
+You can install {epitabulate} from CRAN:
 
-```{r eval = FALSE}
-# install.packages("drat")
-drat::addRepo("R4EPI")
+``` r
 install.packages("epitabulate")
 ```
+
+<details>
+<!--
+NOTE: everything inside the details tag will be collapsed and effectively
+hidden from the user
+-->
+<summary style='text-decoration: underline'>Click here for alternative installation options</summary>
 
 You can also install the in-development version from GitHub using the {remotes}
 package (but there's no guarantee that it will be stable):
@@ -25,4 +24,6 @@ package (but there's no guarantee that it will be stable):
 # install.packages("remotes")
 remotes::install_github("R4EPI/epitabulate") 
 ```
+
+</details>
 

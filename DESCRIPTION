@@ -17,7 +17,11 @@ Authors@R: c(
            role = "aut"),
     person(given = "Kate",
            family = "Doyle",
-           role = "ctb"))
+           role = "ctb"), 
+    person("Applied Epi Incorporated", 
+           role = "cph"), 
+    person("Medecins Sans Frontieres Operational Centre Amsterdam", 
+           role = "fnd"))
 Description: Produces tables for descriptive epidemiological analysis. These
     tables include attack rates, case fatality ratios and mortality rates
     (with appropriate confidence intervals), with additional functionality to
@@ -50,8 +54,4 @@ Suggests:
     cardx, 
     testthat,
     matchmaker (>= 0.1.0),
-    epidict,
     covr
-Remotes:
-    R4EPI/epidict,
-    R4EPI/epikit

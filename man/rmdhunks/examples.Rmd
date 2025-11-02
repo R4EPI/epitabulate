@@ -2,28 +2,33 @@
 # Examples
 
 Here is an example of the tables produced by {epitabulate} from a randomly
-generated data set based on an MSF data dictionary for Measles data. 
+generated dataset. 
 
 ```{r example}
-library(epidict)
-library(matchmaker)
-library(epikit)
 library(dplyr)
 library(epitabulate)
 
-linelist <- epidict::gen_data("Measles", numcases = 1000, org = "MSF")
-measles_dict <- epidict::msf_dict("Measles", compact = FALSE)
+# define how many people to simulate
+n <- 1000
 
-# Cleaning linelist data
-linelist_clean <- matchmaker::match_df(
-  x = linelist,
-  dictionary = measles_dict,
-  from = "option_code",
-  to = "option_name",
-  by = "data_element_shortname",
-  order = "option_order_in_set"
+# generate a fake dataset 
+linelist <- data.frame(
+  sex = sample(c("male", "female"), n, replace = TRUE),
+  age_group = sample(c("<5", "5-14", "15-29", "30-44", "45-59", "60+"), n, replace = TRUE, 
+                     prob = c(0.1, 0.15, 0.25, 0.2, 0.15, 0.15)),
+  fever = sample(c("yes", "no"), n, replace = TRUE, prob = c(0.3, 0.7)),
+  death = sample(c("yes", "no"), n, replace = TRUE, prob = c(0.05, 0.95)),
+  observation_time = round(runif(n, min = 1, max = 365), 1)  # days under observation
 )
-linelist_clean
+
+
+# turn yes/no variables into logical (TRUE/FALSE) variables 
+linelist <- linelist |> 
+  mutate(
+    fever = grepl("yes", fever), 
+    death = grepl("yes", death)
+  )
+
 ```
 
 ## Quick proportions with conficence intervals
@@ -46,74 +51,79 @@ linelist, stratified by different groups (e.g. gender):
 
 ```{r cfr}
 
-case_fatality_rate_df(linelist_clean, 
-                      exit_status %in% c("Dead in facility", "Dead on arrival"), 
+case_fatality_rate_df(linelist, 
+                      deaths = death, 
                       group = sex, 
                       add_total = TRUE, 
                       mergeCI = TRUE)
 ```
 
+It is also possible to add these proportions on to {gtsummary} tabulations
 
 
-## Quick tabulations
-
-```{r tab_linelist}
-the_symptoms <- tab_linelist(linelist_clean,
-  cough, nasal_discharge, severe_oral_lesions,
-  transpose = "value"
-) 
-the_symptoms
+```{r gt_cfr}
+linelist |> 
+    select(death) |> 
+    gtsummary::tbl_summary(
+      statistic = everything() ~ "{N}",
+      label = death ~ "All participants"
+    ) %>%
+    add_cfr(deaths_var = "death")
 ```
 
-```{r print_linelist}
-the_symptoms %>%
-  epikit::rename_redundant("%" = "proportion") %>%
-  epikit::augment_redundant("(n)" = "n") %>%
-  knitr::kable()
+## Cross-tabulations for Odds / Risk / Incidence Rate Ratios
+
+It is possible to add counts to {gtsummary} `tbl_uvregression`
+
+```{r orrrir}
+
+
+## Odds ratios
+gtsummary::tbl_uvregression(linelist, 
+                            method = glm, 
+                            y = death, 
+                            include = fever, 
+                            method.args = list(family = binomial), 
+                            exponentiate = TRUE, 
+                            hide_n = TRUE) |> 
+  add_crosstabs(wide = TRUE)
+
+
+## Risk ratios 
+gtsummary::tbl_uvregression(linelist, 
+                            method = MASS::glm.nb, 
+                            y = death,
+                            include = fever, 
+                            exponentiate = TRUE,
+                            hide_n = TRUE) |> 
+  add_crosstabs(wide = TRUE)
+
+## Incidence rate ratios 
+gtsummary::tbl_uvregression(linelist, 
+                            method = glm, 
+                            y = death,
+                            include = fever, 
+                            method.args = list(family = poisson,
+                                               offset = log(observation_time)),
+                            exponentiate = TRUE,
+                            hide_n = TRUE) |> 
+  add_crosstabs(wide = TRUE)
+
 ```
 
-# 2x2 tables
+## Stratification - Cochran Mantel-Haenszel estimates
 
-In R, creating 2x2 tables is as simple as using the function `table()`, but
-unfortunately, it can be difficult to interpret the values of these tables
-because the dimensions are often flipped around for different analyses. The
-function `data_frame_from_2x2()` will present these values labeled unambiguously.
+It is also possible to run stratified analysis to produce Cochran Mantel-haenszel estimates. 
 
-```{r symp}
-symptoms_tf <- linelist_clean %>%
-  dplyr::transmute(
-    pneumonia = grepl("Yes", pneumonia),
-    cough = grepl("Yes", cough),
-    nasal_discharge = grepl("Yes", nasal_discharge),
-    oral_lesions = grepl("Yes", severe_oral_lesions),
-    contact = grepl("known case", contact_history)
-  ) 
+```{r cmh, warning = FALSE, message = FALSE}
 
-symptoms_tf
+tbl_cmh(data = linelist,
+        case = death,
+        exposure = fever,
+        strata = age_group, 
+        measure = "OR") |>
+  add_crosstabs()
 
-print(pxc <- with(symptoms_tf, table(pneumonia, cough)))
-print(pxcxc <- with(symptoms_tf, table(pneumonia, cough, contact)))
 
-data_frame_from_2x2(pxc)
-data_frame_from_2x2(pxcxc)
 ```
-
-
-## Odds / Risk / Incidence Rate Ratios
-
-```{r orrr}
-tu <- tab_univariate(symptoms_tf, 
-  outcome = pneumonia, 
-  cough, nasal_discharge, oral_lesions, contact,
-  mergeCI = TRUE,
-  extend_output = FALSE,
-  measure = "OR"
-)
-tu %>% 
-  select(-est_type) %>% 
-  epikit::augment_redundant("exposed " = "exp_") %>%
-  rename(odds = est_ci) %>%
-  knitr::kable(digits = 3)
-```
-
 
