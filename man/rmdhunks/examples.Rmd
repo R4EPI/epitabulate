@@ -4,7 +4,29 @@
 Here is an example of the tables produced by {epitabulate} from a randomly
 generated dataset. 
 
-```{r example}
+
+```{r echo = FALSE}
+
+## define function to either print gt or tibble depending on if pkgdown or readme
+## (readme doesnt allow html formatting) 
+show_table <- function(tbl) {
+  if (Sys.getenv("IN_PKGDOWN") == "true") {
+    tbl
+  } else {
+    try_tbl <- try(gtsummary::as_tibble(tbl), silent = TRUE)
+  if (inherits(try_tbl, "try-error")) {
+    return(tbl$table_body %||% as.data.frame(tbl))
+  } else {
+    return(try_tbl)
+  }
+  }
+}
+
+```
+
+
+
+```{r example, warning = FALSE}
 library(dplyr)
 library(epitabulate)
 
@@ -61,8 +83,8 @@ case_fatality_rate_df(linelist,
 It is also possible to add these proportions on to {gtsummary} tabulations
 
 
-```{r gt_cfr}
-linelist |> 
+```{r gt_cfr, warning = FALSE}
+cfr <- linelist |> 
     select(death) |> 
     gtsummary::tbl_summary(
       statistic = everything() ~ "{N}",
@@ -71,15 +93,21 @@ linelist |>
     add_cfr(deaths_var = "death")
 ```
 
+```{r gt_cfr_print, echo = FALSE}
+
+show_table(cfr)
+
+```
+
+
 ## Cross-tabulations for Odds / Risk / Incidence Rate Ratios
 
 It is possible to add counts to {gtsummary} `tbl_uvregression`
 
-```{r orrrir}
-
+```{r or}
 
 ## Odds ratios
-gtsummary::tbl_uvregression(linelist, 
+or <- gtsummary::tbl_uvregression(linelist, 
                             method = glm, 
                             y = death, 
                             include = fever, 
@@ -87,19 +115,37 @@ gtsummary::tbl_uvregression(linelist,
                             exponentiate = TRUE, 
                             hide_n = TRUE) |> 
   add_crosstabs(wide = TRUE)
+```
+
+```{r or_print, echo = FALSE}
+
+show_table(or)
+
+```
 
 
+
+```{r rr}
 ## Risk ratios 
-gtsummary::tbl_uvregression(linelist, 
+rr <- gtsummary::tbl_uvregression(linelist, 
                             method = MASS::glm.nb, 
                             y = death,
                             include = fever, 
                             exponentiate = TRUE,
                             hide_n = TRUE) |> 
   add_crosstabs(wide = TRUE)
+```
+
+```{r rr_print, echo = FALSE}
+
+show_table(rr)
+
+```
+
+```{r irr}
 
 ## Incidence rate ratios 
-gtsummary::tbl_uvregression(linelist, 
+irr <- gtsummary::tbl_uvregression(linelist, 
                             method = glm, 
                             y = death,
                             include = fever, 
@@ -111,13 +157,19 @@ gtsummary::tbl_uvregression(linelist,
 
 ```
 
+```{r irr_print, echo = FALSE}
+
+show_table(irr)
+
+```
+
 ## Stratification - Cochran Mantel-Haenszel estimates
 
 It is also possible to run stratified analysis to produce Cochran Mantel-haenszel estimates. 
 
 ```{r cmh, warning = FALSE, message = FALSE}
 
-tbl_cmh(data = linelist,
+cmh <- tbl_cmh(data = linelist,
         case = death,
         exposure = fever,
         strata = age_group, 
@@ -127,3 +179,8 @@ tbl_cmh(data = linelist,
 
 ```
 
+```{r cmh_print, echo = FALSE}
+
+show_table(cmh)
+
+```
