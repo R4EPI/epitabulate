@@ -1,3 +1,5 @@
+# epitabulate 0.1.0
+
 # epitabulate 0.0.0.9006
 
 * update with with wrapper functions for {gtsummary}. Some work in progress.
