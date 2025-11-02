@@ -1,5 +1,10 @@
 # epitabulate 0.1.0
 
+* first CRAN release 
+* wrapper functions {gtsummary} finalised
+* obsolete functions removed
+* removed {epidict} from examples - no longer in suggests
+
 # epitabulate 0.0.0.9006
 
 * update with with wrapper functions for {gtsummary}. Some work in progress.
