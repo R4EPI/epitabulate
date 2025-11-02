@@ -54,8 +54,4 @@ Suggests:
     cardx, 
     testthat,
     matchmaker (>= 0.1.0),
-    epidict,
     covr
-Remotes:
-    R4EPI/epidict,
-    R4EPI/epikit
