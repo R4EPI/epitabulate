@@ -17,7 +17,7 @@ Authors@R: c(
            role = "aut"),
     person(given = "Kate",
            family = "Doyle",
-           role = "ctb")), 
+           role = "ctb"), 
     person("Applied Epi Incorporated", 
            role = "cph"), 
     person("Medecins Sans Frontieres Operational Centre Amsterdam", 
