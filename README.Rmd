@@ -17,8 +17,8 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN status](https://www.r-pkg.org/badges/version/epitabulate)](https://CRAN.R-project.org/package=epitabulate)
-[![Codecov test coverage](https://codecov.io/gh/R4EPI/epitabulate/branch/master/graph/badge.svg)](https://codecov.io/gh/R4EPI/epitabulate?branch=master)
-[![R build status](https://github.com/R4EPI/epitabulate/workflows/R-CMD-check/badge.svg)](https://github.com/R4EPI/epitabulate/actions)
+[![R-CMD-check](https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/R4EPI/epitabulate/graph/badge.svg)](https://app.codecov.io/gh/R4EPI/epitabulate)
 <!-- badges: end -->
 
 ```{r intro-hunk, child = 'man/rmdhunks/intro.Rmd'}
