@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Tables for Epidemiological Analysis">
-<meta property="og:description" content="Produces tables for descriptive epidemiological analysis. These tables include attack rates, case fatality ratios and mortality rates (with appropriate confidence intervals), with additional functionality to calculate mantel-haenszel odds, risk, and incidence rate ratios. This package is part of the R4EPIs project &lt;https://R4EPI.github.io/sitrep/&gt;.">
+<meta property="og:description" content="Produces tables for descriptive epidemiological analysis. These tables include attack rates, case fatality ratios and mortality rates (with appropriate confidence intervals), with additional functionality to calculate Mantel-Haenszel odds, risk, and incidence rate ratios. This package is part of the R4EPIs project &lt;https://R4EPI.github.io/sitrep/&gt;.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -157,10 +157,10 @@ Click here for alternative installation options
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   sex       deaths population    cfr ci         </span></span>
 <span><span class="co">#&gt;   &lt;fct&gt;      &lt;int&gt;      &lt;int&gt;  &lt;dbl&gt; &lt;chr&gt;      </span></span>
-<span><span class="co">#&gt; 1 female        30        483   6.21 (4.39-8.73)</span></span>
-<span><span class="co">#&gt; 2 male          19        517   3.68 (2.37-5.67)</span></span>
+<span><span class="co">#&gt; 1 female        21        486   4.32 (2.84-6.52)</span></span>
+<span><span class="co">#&gt; 2 male          29        514   5.64 (3.96-7.99)</span></span>
 <span><span class="co">#&gt; 3 (Missing)      0          0 NaN    (NaN-NaN)  </span></span>
-<span><span class="co">#&gt; 4 Total         49       1000   4.9  (3.73-6.42)</span></span></code></pre></div>
+<span><span class="co">#&gt; 4 Total         50       1000   5    (3.81-6.53)</span></span></code></pre></div>
 <p>It is also possible to add these proportions on to {gtsummary} tabulations</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cfr</span> <span class="op">&lt;-</span> <span class="va">linelist</span> <span class="op">|&gt;</span> </span>
@@ -175,7 +175,7 @@ Click here for alternative installation options
 <div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 5</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;   `**Characteristic**` `**N = 1,000**` Deaths `CFR (%)` `95%CI`    </span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;chr&gt;           &lt;chr&gt;  &lt;chr&gt;     &lt;chr&gt;      </span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; 1 All participants     1,000           49     4.90      (3.73-6.42)</span></span></code></pre></div>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; 1 All participants     1,000           50     5.00      (3.81-6.53)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="cross-tabulations-for-odds--risk--incidence-rate-ratios">Cross-tabulations for Odds / Risk / Incidence Rate Ratios<a class="anchor" aria-label="anchor" href="#cross-tabulations-for-odds--risk--incidence-rate-ratios"></a>
@@ -193,15 +193,15 @@ Click here for alternative installation options
 <span>                            hide_n <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/add_crosstabs.html">add_crosstabs</a></span><span class="op">(</span>wide <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">#&gt;   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000</span></span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   coefficients_type coefficients_label label      term var_class var_nlevels</span></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; 1          logistic                 OR fever feverTRUE   logical           2</span></span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;         contrasts contrasts_type n_obs n_event_FALSE n_nonevent_FALSE</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment   302            20              282</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;   n_event_TRUE n_nonevent_TRUE estimate std.error statistic nevent          ci</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 1           29             669 1.636097  0.299205  1.645405     49 0.90,  2.92</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;   conf.low conf.high    p.value n_event_NA n_nonevent_NA reference_row</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; 1 0.898395  2.924016 0.09988628         NA            NA         FALSE</span></span></code></pre></div>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment   283            13              270</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;   n_event_TRUE n_nonevent_TRUE  estimate std.error statistic nevent          ci</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 1           37             680 0.8848849  0.330312 -0.370249     50 0.45,  1.65</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;    conf.low conf.high   p.value n_event_NA n_nonevent_NA reference_row</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; 1 0.4466785  1.648521 0.7111969         NA            NA         FALSE</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Risk ratios </span></span>
 <span><span class="va">rr</span> <span class="op">&lt;-</span> <span class="fu">gtsummary</span><span class="fu">::</span><span class="fu"><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_uvregression.html" class="external-link">tbl_uvregression</a></span><span class="op">(</span><span class="va">linelist</span>, </span>
@@ -215,15 +215,15 @@ Click here for alternative installation options
 <span><span class="co">#&gt; below.</span></span>
 <span><span class="co">#&gt; ! Iterationsgrenze erreicht and Iterationsgrenze erreicht</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#&gt;   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000</span></span>
 <span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   coefficients_type coefficients_label label      term var_class var_nlevels</span></span>
 <span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; 1           poisson                 RR fever feverTRUE   logical           2</span></span>
 <span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;         contrasts contrasts_type exposure n_obs_FALSE n_event_FALSE n_obs_TRUE</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment      302         302            20        698</span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;   n_event_TRUE estimate std.error statistic nevent          ci  conf.low</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 1           29 1.593971 0.2906669  1.603996     49 0.89,  2.80 0.8892179</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment      283         283            13        717</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;   n_event_TRUE  estimate std.error  statistic nevent          ci  conf.low</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 1           37 0.8901729 0.3224198 -0.3608327     50 0.46,  1.63 0.4555606</span></span>
 <span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;   conf.high   p.value n_obs_NA n_event_NA reference_row</span></span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; 1   2.80055 0.1087149       NA         NA         FALSE</span></span></code></pre></div>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; 1    1.6307 0.7182245       NA         NA         FALSE</span></span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">## Incidence rate ratios </span></span>
@@ -237,15 +237,15 @@ Click here for alternative installation options
 <span>                            hide_n <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/add_crosstabs.html">add_crosstabs</a></span><span class="op">(</span>wide <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb13"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co">#&gt;   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000</span></span>
 <span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;   coefficients_type coefficients_label label      term var_class var_nlevels</span></span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; 1           poisson                IRR fever feverTRUE   logical           2</span></span>
 <span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;         contrasts contrasts_type n_obs exposure_FALSE n_event_FALSE</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment   302        55206.9            20</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;   exposure_TRUE n_event_TRUE estimate std.error statistic nevent          ci</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; 1      128410.7           29 1.604131 0.2906557  1.625918     49 0.89,  2.82</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;    conf.low conf.high   p.value exposure_NA n_event_NA reference_row</span></span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; 1 0.8948995  2.818357 0.1039672          NA         NA         FALSE</span></span></code></pre></div>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; 1 contr.treatment      treatment   283        49435.5            13</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;   exposure_TRUE n_event_TRUE  estimate std.error  statistic nevent          ci</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; 1        127225           37 0.9042222 0.3224081 -0.3122756     50 0.46,  1.66</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;   conf.low conf.high   p.value exposure_NA n_event_NA reference_row</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; 1 0.462754  1.656409 0.7548311          NA         NA         FALSE</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="stratification---cochran-mantel-haenszel-estimates">Stratification - Cochran Mantel-Haenszel estimates<a class="anchor" aria-label="anchor" href="#stratification---cochran-mantel-haenszel-estimates"></a>
@@ -263,14 +263,14 @@ Click here for alternative installation options
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt;    `**Strata**` `**Characteristic**` `**Case (n)**` `**Control (n)**` `**OR**`</span></span>
 <span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;        &lt;chr&gt;                &lt;chr&gt;          &lt;chr&gt;             &lt;chr&gt;   </span></span>
 <span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt;  1 Crude        fever                &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;    </span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt;  2 &lt;NA&gt;         FALSE                29             669               &lt;NA&gt;    </span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt;  3 &lt;NA&gt;         TRUE                 20             282               1.64    </span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt;  2 &lt;NA&gt;         FALSE                37             680               &lt;NA&gt;    </span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt;  3 &lt;NA&gt;         TRUE                 13             270               0.88    </span></span>
 <span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;  4 &lt;5           fever                &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;    </span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt;  5 &lt;NA&gt;         FALSE                2              67                &lt;NA&gt;    </span></span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;  6 &lt;NA&gt;         TRUE                 1              23                1.46    </span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt;  5 &lt;NA&gt;         FALSE                6              86                &lt;NA&gt;    </span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;  6 &lt;NA&gt;         TRUE                 3              26                1.65    </span></span>
 <span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt;  7 15-29        fever                &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;    </span></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;  8 &lt;NA&gt;         FALSE                3              163               &lt;NA&gt;    </span></span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt;  9 &lt;NA&gt;         TRUE                 2              91                1.19    </span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;  8 &lt;NA&gt;         FALSE                6              179               &lt;NA&gt;    </span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt;  9 &lt;NA&gt;         TRUE                 2              67                0.89    </span></span>
 <span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt; 10 30-44        fever                &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;    </span></span>
 <span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="co">#&gt; # ℹ 11 more rows</span></span>
 <span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="co">#&gt; # ℹ 5 more variables: `**95% CI**` &lt;chr&gt;, `**p-value**` &lt;chr&gt;,</span></span>
@@ -327,7 +327,7 @@ Click here for alternative installation options
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://www.tidyverse.org/lifecycle/#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#maturing" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="Lifecycle: maturing"></a></li>
 <li><a href="https://CRAN.R-project.org/package=epitabulate" class="external-link"><img src="https://www.r-pkg.org/badges/version/epitabulate" alt="CRAN status"></a></li>
 <li><a href="https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://app.codecov.io/gh/R4EPI/epitabulate" class="external-link"><img src="https://codecov.io/gh/R4EPI/epitabulate/graph/badge.svg" alt="Codecov test coverage"></a></li>
