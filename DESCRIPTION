@@ -25,7 +25,7 @@ Authors@R: c(
 Description: Produces tables for descriptive epidemiological analysis. These
     tables include attack rates, case fatality ratios and mortality rates
     (with appropriate confidence intervals), with additional functionality to
-    calculate mantel-haenszel odds, risk, and incidence rate ratios. 
+    calculate Mantel-Haenszel odds, risk, and incidence rate ratios. 
     This package is part of the 'R4EPIs' project <https://R4EPI.github.io/sitrep/>.
 License: GPL-3
 Encoding: UTF-8
