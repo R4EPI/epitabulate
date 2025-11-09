@@ -6,7 +6,7 @@ Epitabulate
 <!-- badges: start -->
 
 [![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/epitabulate)](https://CRAN.R-project.org/package=epitabulate)
 [![R-CMD-check](https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/R4EPI/epitabulate/actions/workflows/R-CMD-check.yaml)
@@ -122,10 +122,10 @@ case_fatality_rate_df(linelist,
 #> # A tibble: 4 × 5
 #>   sex       deaths population    cfr ci         
 #>   <fct>      <int>      <int>  <dbl> <chr>      
-#> 1 female        30        483   6.21 (4.39-8.73)
-#> 2 male          19        517   3.68 (2.37-5.67)
+#> 1 female        21        486   4.32 (2.84-6.52)
+#> 2 male          29        514   5.64 (3.96-7.99)
 #> 3 (Missing)      0          0 NaN    (NaN-NaN)  
-#> 4 Total         49       1000   4.9  (3.73-6.42)
+#> 4 Total         50       1000   5    (3.81-6.53)
 ```
 
 It is also possible to add these proportions on to {gtsummary}
@@ -146,7 +146,7 @@ cfr <- linelist |>
     #> # A tibble: 1 × 5
     #>   `**Characteristic**` `**N = 1,000**` Deaths `CFR (%)` `95%CI`    
     #>   <chr>                <chr>           <chr>  <chr>     <chr>      
-    #> 1 All participants     1,000           49     4.90      (3.73-6.42)
+    #> 1 All participants     1,000           50     5.00      (3.81-6.53)
 
 ## Cross-tabulations for Odds / Risk / Incidence Rate Ratios
 
@@ -166,15 +166,15 @@ or <- gtsummary::tbl_uvregression(linelist,
 ```
 
     #>   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N
-    #> 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000
+    #> 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000
     #>   coefficients_type coefficients_label label      term var_class var_nlevels
     #> 1          logistic                 OR fever feverTRUE   logical           2
     #>         contrasts contrasts_type n_obs n_event_FALSE n_nonevent_FALSE
-    #> 1 contr.treatment      treatment   302            20              282
-    #>   n_event_TRUE n_nonevent_TRUE estimate std.error statistic nevent          ci
-    #> 1           29             669 1.636097  0.299205  1.645405     49 0.90,  2.92
-    #>   conf.low conf.high    p.value n_event_NA n_nonevent_NA reference_row
-    #> 1 0.898395  2.924016 0.09988628         NA            NA         FALSE
+    #> 1 contr.treatment      treatment   283            13              270
+    #>   n_event_TRUE n_nonevent_TRUE  estimate std.error statistic nevent          ci
+    #> 1           37             680 0.8848849  0.330312 -0.370249     50 0.45,  1.65
+    #>    conf.low conf.high   p.value n_event_NA n_nonevent_NA reference_row
+    #> 1 0.4466785  1.648521 0.7111969         NA            NA         FALSE
 
 ``` r
 ## Risk ratios 
@@ -191,15 +191,15 @@ rr <- gtsummary::tbl_uvregression(linelist,
 ```
 
     #>   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N
-    #> 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000
+    #> 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000
     #>   coefficients_type coefficients_label label      term var_class var_nlevels
     #> 1           poisson                 RR fever feverTRUE   logical           2
     #>         contrasts contrasts_type exposure n_obs_FALSE n_event_FALSE n_obs_TRUE
-    #> 1 contr.treatment      treatment      302         302            20        698
-    #>   n_event_TRUE estimate std.error statistic nevent          ci  conf.low
-    #> 1           29 1.593971 0.2906669  1.603996     49 0.89,  2.80 0.8892179
+    #> 1 contr.treatment      treatment      283         283            13        717
+    #>   n_event_TRUE  estimate std.error  statistic nevent          ci  conf.low
+    #> 1           37 0.8901729 0.3224198 -0.3608327     50 0.46,  1.63 0.4555606
     #>   conf.high   p.value n_obs_NA n_event_NA reference_row
-    #> 1   2.80055 0.1087149       NA         NA         FALSE
+    #> 1    1.6307 0.7182245       NA         NA         FALSE
 
 ``` r
 
@@ -216,15 +216,15 @@ irr <- gtsummary::tbl_uvregression(linelist,
 ```
 
     #>   tbl_id1 variable var_label    var_type row_type header_row N_obs N_event    N
-    #> 1       1    fever     fever dichotomous    label      FALSE  1000      49 1000
+    #> 1       1    fever     fever dichotomous    label      FALSE  1000      50 1000
     #>   coefficients_type coefficients_label label      term var_class var_nlevels
     #> 1           poisson                IRR fever feverTRUE   logical           2
     #>         contrasts contrasts_type n_obs exposure_FALSE n_event_FALSE
-    #> 1 contr.treatment      treatment   302        55206.9            20
-    #>   exposure_TRUE n_event_TRUE estimate std.error statistic nevent          ci
-    #> 1      128410.7           29 1.604131 0.2906557  1.625918     49 0.89,  2.82
-    #>    conf.low conf.high   p.value exposure_NA n_event_NA reference_row
-    #> 1 0.8948995  2.818357 0.1039672          NA         NA         FALSE
+    #> 1 contr.treatment      treatment   283        49435.5            13
+    #>   exposure_TRUE n_event_TRUE  estimate std.error  statistic nevent          ci
+    #> 1        127225           37 0.9042222 0.3224081 -0.3122756     50 0.46,  1.66
+    #>   conf.low conf.high   p.value exposure_NA n_event_NA reference_row
+    #> 1 0.462754  1.656409 0.7548311          NA         NA         FALSE
 
 ## Stratification - Cochran Mantel-Haenszel estimates
 
@@ -245,14 +245,14 @@ cmh <- tbl_cmh(data = linelist,
     #>    `**Strata**` `**Characteristic**` `**Case (n)**` `**Control (n)**` `**OR**`
     #>    <chr>        <chr>                <chr>          <chr>             <chr>   
     #>  1 Crude        fever                <NA>           <NA>              <NA>    
-    #>  2 <NA>         FALSE                29             669               <NA>    
-    #>  3 <NA>         TRUE                 20             282               1.64    
+    #>  2 <NA>         FALSE                37             680               <NA>    
+    #>  3 <NA>         TRUE                 13             270               0.88    
     #>  4 <5           fever                <NA>           <NA>              <NA>    
-    #>  5 <NA>         FALSE                2              67                <NA>    
-    #>  6 <NA>         TRUE                 1              23                1.46    
+    #>  5 <NA>         FALSE                6              86                <NA>    
+    #>  6 <NA>         TRUE                 3              26                1.65    
     #>  7 15-29        fever                <NA>           <NA>              <NA>    
-    #>  8 <NA>         FALSE                3              163               <NA>    
-    #>  9 <NA>         TRUE                 2              91                1.19    
+    #>  8 <NA>         FALSE                6              179               <NA>    
+    #>  9 <NA>         TRUE                 2              67                0.89    
     #> 10 30-44        fever                <NA>           <NA>              <NA>    
     #> # ℹ 11 more rows
     #> # ℹ 5 more variables: `**95% CI**` <chr>, `**p-value**` <chr>,
