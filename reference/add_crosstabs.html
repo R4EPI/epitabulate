@@ -74,6 +74,15 @@ This is only works for dichotomous variables (yes/no, TRUE/FALSE,
 male/female), others will be dropped with a warning message. (Default is FALSE)</p></dd>
 
 </dl></div>
+    <div id="value">
+    <h2>Value</h2>
+    <p>A modified <code>gtsummary</code> table object (same class as input — e.g.
+<code>"tbl_uvregression"</code> or <code>"tbl_cmh"</code>) containing additional cross-tabulated
+counts of outcomes and exposures. The structure depends on regression type:</p><ul><li><p>For logistic models: adds case and control counts.</p></li>
+<li><p>For Poisson models without offsets: adds total and case counts per exposure group (risk ratios).</p></li>
+<li><p>For Poisson models with offsets: adds total person-time and case counts per exposure group (incidence rate ratios).</p></li>
+<li><p>When <code>wide = TRUE</code>, dichotomous variables are reshaped to wide format with separate columns for exposed/unexposed counts.</p></li>
+</ul></div>
     <div id="references">
     <h2>References</h2>
     <p>Inspired by Daniel Sjoberg,
@@ -92,7 +101,7 @@ see <a href="https://github.com/ddsjoberg/gtsummary" class="external-link">gtsum
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>
