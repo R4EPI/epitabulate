@@ -2,37 +2,25 @@ Package: epitabulate
 Title: Tables for Epidemiological Analysis
 Version: 0.1.0
 Authors@R: c(
-    person(given = "Alexander",
-           family = "Spina",
-           email = "aspina@appliedepi.org", 
-           comment = c(ORCID = "0000-0001-8425-1867"),
-           role = c("aut", "cre")),
-    person(given = "Zhian N.",
-           family = "Kamvar",
-           role = c("aut"),
-           email = "zkamvar@gmail.com",
+    person("Alexander", "Spina", , "aspina@appliedepi.org", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-8425-1867")),
+    person("Zhian N.", "Kamvar", , "zkamvar@gmail.com", role = "aut",
            comment = c(ORCID = "0000-0003-1458-7108")),
-    person(given = "Amy",
-           family = "Gimma",
-           role = "aut"),
-    person(given = "Kate",
-           family = "Doyle",
-           role = "ctb"), 
-    person("Applied Epi Incorporated", 
-           role = "cph"), 
-    person("Medecins Sans Frontieres Operational Centre Amsterdam", 
-           role = "fnd"))
-Description: Produces tables for descriptive epidemiological analysis. These
-    tables include attack rates, case fatality ratios and mortality rates
-    (with appropriate confidence intervals), with additional functionality to
-    calculate mantel-haenszel odds, risk, and incidence rate ratios. 
+    person("Amy", "Gimma", role = "aut"),
+    person("Kate", "Doyle", role = "ctb"),
+    person("Applied Epi Incorporated", role = "cph"),
+    person("Medecins Sans Frontieres Operational Centre Amsterdam", role = "fnd")
+  )
+Description: Produces tables for descriptive epidemiological analysis.
+    These tables include attack rates, case fatality ratios, and mortality
+    rates (with appropriate confidence intervals), with additional
+    functionality to calculate Mantel-Haenszel odds, risk, and incidence
+    rate ratios. The methods implemented follow standard epidemiological
+    approaches described in Rothman et al. (2008, ISBN:978-0-19-513554-2).
     This package is part of the 'R4EPIs' project <https://R4EPI.github.io/sitrep/>.
 License: GPL-3
-Encoding: UTF-8
-LazyData: true
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-URL: https://R4EPI.github.io/epitabulate/, https://github.com/R4EPI/epitabulate/
+URL: https://R4EPI.github.io/epitabulate/,
+    https://github.com/R4EPI/epitabulate/
 BugReports: https://github.com/R4EPI/epitabulate/issues
 Imports: 
     binom,
@@ -40,18 +28,22 @@ Imports:
     epikit (>= 0.1.2),
     forcats,
     glue,
-    gtsummary, 
+    gtsummary,
     MASS,
     purrr,
     rlang (>= 0.4.0),
-    scales, 
+    scales,
     stats,
     tibble (>= 3.0.0),
     tidyr (>= 1.0.0),
     tidyselect (>= 1.0.0)
 Suggests: 
-    broom.helpers, 
-    cardx, 
-    testthat,
+    broom.helpers,
+    cardx,
+    covr,
     matchmaker (>= 0.1.0),
-    covr
+    testthat
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

@@ -16,6 +16,17 @@ wide format. Results in four columns rather than two, but in a single row.
 This is only works for dichotomous variables (yes/no, TRUE/FALSE,
 male/female), others will be dropped with a warning message. (Default is FALSE)}
 }
+\value{
+A modified \code{gtsummary} table object (same class as input — e.g.
+\code{"tbl_uvregression"} or \code{"tbl_cmh"}) containing additional cross-tabulated
+counts of outcomes and exposures. The structure depends on regression type:
+\itemize{
+\item For logistic models: adds case and control counts.
+\item For Poisson models without offsets: adds total and case counts per exposure group (risk ratios).
+\item For Poisson models with offsets: adds total person-time and case counts per exposure group (incidence rate ratios).
+\item When \code{wide = TRUE}, dichotomous variables are reshaped to wide format with separate columns for exposed/unexposed counts.
+}
+}
 \description{
 A \{gtsummary\} wrapper function that takes a gtsummary univariate regression
 table and adds appropriate cross tabs by exposure and outcome

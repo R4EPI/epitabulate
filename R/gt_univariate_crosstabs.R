@@ -15,6 +15,16 @@ utils::globalVariables(c("n_obs", "n_event", "n_nonevent", "estimate",
 #'This is only works for dichotomous variables (yes/no, TRUE/FALSE,
 #'male/female), others will be dropped with a warning message. (Default is FALSE)
 #'
+#'@return A modified `gtsummary` table object (same class as input — e.g.
+#'   `"tbl_uvregression"` or `"tbl_cmh"`) containing additional cross-tabulated
+#'   counts of outcomes and exposures. The structure depends on regression type:
+#'   \itemize{
+#'     \item For logistic models: adds case and control counts.
+#'     \item For Poisson models without offsets: adds total and case counts per exposure group (risk ratios).
+#'     \item For Poisson models with offsets: adds total person-time and case counts per exposure group (incidence rate ratios).
+#'     \item When `wide = TRUE`, dichotomous variables are reshaped to wide format with separate columns for exposed/unexposed counts.
+#'   }
+#'
 #'@importFrom gtsummary modify_table_styling modify_table_body modify_header modify_fmt_fun style_number modify_footnote
 #'@importFrom dplyr mutate relocate
 #'@importFrom rlang enquo as_label quo_get_expr

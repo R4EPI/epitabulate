@@ -37,6 +37,16 @@ individual}
 
 \item{conf.level}{Confidence level for confidence intervals (default 0.95)}
 }
+\value{
+A gtsummary table of class \code{"tbl_cmh"} (and \code{"gtsummary"}, \code{"tbl_stack"})
+containing:
+\itemize{
+\item Crude estimates of association (odds ratios, risk ratios, or rate ratios)
+\item Stratified estimates for each level of the stratification variable
+\item Cochran–Mantel–Haenszel (CMH) adjusted estimates with 95\\% confidence intervals
+\item Woolf test p-values for assessing homogeneity across strata (when applicable)
+}
+}
 \description{
 A \{gtsummary\} wrapper function that takes a dataframe and produces crude,
 stratified and Cochran-Mantel-Haenszel estimates.
