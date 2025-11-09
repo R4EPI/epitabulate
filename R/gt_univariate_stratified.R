@@ -30,6 +30,15 @@ utils::globalVariables(c("n_obs", "n_event", "n_nonevent", "estimate",
 #'
 #' @param conf.level Confidence level for confidence intervals (default 0.95)
 #'
+#' @return A gtsummary table of class `"tbl_cmh"` (and `"gtsummary"`, `"tbl_stack"`)
+#'   containing:
+#'   \itemize{
+#'     \item Crude estimates of association (odds ratios, risk ratios, or rate ratios)
+#'     \item Stratified estimates for each level of the stratification variable
+#'     \item Cochran–Mantel–Haenszel (CMH) adjusted estimates with 95\% confidence intervals
+#'     \item Woolf test p-values for assessing homogeneity across strata (when applicable)
+#'   }
+#'
 #' @importFrom tidyselect vars_select
 #' @importFrom dplyr mutate relocate filter
 #' @importFrom rlang enquo as_label
