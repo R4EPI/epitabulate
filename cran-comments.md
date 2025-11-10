@@ -14,4 +14,4 @@
 
 All URLs and metadata issues noted in the previous submission have been corrected:
 - Updated lifecycle badge link to https://lifecycle.r-lib.org/articles/stages.html#maturing.
-- Capitalised spelling of Mantel-Haenszel
+- Spellings are as expected 
